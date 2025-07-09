@@ -11,17 +11,14 @@ import { Shot } from '@/types/shot';
 import { Player } from '@/types/player';
 import { firestoreDb } from '@/utils/db';
 import { useAuth } from '@/context/AuthContext';
-import { FaUsers, FaEnvelopeOpenText, FaUserCircle, FaEdit, FaArrowUp, FaArrowDown, FaBrain, FaEye } from 'react-icons/fa';
-import { FiTrendingUp, FiActivity, FiTarget, FiCalendar, FiPlay } from 'react-icons/fi';
+import { FaUsers, FaUserCircle, FaEdit, FaArrowUp, FaArrowDown, FaBrain, FaEye } from 'react-icons/fa';
+import { FiCalendar, FiPlay } from 'react-icons/fi';
 import { GiShuttlecock } from 'react-icons/gi';
 import Link from 'next/link';
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [players, setPlayers] = useState<Player[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
-  const [shots, setShots] = useState<Shot[]>([]);
-  const [pendingMatchRequestsCount, setPendingMatchRequestsCount] = useState(0);
   const [friends, setFriends] = useState<unknown[]>([]);
   const [mbtiResult, setMbtiResult] = useState<unknown | null>(null);
 
@@ -30,18 +27,10 @@ export default function DashboardPage() {
       if (!user || !user.uid) return;
       
       try {
-        const [loadedPlayers, loadedMatches, loadedShots] = await Promise.all([
-          firestoreDb.getPlayers(user.uid),
+        const [loadedMatches] = await Promise.all([
           firestoreDb.getMatches(user.uid),
-          firestoreDb.getShots(user.uid),
         ]);
-        setPlayers(loadedPlayers);
         setMatches(loadedMatches);
-        setShots(loadedShots);
-
-        // 保留中の試合リクエスト数を取得
-        const pendingRequests = await firestoreDb.getPendingMatchRequests(user.uid);
-        setPendingMatchRequestsCount(pendingRequests.length);
 
         // フレンド一覧を取得
         const acceptedFriendships = await firestoreDb.getAcceptedFriendships(user.uid);
@@ -140,48 +129,6 @@ export default function DashboardPage() {
   );
 }
 
-// モダン統計カードコンポーネント
-interface ModernStatCardProps {
-  icon: React.ReactNode;
-  title: string;
-  value: string | number;
-  trend?: number;
-  color: 'gradient-blue' | 'gradient-green' | 'gradient-purple' | 'gradient-red';
-  description?: string;
-}
-
-const ModernStatCard: React.FC<ModernStatCardProps> = ({ icon, title, value, trend, color, description }) => {
-  const gradientClasses = {
-    'gradient-blue': 'bg-gradient-to-br from-blue-500 to-blue-600',
-    'gradient-green': 'bg-gradient-to-br from-emerald-500 to-green-600',
-    'gradient-purple': 'bg-gradient-to-br from-purple-500 to-indigo-600',
-    'gradient-red': 'bg-gradient-to-br from-red-500 to-pink-600',
-  };
-
-  return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl hover:scale-105 transition-all duration-300 group h-32 flex flex-col justify-between">
-      <div className="flex items-start justify-between">
-        <div className={`p-3 rounded-xl ${gradientClasses[color]} text-white group-hover:scale-110 transition-transform duration-300`}>
-          {icon}
-        </div>
-        {trend !== undefined && (
-          <div className={`flex items-center text-sm font-medium ${
-            trend > 0 ? 'text-emerald-600' : trend < 0 ? 'text-red-500' : 'text-gray-500'
-          }`}>
-            {trend > 0 ? <FaArrowUp className="w-3 h-3 mr-1" /> : 
-             trend < 0 ? <FaArrowDown className="w-3 h-3 mr-1" /> : null}
-            {trend > 0 ? '+' : ''}{trend}%
-          </div>
-        )}
-      </div>
-      <div className="mt-auto">
-        <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-        <p className="text-2xl font-bold text-gray-900">{value.toLocaleString()}</p>
-        {description && <p className="text-xs text-gray-500 mt-1">{description}</p>}
-      </div>
-    </div>
-  );
-};
 
 // モダン試合カードコンポーネント
 interface MatchCardProps {

@@ -170,7 +170,7 @@ const BadmintonCourt: React.FC<BadmintonCourtProps> = ({
       setIsHitAreaTop((state.isHitAreaTop as boolean) ?? true);
       
       // ラリー中かサーブ中かを正しく判断
-      if (state.lastShot && typeof state.lastShot === 'object' && state.lastShot !== null && (state.lastShot as any).result === 'continue') {
+      if (state.lastShot && typeof state.lastShot === 'object' && state.lastShot !== null && (state.lastShot as unknown as { result: string }).result === 'continue') {
         // 最後のショットが継続の場合はラリー中
         setIsServing(false);
         // ラリー中の場合はshotTypeもclearに設定

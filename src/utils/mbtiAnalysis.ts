@@ -179,16 +179,16 @@ function calculateAlternativeTypes(
   const questionsPerDimension = totalQuestions / 4;
   
   // 各次元での確率を計算
-  const probabilities = {
-    E: scores.E / questionsPerDimension,
-    I: scores.I / questionsPerDimension,
-    S: scores.S / questionsPerDimension,
-    N: scores.N / questionsPerDimension,
-    T: scores.T / questionsPerDimension,
-    F: scores.F / questionsPerDimension,
-    J: scores.J / questionsPerDimension,
-    P: scores.P / questionsPerDimension
-  };
+  // const probabilities = {
+  //   E: scores.E / questionsPerDimension,
+  //   I: scores.I / questionsPerDimension,
+  //   S: scores.S / questionsPerDimension,
+  //   N: scores.N / questionsPerDimension,
+  //   T: scores.T / questionsPerDimension,
+  //   F: scores.F / questionsPerDimension,
+  //   J: scores.J / questionsPerDimension,
+  //   P: scores.P / questionsPerDimension
+  // };
   
   // 上位3つの代替タイプを生成
   const alternatives: { type: string; probability: number }[] = [];
@@ -254,7 +254,7 @@ export function assessGrowthLevel(answers: MBTIAnswer[], type: MBTIType): {
   nextSteps: string[];
 } {
   // 簡単な実装：回答パターンから成長レベルを判定
-  const consistentAnswers = answers.filter((answer, index) => {
+  const consistentAnswers = answers.filter(() => {
     // 一貫性のある回答かどうかをチェック
     return true; // 実際の実装では詳細な分析が必要
   });

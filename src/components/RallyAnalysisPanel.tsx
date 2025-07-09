@@ -17,7 +17,7 @@ const RallyAnalysisPanel: React.FC<RallyAnalysisPanelProps> = ({ analysis, playe
 
   // 勝率が高いラリー数の上位3位
   const topWinRateRallies = Array.from(analysis.winRateByRallyCount.entries())
-    .filter(([_, stats]) => stats.total >= 3) // 最低3回以上のラリー
+    .filter(([, stats]) => stats.total >= 3) // 最低3回以上のラリー
     .sort((a, b) => b[1].rate - a[1].rate)
     .slice(0, 3);
 
@@ -222,7 +222,7 @@ const RallyAnalysisPanel: React.FC<RallyAnalysisPanelProps> = ({ analysis, playe
                 勝率の高いラリー数（3回以上）
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {topWinRateRallies.map(([rallyCount, stats], index) => (
+                {topWinRateRallies.map(([rallyCount, stats]) => (
                   <div key={rallyCount} className="bg-white p-3 rounded border">
                     <div className="flex items-center justify-between mb-1">
                       <span className="font-medium text-gray-800">{rallyCount}打</span>

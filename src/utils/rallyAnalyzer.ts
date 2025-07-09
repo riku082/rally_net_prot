@@ -1,4 +1,4 @@
-import { Shot, ShotType, ShotResult } from '@/types/shot';
+import { Shot, ShotType } from '@/types/shot';
 import { Match } from '@/types/match';
 
 export interface RallyStats {

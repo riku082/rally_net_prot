@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { MBTIResult, MBTIType } from '@/types/mbti';
+import React, { useState } from 'react';
+import { MBTIType } from '@/types/mbti';
 import { badmintonMBTITypes } from '@/data/badmintonMBTITypes';
-import { FaUsers, FaPlus, FaTrash, FaChartBar, FaExclamationTriangle, FaCheckCircle, FaSearch } from 'react-icons/fa';
+import { FaUsers, FaPlus, FaTrash, FaChartBar, FaExclamationTriangle, FaCheckCircle } from 'react-icons/fa';
 import MBTIAvatar from './MBTIAvatar';
 
 interface TeamMember {
@@ -145,13 +145,13 @@ const TeamAnalyzer: React.FC = () => {
 
     // 共通の強みと弱みを抽出
     const commonStrengths = Object.entries(strengthCount)
-      .filter(([_, count]) => count >= 2)
+      .filter(([, count]) => count >= 2)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([strength]) => strength);
 
     const commonWeaknesses = Object.entries(weaknessCount)
-      .filter(([_, count]) => count >= 2)
+      .filter(([, count]) => count >= 2)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([weakness]) => weakness);

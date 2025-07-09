@@ -145,14 +145,15 @@ export class PrivacyChecker {
   static async checkIsFriend(
     userId: string,
     targetUserId: string,
-    firestoreDb: any
+    firestoreDb: unknown
   ): Promise<boolean> {
     try {
       const friendships = await firestoreDb.getAcceptedFriendships(userId);
-      return friendships.some((friendship: any) => 
-        (friendship.fromUserId === userId && friendship.toUserId === targetUserId) ||
-        (friendship.fromUserId === targetUserId && friendship.toUserId === userId)
-      );
+      return friendships.some((friendship: unknown) => {
+        const f = friendship as { fromUserId: string; toUserId: string };
+        return (f.fromUserId === userId && f.toUserId === targetUserId) ||
+               (f.fromUserId === targetUserId && f.toUserId === userId);
+      });
     } catch (error) {
       console.error('フレンドシップチェックエラー:', error);
       return false;

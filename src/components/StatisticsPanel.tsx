@@ -111,7 +111,7 @@ const StatisticsPanel: React.FC = () => {
       <div className="bg-gray-50 rounded-lg p-6">
         <h4 className="font-bold text-gray-800 mb-4">タイプ分布</h4>
         <div className="space-y-3">
-          {statistics?.popularTypes.map((item, index) => (
+          {statistics?.popularTypes.map((item) => (
             <div key={item.type} className="flex items-center">
               <div
                 className="w-4 h-4 rounded-full mr-3"
@@ -164,7 +164,7 @@ const StatisticsPanel: React.FC = () => {
     <div className="bg-gray-50 rounded-lg p-6">
       <h4 className="font-bold text-gray-800 mb-4">月別診断数トレンド</h4>
       <div className="space-y-3">
-        {statistics?.monthlyTrends.map((item, index) => {
+        {statistics?.monthlyTrends.map((item) => {
           const maxCount = Math.max(...(statistics?.monthlyTrends.map(t => t.count) || [0]));
           const percentage = (item.count / maxCount) * 100;
           return (

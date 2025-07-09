@@ -5,7 +5,7 @@ import { badmintonMBTIQuestions } from '@/data/badmintonMBTIQuestions';
 import { badmintonMBTITypes } from '@/data/badmintonMBTITypes';
 import { MBTIAnswer, MBTIResult, MBTIType } from '@/types/mbti';
 import { useAuth } from '@/context/AuthContext';
-import { performAdvancedAnalysis, assessGrowthLevel } from '@/utils/mbtiAnalysis';
+import { performAdvancedAnalysis } from '@/utils/mbtiAnalysis';
 import { FaArrowLeft, FaArrowRight, FaCheckCircle, FaSpinner } from 'react-icons/fa';
 import { GiShuttlecock } from 'react-icons/gi';
 

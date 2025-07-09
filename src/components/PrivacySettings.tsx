@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { UserProfile } from '@/types/userProfile';
 import { firestoreDb } from '@/utils/db';
 import { useAuth } from '@/context/AuthContext';

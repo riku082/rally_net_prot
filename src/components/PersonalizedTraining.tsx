@@ -3,8 +3,7 @@
 import React, { useState } from 'react';
 import { MBTIResult } from '@/types/mbti';
 import { badmintonMBTITypes } from '@/data/badmintonMBTITypes';
-import { FaBullseye, FaBookOpen, FaChartLine, FaCheckCircle, FaPlay, FaClock, FaFire } from 'react-icons/fa';
-import { GiShuttlecock } from 'react-icons/gi';
+import { FaBullseye, FaCheckCircle, FaClock, FaFire } from 'react-icons/fa';
 
 interface PersonalizedTrainingProps {
   result: MBTIResult;
@@ -33,7 +32,7 @@ const PersonalizedTraining: React.FC<PersonalizedTrainingProps> = ({ result }) =
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [completedExercises, setCompletedExercises] = useState<Set<string>>(new Set());
   
-  const typeData = badmintonMBTITypes[result.result as keyof typeof badmintonMBTITypes];
+  // const typeData = badmintonMBTITypes[result.result as keyof typeof badmintonMBTITypes];
 
   // タイプ別のトレーニングプランを生成
   const generateTrainingPlans = (): TrainingPlan[] => {

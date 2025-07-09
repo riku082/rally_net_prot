@@ -285,9 +285,9 @@ export const firestoreDb = {
   },
 
   // undefined値を除外するヘルパー関数
-  removeUndefinedFields(obj: any): any {
-    const cleaned: any = {};
-    for (const [key, value] of Object.entries(obj)) {
+  removeUndefinedFields(obj: unknown): unknown {
+    const cleaned: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
       if (value !== undefined) {
         cleaned[key] = value;
       }
