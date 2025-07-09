@@ -57,27 +57,27 @@ const PlayersPage: React.FC = () => {
         <div className="flex-1 flex flex-col">
           <Topbar />
           <main className="flex-1 p-6 lg:p-8">
-            <div className="max-w-7xl mx-auto">
-              <h2 className="text-3xl font-bold text-gray-800 mb-6">選手管理</h2>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* 新規選手登録フォーム */}
-                <div>
-                  <PlayerForm onPlayerAdded={handlePlayerAdded} />
-                </div>
-                {/* 登録済み選手一覧 */}
-                <div>
-                  {loading ? (
-                    <div className="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
-                      読み込み中...
-                    </div>
-                  ) : (
-                    <PlayerList 
-                      players={players} 
-                      shots={shots} 
-                      onPlayerDeleted={handlePlayerDeleted}
-                    />
-                  )}
-                </div>
+            <div className="max-w-7xl mx-auto space-y-8">
+              <h2 className="text-3xl font-bold text-gray-800">選手管理</h2>
+              
+              {/* 新規選手登録フォーム */}
+              <div className="max-w-2xl mx-auto">
+                <PlayerForm onPlayerAdded={handlePlayerAdded} />
+              </div>
+              
+              {/* 登録済み選手一覧 */}
+              <div>
+                {loading ? (
+                  <div className="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
+                    読み込み中...
+                  </div>
+                ) : (
+                  <PlayerList 
+                    players={players} 
+                    shots={shots} 
+                    onPlayerDeleted={handlePlayerDeleted}
+                  />
+                )}
               </div>
             </div>
           </main>

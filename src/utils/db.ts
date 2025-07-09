@@ -1,5 +1,5 @@
 import { db, storage } from './firebase';
-import { collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, query, where, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, setDoc, getDoc, query, where, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Player } from '@/types/player';
 import { Match } from '@/types/match';
@@ -7,6 +7,7 @@ import { Shot } from '@/types/shot';
 import { UserProfile } from '@/types/userProfile';
 import { Friendship, FriendshipStatus } from '@/types/friendship';
 import { MatchRequest, MatchRequestStatus } from '@/types/matchRequest';
+import { MBTIResult, MBTIDiagnostic } from '@/types/mbti';
 
 export const firestoreDb = {
   // 選手
@@ -120,8 +121,100 @@ export const firestoreDb = {
       console.warn('deleteMatch: userId is undefined or empty');
       return;
     }
-    // ユーザーのサブコレクションから試合を削除
+    if (!matchId) {
+      console.warn('deleteMatch: matchId is undefined or empty');
+      return;
+    }
+    
+    try {
+      // 試合が削除権限があるかチェック（作成者のみ削除可能）
+      const matchDoc = await getDoc(doc(db, `users/${userId}/matches`, matchId));
+      if (!matchDoc.exists()) {
+        console.warn('deleteMatch: Match not found or user does not have permission');
+        throw new Error('試合が見つからないか、削除権限がありません。');
+      }
+      
+      const matchData = matchDoc.data();
+      if (matchData.ownerUserId !== userId) {
+        console.warn('deleteMatch: User does not have permission to delete this match');
+        throw new Error('この試合を削除する権限がありません。作成者のみが削除できます。');
+      }
+    
+    // 関連するショットを削除（作成者のデータから）
+    const shotsQuery = query(
+      collection(db, `users/${userId}/shots`), 
+      where('matchId', '==', matchId)
+    );
+    const shotsSnapshot = await getDocs(shotsQuery);
+    
+    // すべての関連ショットを削除
+    const deleteShotPromises = shotsSnapshot.docs.map(shotDoc => 
+      deleteDoc(doc(db, `users/${userId}/shots`, shotDoc.id))
+    );
+    await Promise.all(deleteShotPromises);
+    
+    // 承認済みのフレンドデータは削除せず、未承認のリクエストのみキャンセル
+    const allPlayerIds = [
+      matchData.players.player1,
+      matchData.players.player2,
+      matchData.players.opponent1,
+      matchData.players.opponent2,
+    ].filter(Boolean) as string[];
+    
+    const userProfiles = await this.getUserProfilesByIds(allPlayerIds);
+    const friendUserIds = userProfiles
+      .filter(profile => profile.id !== userId) // 削除実行者自身は除く
+      .map(profile => profile.id);
+    
+    // 未承認の試合リクエストのみ削除
+    const pendingMatchRequests = await Promise.all(
+      friendUserIds.map(async (friendId) => {
+        const matchRequestId = `${matchId}_${friendId}`;
+        const matchRequestDoc = await getDoc(doc(db, 'matchRequests', matchRequestId));
+        
+        if (matchRequestDoc.exists()) {
+          const requestData = matchRequestDoc.data();
+          // pending状態のリクエストのみ削除
+          if (requestData.status === 'pending') {
+            await deleteDoc(doc(db, 'matchRequests', matchRequestId));
+            console.log(`Deleted pending match request for friend ${friendId}`);
+          } else {
+            console.log(`Match request for friend ${friendId} is ${requestData.status}, keeping friend data intact`);
+          }
+        }
+      })
+    );
+    
+    await Promise.all(pendingMatchRequests);
+    
+    // 試合を削除（作成者のデータから）
     await deleteDoc(doc(db, `users/${userId}/matches`, matchId));
+    
+    // ローカルストレージの一時データも削除
+    try {
+      localStorage.removeItem(`match_temp_${matchId}`);
+      console.log(`Removed temporary data for match ${matchId} from localStorage`);
+    } catch (error) {
+      console.warn('Failed to remove temporary data from localStorage:', error);
+    }
+    
+      console.log(`Deleted match ${matchId} and ${shotsSnapshot.docs.length} related shots from creator. Cancelled pending requests to ${friendUserIds.length} friends.`);
+    } catch (error) {
+      console.error('Error deleting match and related data:', error);
+      throw error;
+    }
+  },
+  async updateMatchScore(matchId: string, userId: string, score: { player: number; opponent: number }): Promise<void> {
+    if (!userId) {
+      console.warn('updateMatchScore: userId is undefined or empty');
+      return;
+    }
+    if (!matchId) {
+      console.warn('updateMatchScore: matchId is undefined or empty');
+      return;
+    }
+    // ユーザーのサブコレクションで試合のスコアを更新
+    await updateDoc(doc(db, `users/${userId}/matches`, matchId), { score });
   },
 
   // ショット
@@ -149,6 +242,10 @@ export const firestoreDb = {
   async addShot(shot: Omit<Shot, 'id' | 'timestamp'>, userId: string, matchId: string): Promise<void> {
     if (!userId) {
       console.warn('addShot: userId is undefined or empty');
+      return;
+    }
+    if (!matchId) {
+      console.warn('addShot: matchId is undefined or empty');
       return;
     }
     const shotWithId = {
@@ -376,4 +473,41 @@ export const firestoreDb = {
     }
     return false;
   },
+
+  // MBTI診断関連
+  async saveMBTIResult(result: MBTIResult): Promise<void> {
+    await setDoc(doc(db, 'mbtiResults', result.id), result);
+  },
+
+  async getMBTIResult(userId: string): Promise<MBTIResult | null> {
+    const q = query(collection(db, 'mbtiResults'), where('userId', '==', userId));
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return null;
+    
+    // 最新の結果を取得（createdAtでソート）
+    const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MBTIResult));
+    return results.sort((a, b) => b.createdAt - a.createdAt)[0];
+  },
+
+  async saveMBTIDiagnostic(diagnostic: MBTIDiagnostic): Promise<void> {
+    await setDoc(doc(db, 'mbtiDiagnostics', diagnostic.id), diagnostic);
+  },
+
+  async getMBTIDiagnostic(userId: string): Promise<MBTIDiagnostic | null> {
+    const q = query(collection(db, 'mbtiDiagnostics'), where('userId', '==', userId));
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return null;
+    
+    // 最新の診断を取得
+    const diagnostics = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MBTIDiagnostic));
+    return diagnostics.sort((a, b) => b.createdAt - a.createdAt)[0];
+  },
+
+  async updateUserProfileMBTI(userId: string, mbtiResult: string): Promise<void> {
+    const userRef = doc(db, 'userProfiles', userId);
+    await updateDoc(userRef, {
+      mbtiResult,
+      mbtiCompletedAt: Date.now()
+    });
+  }
 };

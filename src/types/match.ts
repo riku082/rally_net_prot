@@ -12,4 +12,10 @@ export interface Match {
   };
   ownerUserId: string; // この試合を記録したユーザーのID
   createdAt: number;
+  score?: {
+    player: number;
+    opponent: number;
+  };
+  youtubeVideoId?: string; // YouTube動画ID
+  youtubeVideoTitle?: string; // YouTube動画タイトル
 }

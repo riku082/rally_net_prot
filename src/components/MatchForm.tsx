@@ -6,7 +6,7 @@ import { Player } from '@/types/player';
 import { UserProfile } from '@/types/userProfile';
 import { firestoreDb } from '@/utils/db';
 import { useAuth } from '@/context/AuthContext';
-import { FiCalendar, FiUsers, FiUser, FiPlusCircle } from 'react-icons/fi';
+import { FiCalendar, FiUsers, FiUser, FiPlusCircle, FiVideo, FiLink } from 'react-icons/fi';
 
 // 選手選択ドロップダウンのオプションとして使用する型
 interface SelectablePlayer {
@@ -30,6 +30,8 @@ const MatchForm: React.FC<MatchFormProps> = ({ players, onMatchAdded }) => {
   const [opponent1, setOpponent1] = useState('');
   const [opponent2, setOpponent2] = useState('');
   const [connectedUserProfiles, setConnectedUserProfiles] = useState<UserProfile[]>([]);
+  const [videoUrl, setVideoUrl] = useState('');
+  const [videoTitle, setVideoTitle] = useState('');
 
   useEffect(() => {
     const loadConnectedUsers = async () => {
@@ -47,6 +49,21 @@ const MatchForm: React.FC<MatchFormProps> = ({ players, onMatchAdded }) => {
     };
     loadConnectedUsers();
   }, [user]);
+
+  const extractYouTubeVideoId = (url: string): string | null => {
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  };
+
+  const handleVideoUrlChange = (url: string) => {
+    setVideoUrl(url);
+    if (url.trim() && extractYouTubeVideoId(url)) {
+      setVideoTitle('YouTube動画');
+    } else {
+      setVideoTitle('');
+    }
+  };
 
   // ローカル選手と接続済みユーザーを結合したリスト
   const allSelectablePlayers: SelectablePlayer[] = [
@@ -76,6 +93,8 @@ const MatchForm: React.FC<MatchFormProps> = ({ players, onMatchAdded }) => {
         },
         ownerUserId: user.uid, // 試合を記録したユーザーのID
         createdAt: Date.now(),
+        youtubeVideoId: extractYouTubeVideoId(videoUrl),
+        youtubeVideoTitle: videoTitle || '動画',
       });
       // フォームをリセット
       setDate('');
@@ -84,6 +103,8 @@ const MatchForm: React.FC<MatchFormProps> = ({ players, onMatchAdded }) => {
       setPlayer2('');
       setOpponent1('');
       setOpponent2('');
+      setVideoUrl('');
+      setVideoTitle('');
     }
   };
 
@@ -225,6 +246,46 @@ const MatchForm: React.FC<MatchFormProps> = ({ players, onMatchAdded }) => {
                   availableOpponents.filter((p) => p.id !== opponent1)
                 )}
               </select>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 動画URL入力 */}
+      <div>
+        <label htmlFor="videoUrl" className="block text-sm font-medium text-gray-700 mb-2">
+          <FiVideo className="inline-block mr-2 text-gray-500" />関連動画URL（オプション）
+        </label>
+        <div className="space-y-3">
+          <input
+            type="url"
+            id="videoUrl"
+            value={videoUrl}
+            onChange={(e) => handleVideoUrlChange(e.target.value)}
+            placeholder="https://www.youtube.com/watch?v=..."
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
+          />
+          <input
+            type="text"
+            value={videoTitle}
+            onChange={(e) => setVideoTitle(e.target.value)}
+            placeholder="動画のタイトル（任意）"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
+          />
+          {videoUrl && extractYouTubeVideoId(videoUrl) && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <FiLink className="text-green-600" />
+                <span className="text-green-700 text-sm font-medium">有効なYouTube URLが入力されました</span>
+              </div>
+            </div>
+          )}
+          {videoUrl && !extractYouTubeVideoId(videoUrl) && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <FiVideo className="text-yellow-600" />
+                <span className="text-yellow-700 text-sm">有効なYouTube URLを入力してください</span>
+              </div>
             </div>
           )}
         </div>

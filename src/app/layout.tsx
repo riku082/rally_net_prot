@@ -7,8 +7,8 @@ import { AuthProvider } from "@/context/AuthContext";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "配球分析「ヨシダシステム」",
-  description: "バドミントンの配球分析システム",
+  title: "Rally Net - バドミントン解析システム",
+  description: "Rally Net - バドミントンの配球分析システム「ヨシダシステム」",
 };
 
 export default function RootLayout({
@@ -19,8 +19,8 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <head>
-        <title>配球分析「ヨシダシステム」</title>
-        <meta name="description" content="バドミントンの配球分析システム" />
+        <title>Rally Net - バドミントン解析システム</title>
+        <meta name="description" content="Rally Net - バドミントンの配球分析システム「ヨシダシステム」" />
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body className={inter.className}>

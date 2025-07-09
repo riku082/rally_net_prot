@@ -54,12 +54,37 @@ const MatchList: React.FC<MatchListProps> = ({
               key={match.id}
               className="bg-gray-50 border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col"
             >
-              <div className="flex items-center text-sm text-gray-600 mb-3">
-                <FiCalendar className="mr-2 text-blue-500" />
-                <span>{new Date(match.date).toLocaleDateString('ja-JP')}</span>
-                <span className="mx-2">•</span>
-                <FiUsers className="mr-2 text-blue-500" />
-                <span>{match.type === 'singles' ? 'シングルス' : 'ダブルス'}</span>
+              <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
+                <div className="flex items-center">
+                  <FiCalendar className="mr-2 text-blue-500" />
+                  <span>{new Date(match.date).toLocaleDateString('ja-JP')}</span>
+                  <span className="mx-2">•</span>
+                  <FiUsers className="mr-2 text-blue-500" />
+                  <span>{match.type === 'singles' ? 'シングルス' : 'ダブルス'}</span>
+                </div>
+                {(() => {
+                  // ローカルストレージから一時データを確認してステータスを表示
+                  try {
+                    const tempData = localStorage.getItem(`match_temp_${match.id}`);
+                    if (tempData) {
+                      const parsedData = JSON.parse(tempData);
+                      if (parsedData.shots && parsedData.shots.length > 0) {
+                        return (
+                          <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
+                            入力中
+                          </span>
+                        );
+                      }
+                    }
+                  } catch (error) {
+                    // エラーの場合は何も表示しない
+                  }
+                  return (
+                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+                      新規
+                    </span>
+                  );
+                })()}
               </div>
               
               <div className="mb-3">
@@ -73,6 +98,23 @@ const MatchList: React.FC<MatchListProps> = ({
                   相手選手: {getPlayerName(match.players.opponent1)}
                   {match.players.opponent2 && `, ${getPlayerName(match.players.opponent2)}`}
                 </p>
+                
+                {/* スコア表示 */}
+                {match.score && (
+                  <div className="mt-2 p-2 bg-gray-50 rounded-md">
+                    <div className="flex justify-center items-center space-x-4">
+                      <div className="text-center">
+                        <p className="text-xs text-gray-600">自チーム</p>
+                        <p className="text-xl font-bold text-blue-600">{match.score.player}</p>
+                      </div>
+                      <div className="text-lg font-bold text-gray-400">:</div>
+                      <div className="text-center">
+                        <p className="text-xs text-gray-600">相手チーム</p>
+                        <p className="text-xl font-bold text-red-600">{match.score.opponent}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="mt-auto flex justify-end space-x-3 pt-4 border-t border-gray-100">
@@ -80,7 +122,22 @@ const MatchList: React.FC<MatchListProps> = ({
                   onClick={() => onMatchSelected(match)}
                   className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
                 >
-                  <FiPlayCircle className="mr-2" />配球登録
+                  <FiPlayCircle className="mr-2" />
+                  {(() => {
+                    // ローカルストレージから一時データを確認
+                    try {
+                      const tempData = localStorage.getItem(`match_temp_${match.id}`);
+                      if (tempData) {
+                        const parsedData = JSON.parse(tempData);
+                        if (parsedData.shots && parsedData.shots.length > 0) {
+                          return '配球登録を続ける';
+                        }
+                      }
+                    } catch (error) {
+                      // エラーの場合は通常の表示
+                    }
+                    return '配球登録';
+                  })()}
                 </button>
                 <button
                   onClick={() => onMatchDeleted(match.id)}

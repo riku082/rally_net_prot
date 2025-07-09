@@ -29,4 +29,8 @@ export interface UserProfile {
   // 追加情報
   bio?: string; // 自己紹介
   preferredGameType?: 'singles' | 'doubles' | 'both'; // 好きな試合形式
+  
+  // MBTI診断結果
+  mbtiResult?: string; // "ESTJ", "INFP" など
+  mbtiCompletedAt?: number; // MBTI診断完了日時
 }

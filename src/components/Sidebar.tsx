@@ -1,18 +1,17 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { FaTachometerAlt, FaUser, FaChartBar, FaDatabase, FaUserCircle, FaRss, FaUserFriends, FaEnvelope } from 'react-icons/fa';
+import { FaTachometerAlt, FaUser, FaChartBar, FaUserCircle, FaRss, FaUserFriends, FaBrain } from 'react-icons/fa';
 import { GiShuttlecock } from 'react-icons/gi'; // GiShuttlecockをインポート
 
 const navItems = [
   { label: 'ダッシュボード', icon: <FaTachometerAlt />, path: '/' },
   { label: '選手管理', icon: <FaUser />, path: '/players' },
-  { label: '試合記録', icon: <GiShuttlecock />, path: '/matches' }, // GiShuttlecockを使用
+  { label: '試合記録', icon: <GiShuttlecock />, path: '/matches', badge: 'ヨシダシステム' }, // GiShuttlecockを使用
   { label: '分析', icon: <FaChartBar />, path: '/analysis' },
   { label: 'ニュース', icon: <FaRss />, path: '/news' },
-  { label: 'フレンド管理', icon: <FaUserFriends />, path: '/friends' },
-  { label: '試合リクエスト', icon: <FaEnvelope />, path: '/match-requests' },
-  { label: 'データ管理', icon: <FaDatabase />, path: '/management' },
+  { label: 'フレンド', icon: <FaUserFriends />, path: '/friends' },
+  { label: 'MBTI診断', icon: <FaBrain />, path: '/mbti', badge: 'NEW' },
 ];
 
 const Sidebar: React.FC<{ activePath?: string }> = ({ activePath = '/' }) => {
@@ -21,19 +20,26 @@ const Sidebar: React.FC<{ activePath?: string }> = ({ activePath = '/' }) => {
   return (
     <aside className="w-64 h-screen bg-white border-r flex flex-col py-6 px-4">
       <div className="flex items-center mb-10">
-        <span className="text-2xl font-bold text-blue-600 mr-2">🎯</span>
-        <span className="text-xl font-bold text-gray-800">ヨシダシステム</span>
+        <img src="/logo.png" alt="Rally Net" className="h-8 w-8 mr-3" />
+        <span className="text-xl font-bold text-gray-800">Rally Net</span>
       </div>
       <nav className="flex-1">
         <ul className="space-y-2">
           {navItems.map((item) => (
             <li key={item.label}>
               <button
-                className={`flex items-center w-full px-3 py-2 rounded-lg transition-colors duration-150 ${activePath === item.path ? 'bg-blue-100 text-blue-700' : 'text-gray-700 hover:bg-gray-100'}`}
+                className={`flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors duration-150 ${activePath === item.path ? 'bg-blue-100 text-blue-700' : 'text-gray-700 hover:bg-gray-100'}`}
                 onClick={() => router.push(item.path)}
               >
-                <span className="text-lg mr-3">{item.icon}</span>
-                <span className="font-medium">{item.label}</span>
+                <div className="flex items-center">
+                  <span className="text-lg mr-3">{item.icon}</span>
+                  <span className="font-medium">{item.label}</span>
+                </div>
+                {item.badge && (
+                  <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
+                    {item.badge}
+                  </span>
+                )}
               </button>
             </li>
           ))}
