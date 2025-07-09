@@ -15,6 +15,14 @@ export interface MBTIResult {
     description: string;
   };
   createdAt: number;
+  analysis: {
+    confidenceScore: number; // 0-100の信頼度スコア
+    borderlineTraits: string[]; // 境界線上の特性
+    dominantFunctions: string[]; // 主要な心理機能
+    subType: string; // サブタイプ（例：ESTJ-A, ESTJ-T）
+    consistency: number; // 回答の一貫性（0-100）
+    alternativeTypes: { type: string; probability: number }[]; // 他の可能性のあるタイプ
+  };
 }
 
 export interface MBTIQuestion {

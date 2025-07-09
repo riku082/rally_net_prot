@@ -21,7 +21,9 @@ export default function RootLayout({
       <head>
         <title>Rally Net - バドミントン解析システム</title>
         <meta name="description" content="Rally Net - バドミントンの配球分析システム「ヨシダシステム」" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/logo.png" />
+        <link rel="apple-touch-icon" href="/logo.png" />
+        <meta name="theme-color" content="#3B82F6" />
       </head>
       <body className={inter.className}>
         <AuthProvider>

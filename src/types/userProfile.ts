@@ -33,4 +33,13 @@ export interface UserProfile {
   // MBTI診断結果
   mbtiResult?: string; // "ESTJ", "INFP" など
   mbtiCompletedAt?: number; // MBTI診断完了日時
+  
+  // プライバシー設定
+  privacySettings?: {
+    profilePublic?: boolean; // プロフィール公開
+    statsPublic?: boolean; // 統計情報公開
+    matchHistoryPublic?: boolean; // 試合履歴公開
+    analysisPublic?: boolean; // 分析結果公開
+    allowFriendView?: boolean; // フレンドからの閲覧許可
+  };
 }

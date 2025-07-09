@@ -76,7 +76,7 @@ const MatchList: React.FC<MatchListProps> = ({
                         );
                       }
                     }
-                  } catch (error) {
+                  } catch {
                     // エラーの場合は何も表示しない
                   }
                   return (
@@ -133,7 +133,7 @@ const MatchList: React.FC<MatchListProps> = ({
                           return '配球登録を続ける';
                         }
                       }
-                    } catch (error) {
+                    } catch {
                       // エラーの場合は通常の表示
                     }
                     return '配球登録';

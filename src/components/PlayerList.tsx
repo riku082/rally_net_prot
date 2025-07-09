@@ -1,12 +1,17 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Player } from '@/types/player';
 import { Shot } from '@/types/shot';
-import { FiUser, FiHome, FiTrash2, FiBarChart2, FiTarget, FiXCircle, FiCheckCircle, FiActivity } from 'react-icons/fi';
+import { UserProfile } from '@/types/userProfile';
+import { FiUser, FiHome, FiTrash2, FiBarChart2, FiTarget, FiXCircle, FiCheckCircle, FiActivity, FiUserPlus, FiZap, FiEye, FiLock } from 'react-icons/fi';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
+import { RallyAnalyzer } from '@/utils/rallyAnalyzer';
+import { PrivacyChecker } from '@/utils/privacyChecker';
+import { firestoreDb } from '@/utils/db';
+import { useAuth } from '@/context/AuthContext';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -18,6 +23,55 @@ interface PlayerListProps {
 
 const PlayerList: React.FC<PlayerListProps> = ({ players, shots, onPlayerDeleted }) => {
   const router = useRouter();
+  const { user } = useAuth();
+  const rallyAnalyzer = new RallyAnalyzer(shots, []);
+  const [friendProfiles, setFriendProfiles] = useState<UserProfile[]>([]);
+  const [friendShots, setFriendShots] = useState<{ [userId: string]: Shot[] }>({});
+  const [isLoadingFriends, setIsLoadingFriends] = useState(false);
+
+  // フレンドの情報を読み込み
+  useEffect(() => {
+    const loadFriendData = async () => {
+      if (!user?.uid) return;
+      
+      setIsLoadingFriends(true);
+      try {
+        // フレンドのプロフィール情報を取得
+        const friendships = await firestoreDb.getAcceptedFriendships(user.uid);
+        const friendUserIds = friendships.map(friendship => 
+          friendship.fromUserId === user.uid ? friendship.toUserId : friendship.fromUserId
+        );
+        
+        const profiles = await firestoreDb.getUserProfilesByIds(friendUserIds);
+        setFriendProfiles(profiles);
+        
+        // 公開設定を確認して、フレンドの配球データを取得
+        const friendShotsData: { [userId: string]: Shot[] } = {};
+        
+        for (const profile of profiles) {
+          const canViewAnalysis = PrivacyChecker.canViewAnalysis(profile, user.uid, true);
+          if (canViewAnalysis) {
+            try {
+              const shots = await firestoreDb.getShots(profile.id);
+              friendShotsData[profile.id] = shots;
+            } catch (error) {
+              console.error(`フレンド ${profile.name} の配球データ取得エラー:`, error);
+              friendShotsData[profile.id] = [];
+            }
+          }
+        }
+        
+        setFriendShots(friendShotsData);
+      } catch (error) {
+        console.error('フレンドデータの読み込みエラー:', error);
+      } finally {
+        setIsLoadingFriends(false);
+      }
+    };
+    
+    loadFriendData();
+  }, [user]);
+  
   // 選手ごとの統計を計算
   const calculatePlayerStats = (player: Player, shots: Shot[]) => {
     const playerShots = shots.filter(shot => shot.hitPlayer === player.id);
@@ -29,6 +83,9 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, shots, onPlayerDeleted
     const totalMidShots = playerShots.filter(shot => ['LM', 'CM', 'RM'].includes(shot.hitArea)).length;
     const totalFrontShots = playerShots.filter(shot => ['LF', 'CF', 'RF'].includes(shot.hitArea)).length;
 
+    // ラリー分析の追加
+    const rallyAnalysis = rallyAnalyzer.analyzeRallies(undefined, player.id);
+
     return {
       totalShots,
       crossRate: totalShots > 0 ? (crossShots / totalShots) * 100 : 0,
@@ -37,6 +94,10 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, shots, onPlayerDeleted
       rearRate: totalShots > 0 ? (totalRearShots / totalShots) * 100 : 0,
       midRate: totalShots > 0 ? (totalMidShots / totalShots) * 100 : 0,
       frontRate: totalShots > 0 ? (totalFrontShots / totalShots) * 100 : 0,
+      averageRallyCount: rallyAnalysis.averageRallyCount,
+      totalRallies: rallyAnalysis.totalRallies,
+      shortRallyWinRate: rallyAnalysis.rallyRangeAnalysis.short.winRate,
+      longRallyWinRate: rallyAnalysis.rallyRangeAnalysis.long.winRate,
     };
   };
 
@@ -94,6 +155,37 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, shots, onPlayerDeleted
     maintainAspectRatio: false
   };
 
+  // フレンドの統計を計算
+  const calculateFriendStats = (profile: UserProfile) => {
+    const shots = friendShots[profile.id] || [];
+    if (shots.length === 0) return null;
+    
+    const friendRallyAnalyzer = new RallyAnalyzer(shots, []);
+    const rallyAnalysis = friendRallyAnalyzer.analyzeRallies(undefined, profile.id);
+    
+    const totalShots = shots.length;
+    const crossShots = shots.filter(shot => shot.isCross).length;
+    const missShots = shots.filter(shot => shot.result === 'miss').length;
+    const pointShots = shots.filter(shot => shot.result === 'point').length;
+    const totalRearShots = shots.filter(shot => ['LR', 'CR', 'RR'].includes(shot.hitArea)).length;
+    const totalMidShots = shots.filter(shot => ['LM', 'CM', 'RM'].includes(shot.hitArea)).length;
+    const totalFrontShots = shots.filter(shot => ['LF', 'CF', 'RF'].includes(shot.hitArea)).length;
+    
+    return {
+      totalShots,
+      crossRate: totalShots > 0 ? (crossShots / totalShots) * 100 : 0,
+      missRate: totalShots > 0 ? (missShots / totalShots) * 100 : 0,
+      pointRate: totalShots > 0 ? (pointShots / totalShots) * 100 : 0,
+      rearRate: totalShots > 0 ? (totalRearShots / totalShots) * 100 : 0,
+      midRate: totalShots > 0 ? (totalMidShots / totalShots) * 100 : 0,
+      frontRate: totalShots > 0 ? (totalFrontShots / totalShots) * 100 : 0,
+      averageRallyCount: rallyAnalysis.averageRallyCount,
+      totalRallies: rallyAnalysis.totalRallies,
+      shortRallyWinRate: rallyAnalysis.rallyRangeAnalysis.short.winRate,
+      longRallyWinRate: rallyAnalysis.rallyRangeAnalysis.long.winRate,
+    };
+  };
+
   return (
     <div className="p-8 bg-gradient-to-br from-white via-blue-50 to-indigo-50 rounded-2xl shadow-xl border border-blue-100">
       <div className="flex items-center justify-between mb-8">
@@ -104,7 +196,9 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, shots, onPlayerDeleted
           {players.length}名
         </div>
       </div>
+      
       <div className="space-y-6">
+        {/* 自分の選手 */}
         {players.length === 0 ? (
           <div className="col-span-full text-center py-16">
             <div className="mx-auto w-24 h-24 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-full flex items-center justify-center mb-6">
@@ -129,13 +223,26 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, shots, onPlayerDeleted
                       <FiUser className="w-10 h-10 text-white" />
                     </div>
                     <div className="min-w-0">
-                      <h4 className="text-2xl font-bold text-gray-800 mb-1">
-                        {player.name}
-                      </h4>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="text-2xl font-bold text-gray-800">
+                          {player.name}
+                        </h4>
+                        {player.friendId && (
+                          <div className="flex items-center bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                            <FiUserPlus className="w-3 h-3 mr-1" />
+                            フレンド
+                          </div>
+                        )}
+                      </div>
                       <p className="text-gray-500 flex items-center">
                         <FiHome className="mr-2 w-4 h-4 flex-shrink-0" />
                         <span className="truncate">{player.affiliation}</span>
                       </p>
+                      {player.email && (
+                        <p className="text-gray-400 text-sm flex items-center mt-1">
+                          <span className="truncate">{player.email}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
                 
@@ -151,34 +258,41 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, shots, onPlayerDeleted
                       </div>
 
                       {/* 統計情報 */}
-                      <div className="flex items-center space-x-4 flex-grow">
-                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200 hover:shadow-md transition-shadow flex-1">
+                      <div className="flex items-center space-x-3 flex-grow">
+                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-xl border border-blue-200 hover:shadow-md transition-shadow flex-1">
                           <div className="flex items-center justify-between">
-                            <FiTarget className="w-5 h-5 text-blue-600" />
-                            <span className="text-xl font-bold text-blue-700">{stats.crossRate.toFixed(1)}%</span>
+                            <FiTarget className="w-4 h-4 text-blue-600" />
+                            <span className="text-lg font-bold text-blue-700">{stats.crossRate.toFixed(1)}%</span>
                           </div>
-                          <p className="text-blue-600 font-medium mt-1 text-sm">クロス率</p>
+                          <p className="text-blue-600 font-medium mt-1 text-xs">クロス率</p>
                         </div>
-                        <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-xl border border-red-200 hover:shadow-md transition-shadow flex-1">
+                        <div className="bg-gradient-to-br from-red-50 to-red-100 p-3 rounded-xl border border-red-200 hover:shadow-md transition-shadow flex-1">
                           <div className="flex items-center justify-between">
-                            <FiXCircle className="w-5 h-5 text-red-600" />
-                            <span className="text-xl font-bold text-red-700">{stats.missRate.toFixed(1)}%</span>
+                            <FiXCircle className="w-4 h-4 text-red-600" />
+                            <span className="text-lg font-bold text-red-700">{stats.missRate.toFixed(1)}%</span>
                           </div>
-                          <p className="text-red-600 font-medium mt-1 text-sm">ミス率</p>
+                          <p className="text-red-600 font-medium mt-1 text-xs">ミス率</p>
                         </div>
-                        <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200 hover:shadow-md transition-shadow flex-1">
+                        <div className="bg-gradient-to-br from-green-50 to-green-100 p-3 rounded-xl border border-green-200 hover:shadow-md transition-shadow flex-1">
                           <div className="flex items-center justify-between">
-                            <FiCheckCircle className="w-5 h-5 text-green-600" />
-                            <span className="text-xl font-bold text-green-700">{stats.pointRate.toFixed(1)}%</span>
+                            <FiCheckCircle className="w-4 h-4 text-green-600" />
+                            <span className="text-lg font-bold text-green-700">{stats.pointRate.toFixed(1)}%</span>
                           </div>
-                          <p className="text-green-600 font-medium mt-1 text-sm">得点率</p>
+                          <p className="text-green-600 font-medium mt-1 text-xs">得点率</p>
                         </div>
-                        <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200 hover:shadow-md transition-shadow flex-1">
+                        <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-xl border border-purple-200 hover:shadow-md transition-shadow flex-1">
                           <div className="flex items-center justify-between">
-                            <FiBarChart2 className="w-5 h-5 text-gray-600" />
-                            <span className="text-xl font-bold text-gray-700">{stats.totalShots}</span>
+                            <FiZap className="w-4 h-4 text-purple-600" />
+                            <span className="text-lg font-bold text-purple-700">{stats.averageRallyCount.toFixed(1)}</span>
                           </div>
-                          <p className="text-gray-600 font-medium mt-1 text-sm">総ショット数</p>
+                          <p className="text-purple-600 font-medium mt-1 text-xs">平均ラリー数</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-xl border border-gray-200 hover:shadow-md transition-shadow flex-1">
+                          <div className="flex items-center justify-between">
+                            <FiBarChart2 className="w-4 h-4 text-gray-600" />
+                            <span className="text-lg font-bold text-gray-700">{stats.totalShots}</span>
+                          </div>
+                          <p className="text-gray-600 font-medium mt-1 text-xs">総ショット数</p>
                         </div>
                       </div>
                     </div>
@@ -223,6 +337,147 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, shots, onPlayerDeleted
               </div>
             );
           })
+        )}
+
+        {/* フレンドの選手情報 */}
+        {friendProfiles.length > 0 && (
+          <div className="border-t pt-6">
+            <div className="flex items-center justify-between mb-6">
+              <h4 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
+                フレンドの分析結果
+              </h4>
+              <div className="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
+                {friendProfiles.length}名
+              </div>
+            </div>
+            
+            {isLoadingFriends ? (
+              <div className="text-center py-8">
+                <div className="animate-spin w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                <p className="text-gray-600">フレンドの情報を読み込み中...</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {friendProfiles.map((profile) => {
+                  const canViewStats = PrivacyChecker.canViewStats(profile, user?.uid || null, true);
+                  const canViewAnalysis = PrivacyChecker.canViewAnalysis(profile, user?.uid || null, true);
+                  const friendStats = calculateFriendStats(profile);
+                  
+                  return (
+                    <div key={profile.id} className="group bg-white border border-green-200 rounded-2xl p-6 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden cursor-pointer" onClick={() => router.push(`/analysis?playerId=${profile.id}`)}>
+                      {/* 背景の装飾グラデーション */}
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-400/10 to-teal-400/10 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500"></div>
+                      
+                      <div className="flex items-center justify-between relative z-10">
+                        {/* 左側: プレイヤー情報 */}
+                        <div className="flex items-center space-x-6">
+                          <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                            <FiUser className="w-10 h-10 text-white" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="text-2xl font-bold text-gray-800">
+                                {profile.name}
+                              </h4>
+                              <div className="flex items-center bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                                <FiUserPlus className="w-3 h-3 mr-1" />
+                                フレンド
+                              </div>
+                            </div>
+                            <p className="text-gray-500 flex items-center">
+                              <FiHome className="mr-2 w-4 h-4 flex-shrink-0" />
+                              <span className="truncate">{profile.team || '所属不明'}</span>
+                            </p>
+                            <p className="text-gray-400 text-sm flex items-center mt-1">
+                              <span className="truncate">{profile.email}</span>
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* 中央: 統計情報またはプライバシーメッセージ */}
+                        {canViewStats && canViewAnalysis && friendStats ? (
+                          <div className="flex items-center space-x-8 flex-grow relative z-10">
+                            {/* 円グラフ */}
+                            <div className="bg-gray-50 rounded-2xl p-4 shadow-inner">
+                              <h5 className="text-xs font-semibold text-gray-700 mb-3 text-center">コートエリア分布</h5>
+                              <div className="h-24 w-24">
+                                <Doughnut data={getChartData(friendStats)} options={chartOptions} />
+                              </div>
+                            </div>
+
+                            {/* 統計情報 */}
+                            <div className="flex items-center space-x-3 flex-grow">
+                              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-xl border border-blue-200 hover:shadow-md transition-shadow flex-1">
+                                <div className="flex items-center justify-between">
+                                  <FiTarget className="w-4 h-4 text-blue-600" />
+                                  <span className="text-lg font-bold text-blue-700">{friendStats.crossRate.toFixed(1)}%</span>
+                                </div>
+                                <p className="text-blue-600 font-medium mt-1 text-xs">クロス率</p>
+                              </div>
+                              <div className="bg-gradient-to-br from-red-50 to-red-100 p-3 rounded-xl border border-red-200 hover:shadow-md transition-shadow flex-1">
+                                <div className="flex items-center justify-between">
+                                  <FiXCircle className="w-4 h-4 text-red-600" />
+                                  <span className="text-lg font-bold text-red-700">{friendStats.missRate.toFixed(1)}%</span>
+                                </div>
+                                <p className="text-red-600 font-medium mt-1 text-xs">ミス率</p>
+                              </div>
+                              <div className="bg-gradient-to-br from-green-50 to-green-100 p-3 rounded-xl border border-green-200 hover:shadow-md transition-shadow flex-1">
+                                <div className="flex items-center justify-between">
+                                  <FiCheckCircle className="w-4 h-4 text-green-600" />
+                                  <span className="text-lg font-bold text-green-700">{friendStats.pointRate.toFixed(1)}%</span>
+                                </div>
+                                <p className="text-green-600 font-medium mt-1 text-xs">得点率</p>
+                              </div>
+                              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-xl border border-purple-200 hover:shadow-md transition-shadow flex-1">
+                                <div className="flex items-center justify-between">
+                                  <FiZap className="w-4 h-4 text-purple-600" />
+                                  <span className="text-lg font-bold text-purple-700">{friendStats.averageRallyCount.toFixed(1)}</span>
+                                </div>
+                                <p className="text-purple-600 font-medium mt-1 text-xs">平均ラリー数</p>
+                              </div>
+                              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-xl border border-gray-200 hover:shadow-md transition-shadow flex-1">
+                                <div className="flex items-center justify-between">
+                                  <FiBarChart2 className="w-4 h-4 text-gray-600" />
+                                  <span className="text-lg font-bold text-gray-700">{friendStats.totalShots}</span>
+                                </div>
+                                <p className="text-gray-600 font-medium mt-1 text-xs">総ショット数</p>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center py-8 relative z-10 flex-grow">
+                            <div className="text-center">
+                              <div className="mx-auto w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mb-3">
+                                <FiLock className="w-6 h-6 text-gray-400" />
+                              </div>
+                              <h5 className="text-lg font-semibold text-gray-600 mb-1">非公開設定</h5>
+                              <p className="text-gray-500 text-sm">
+                                {canViewStats ? '分析データがありません' : '統計情報が非公開です'}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 右側: アクションボタン */}
+                        <div className="flex items-center space-x-2 relative z-10">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/analysis?playerId=${profile.id}`);
+                            }}
+                            className="text-gray-400 hover:text-green-500 p-3 rounded-xl hover:bg-green-50 transition-all duration-200 group/analysis"
+                            title="分析詳細を表示"
+                          >
+                            <FiEye className="w-6 h-6 group-hover/analysis:scale-110 transition-transform" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

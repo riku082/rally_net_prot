@@ -6,6 +6,8 @@ import { Player } from '@/types/player';
 import { Shot, ShotType, ShotResult } from '@/types/shot';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
+import { RallyAnalyzer } from '@/utils/rallyAnalyzer';
+import RallyAnalysisPanel from './RallyAnalysisPanel';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -15,6 +17,9 @@ interface AnalysisPanelProps {
 }
 
 const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ players, shots }) => {
+  // ラリー分析の準備
+  const rallyAnalyzer = new RallyAnalyzer(shots, []);
+  const overallRallyAnalysis = rallyAnalyzer.analyzeRallies();
   const calculatePlayerStats = (player: Player) => {
     const playerShots = shots.filter(shot => shot.hitPlayer === player.id);
     const totalShots = playerShots.length;
@@ -139,65 +144,79 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ players, shots }) => {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {players.map(player => {
-        const stats = calculatePlayerStats(player);
-        const maxMissCount = Math.max(...Object.values(stats.missAreas), 0);
+    <div className="space-y-6">
+      {/* 全体のラリー分析 */}
+      <RallyAnalysisPanel analysis={overallRallyAnalysis} />
+      
+      {/* 個別選手分析 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {players.map(player => {
+          const stats = calculatePlayerStats(player);
+          const maxMissCount = Math.max(...Object.values(stats.missAreas), 0);
+          
+          // 選手個別のラリー分析
+          const playerRallyAnalysis = rallyAnalyzer.analyzeRallies(undefined, player.id);
 
-        return (
-          <div key={player.id} className="bg-white rounded-lg shadow p-4">
-            <h3 className="text-lg font-medium mb-4">{player.name}</h3>
-            
-            {/* ミスのヒートマップ */}
-            <div className="mb-4">
-              <h4 className="text-sm font-medium mb-2">ミスのヒートマップ</h4>
-              <div className="aspect-[2/1] bg-green-500 relative">
-                <div className="absolute inset-2 border-2 border-white grid grid-cols-3 grid-rows-3">
-                  {COURT_AREAS.map((area) => (
-                    <div
-                      key={area.code}
-                      className={`border border-white ${getMissHeatmapColor(stats.missAreas[area.code] || 0, maxMissCount)} relative`}
-                    >
-                      <div className="absolute top-1 left-1 text-white">
-                        <span className="text-[10px] block">{area.name}</span>
-                        <span className="text-xs font-bold block">{area.code}</span>
-                      </div>
+          return (
+            <div key={player.id} className="space-y-4">
+              <div className="bg-white rounded-lg shadow p-4">
+                <h3 className="text-lg font-medium mb-4">{player.name}</h3>
+                
+                {/* ミスのヒートマップ */}
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium mb-2">ミスのヒートマップ</h4>
+                  <div className="aspect-[2/1] bg-green-500 relative">
+                    <div className="absolute inset-2 border-2 border-white grid grid-cols-3 grid-rows-3">
+                      {COURT_AREAS.map((area) => (
+                        <div
+                          key={area.code}
+                          className={`border border-white ${getMissHeatmapColor(stats.missAreas[area.code] || 0, maxMissCount)} relative`}
+                        >
+                          <div className="absolute top-1 left-1 text-white">
+                            <span className="text-[10px] block">{area.name}</span>
+                            <span className="text-xs font-bold block">{area.code}</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                </div>
+
+                {/* ショット種類の円グラフ */}
+                <div>
+                  <h4 className="text-sm font-medium mb-2">ショット種類分布</h4>
+                  <div className="h-40">
+                    <Doughnut data={getShotTypeChartData(player)} options={chartOptions} />
+                  </div>
+                </div>
+
+                {/* 統計情報 */}
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  <div className="bg-blue-50 p-3 rounded">
+                    <p className="text-sm text-gray-600">クロス率</p>
+                    <p className="text-xl font-bold">{stats.crossRate}%</p>
+                  </div>
+                  <div className="bg-red-50 p-3 rounded">
+                    <p className="text-sm text-gray-600">ミス率</p>
+                    <p className="text-xl font-bold">{stats.missRate}%</p>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded">
+                    <p className="text-sm text-gray-600">サーブ成功率</p>
+                    <p className="text-xl font-bold">{stats.serveSuccessRate}%</p>
+                  </div>
+                  <div className="bg-yellow-50 p-3 rounded">
+                    <p className="text-sm text-gray-600">総ショット数</p>
+                    <p className="text-xl font-bold">{stats.totalShots}</p>
+                  </div>
                 </div>
               </div>
+              
+              {/* 個別選手のラリー分析 */}
+              <RallyAnalysisPanel analysis={playerRallyAnalysis} playerName={player.name} />
             </div>
-
-            {/* ショット種類の円グラフ */}
-            <div>
-              <h4 className="text-sm font-medium mb-2">ショット種類分布</h4>
-              <div className="h-40">
-                <Doughnut data={getShotTypeChartData(player)} options={chartOptions} />
-              </div>
-            </div>
-
-            {/* 統計情報 */}
-            <div className="grid grid-cols-2 gap-2 mt-4">
-              <div className="bg-blue-50 p-3 rounded">
-                <p className="text-sm text-gray-600">クロス率</p>
-                <p className="text-xl font-bold">{stats.crossRate}%</p>
-              </div>
-              <div className="bg-red-50 p-3 rounded">
-                <p className="text-sm text-gray-600">ミス率</p>
-                <p className="text-xl font-bold">{stats.missRate}%</p>
-              </div>
-              <div className="bg-green-50 p-3 rounded">
-                <p className="text-sm text-gray-600">サーブ成功率</p>
-                <p className="text-xl font-bold">{stats.serveSuccessRate}%</p>
-              </div>
-              <div className="bg-yellow-50 p-3 rounded">
-                <p className="text-sm text-gray-600">総ショット数</p>
-                <p className="text-xl font-bold">{stats.totalShots}</p>
-              </div>
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 };

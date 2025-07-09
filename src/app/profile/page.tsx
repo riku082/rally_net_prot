@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { firestoreDb } from '@/utils/db';
 import { useRouter } from 'next/navigation';
-import { FiUser, FiMail, FiUsers, FiAward, FiCalendar, FiEdit, FiSave, FiXCircle, FiArrowLeft, FiTarget, FiTrendingUp, FiActivity, FiHeart } from 'react-icons/fi';
+import { FiUser, FiMail, FiUsers, FiAward, FiCalendar, FiEdit, FiSave, FiXCircle, FiArrowLeft, FiTarget, FiTrendingUp, FiActivity, FiHeart, FiLock } from 'react-icons/fi';
 import { UserProfile } from '@/types/userProfile';
+import PrivacySettings from '@/components/PrivacySettings';
 
 const ProfilePage: React.FC = () => {
   const { user } = useAuth();
@@ -36,6 +37,7 @@ const ProfilePage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [activeTab, setActiveTab] = useState<'profile' | 'privacy'>('profile');
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -144,7 +146,7 @@ const ProfilePage: React.FC = () => {
         setUploadingAvatar(false);
       }
 
-      const updatedProfile: any = {
+      const updatedProfile: Partial<UserProfile> = {
         id: user.uid,
         email: user.email || '',
         name: formData.name,
@@ -254,6 +256,10 @@ const ProfilePage: React.FC = () => {
     setAvatarFile(null);
   };
 
+  const handlePrivacyUpdated = (updatedProfile: UserProfile) => {
+    setProfile(updatedProfile);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -308,6 +314,32 @@ const ProfilePage: React.FC = () => {
                   プロフィールを編集
                 </button>
               )}
+            </div>
+
+            {/* タブナビゲーション */}
+            <div className="flex border-b border-gray-200 mt-6">
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`px-6 py-3 font-medium text-sm ${
+                  activeTab === 'profile'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <FiUser className="inline mr-2" />
+                プロフィール
+              </button>
+              <button
+                onClick={() => setActiveTab('privacy')}
+                className={`px-6 py-3 font-medium text-sm ${
+                  activeTab === 'privacy'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <FiLock className="inline mr-2" />
+                プライバシー設定
+              </button>
             </div>
           </div>
 
@@ -491,91 +523,99 @@ const ProfilePage: React.FC = () => {
             </div>
           ) : (
             <div className="p-6 sm:p-8 border-t border-gray-200">
-              {/* プロフィール表示部分 */}
-              <div className="space-y-8">
-                {/* 基本情報 */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">基本情報</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                    <InfoItem icon={<FiUser />} label="名前" value={profile.name} />
-                    <InfoItem icon={<FiMail />} label="メールアドレス" value={profile.email} />
-                    <InfoItem icon={<FiUsers />} label="チーム" value={profile.team} />
-                    <InfoItem icon={<FiCalendar />} label="登録日" value={new Date(profile.createdAt).toLocaleDateString('ja-JP')} />
-                    {profile.age && <InfoItem icon={<FiUser />} label="年齢" value={`${profile.age}歳`} />}
-                    {profile.height && <InfoItem icon={<FiTrendingUp />} label="身長" value={`${profile.height}cm`} />}
-                    {profile.weight && <InfoItem icon={<FiActivity />} label="体重" value={`${profile.weight}kg`} />}
-                  </div>
-                </div>
-                
-                {/* バドミントン情報 */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">バドミントン情報</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                    <InfoItem icon={<FiAward />} label="競技レベル" value={
-                      profile.skillLevel === 'beginner' ? '初心者' :
-                      profile.skillLevel === 'intermediate' ? '中級者' :
-                      profile.skillLevel === 'advanced' ? '上級者' :
-                      profile.skillLevel === 'professional' ? 'プロ' : undefined
-                    } />
-                    <InfoItem icon={<FiTarget />} label="プレイスタイル" value={
-                      profile.playStyle === 'aggressive' ? '攻撃型' :
-                      profile.playStyle === 'defensive' ? '守備型' :
-                      profile.playStyle === 'all-round' ? 'オールラウンド' : undefined
-                    } />
-                    <InfoItem icon={<FiUser />} label="利き手" value={
-                      profile.dominantHand === 'right' ? '右利き' :
-                      profile.dominantHand === 'left' ? '左利き' : undefined
-                    } />
-                    <InfoItem icon={<FiUsers />} label="好きな試合形式" value={
-                      profile.preferredGameType === 'singles' ? 'シングルス' :
-                      profile.preferredGameType === 'doubles' ? 'ダブルス' :
-                      profile.preferredGameType === 'both' ? '両方' : undefined
-                    } />
-                    <InfoItem icon={<FiCalendar />} label="経験年数" value={profile.experience} />
-                    <InfoItem icon={<FiTarget />} label="戦術的役割" value={profile.tacticalRole} />
-                  </div>
-                </div>
-                
-                {/* 技術情報 */}
-                {(profile.favoriteShots || profile.weakShots) && (
+              {activeTab === 'profile' ? (
+                // プロフィール表示部分
+                <div className="space-y-8">
+                  {/* 基本情報 */}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">技術情報</h3>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">基本情報</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                      {profile.favoriteShots && (
-                        <InfoItem icon={<FiHeart />} label="得意ショット" value={profile.favoriteShots.join(', ')} />
-                      )}
-                      {profile.weakShots && (
-                        <InfoItem icon={<FiTarget />} label="苦手ショット" value={profile.weakShots.join(', ')} />
-                      )}
+                      <InfoItem icon={<FiUser />} label="名前" value={profile.name} />
+                      <InfoItem icon={<FiMail />} label="メールアドレス" value={profile.email} />
+                      <InfoItem icon={<FiUsers />} label="チーム" value={profile.team} />
+                      <InfoItem icon={<FiCalendar />} label="登録日" value={new Date(profile.createdAt).toLocaleDateString('ja-JP')} />
+                      {profile.age && <InfoItem icon={<FiUser />} label="年齢" value={`${profile.age}歳`} />}
+                      {profile.height && <InfoItem icon={<FiTrendingUp />} label="身長" value={`${profile.height}cm`} />}
+                      {profile.weight && <InfoItem icon={<FiActivity />} label="体重" value={`${profile.weight}kg`} />}
                     </div>
                   </div>
-                )}
-                
-                {/* 戦績・目標 */}
-                {(profile.achievements || profile.goals) && (
+                  
+                  {/* バドミントン情報 */}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">戦績・目標</h3>
-                    <div className="space-y-6">
-                      {profile.achievements && (
-                        <InfoItem icon={<FiAward />} label="主な戦績" value={profile.achievements.join(', ')} />
-                      )}
-                      {profile.goals && (
-                        <InfoItem icon={<FiTarget />} label="目標・モチベーション" value={profile.goals} />
-                      )}
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">バドミントン情報</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                      <InfoItem icon={<FiAward />} label="競技レベル" value={
+                        profile.skillLevel === 'beginner' ? '初心者' :
+                        profile.skillLevel === 'intermediate' ? '中級者' :
+                        profile.skillLevel === 'advanced' ? '上級者' :
+                        profile.skillLevel === 'professional' ? 'プロ' : undefined
+                      } />
+                      <InfoItem icon={<FiTarget />} label="プレイスタイル" value={
+                        profile.playStyle === 'aggressive' ? '攻撃型' :
+                        profile.playStyle === 'defensive' ? '守備型' :
+                        profile.playStyle === 'all-round' ? 'オールラウンド' : undefined
+                      } />
+                      <InfoItem icon={<FiUser />} label="利き手" value={
+                        profile.dominantHand === 'right' ? '右利き' :
+                        profile.dominantHand === 'left' ? '左利き' : undefined
+                      } />
+                      <InfoItem icon={<FiUsers />} label="好きな試合形式" value={
+                        profile.preferredGameType === 'singles' ? 'シングルス' :
+                        profile.preferredGameType === 'doubles' ? 'ダブルス' :
+                        profile.preferredGameType === 'both' ? '両方' : undefined
+                      } />
+                      <InfoItem icon={<FiCalendar />} label="経験年数" value={profile.experience} />
+                      <InfoItem icon={<FiTarget />} label="戦術的役割" value={profile.tacticalRole} />
                     </div>
                   </div>
-                )}
-                
-                {/* 自己紹介 */}
-                {profile.bio && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">自己紹介</h3>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="text-gray-700 leading-relaxed">{profile.bio}</p>
+                  
+                  {/* 技術情報 */}
+                  {(profile.favoriteShots || profile.weakShots) && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4">技術情報</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                        {profile.favoriteShots && (
+                          <InfoItem icon={<FiHeart />} label="得意ショット" value={profile.favoriteShots.join(', ')} />
+                        )}
+                        {profile.weakShots && (
+                          <InfoItem icon={<FiTarget />} label="苦手ショット" value={profile.weakShots.join(', ')} />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                  
+                  {/* 戦績・目標 */}
+                  {(profile.achievements || profile.goals) && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4">戦績・目標</h3>
+                      <div className="space-y-6">
+                        {profile.achievements && (
+                          <InfoItem icon={<FiAward />} label="主な戦績" value={profile.achievements.join(', ')} />
+                        )}
+                        {profile.goals && (
+                          <InfoItem icon={<FiTarget />} label="目標・モチベーション" value={profile.goals} />
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* 自己紹介 */}
+                  {profile.bio && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4">自己紹介</h3>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <p className="text-gray-700 leading-relaxed">{profile.bio}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // プライバシー設定
+                <PrivacySettings 
+                  userProfile={profile} 
+                  onPrivacyUpdated={handlePrivacyUpdated} 
+                />
+              )}
             </div>
           )}
         </div>

@@ -11,14 +11,14 @@ const navItems = [
   { label: '分析', icon: <FaChartBar />, path: '/analysis' },
   { label: 'ニュース', icon: <FaRss />, path: '/news' },
   { label: 'フレンド', icon: <FaUserFriends />, path: '/friends' },
-  { label: 'MBTI診断', icon: <FaBrain />, path: '/mbti', badge: 'NEW' },
+  { label: 'BPSI診断', icon: <FaBrain />, path: '/mbti', badge: 'NEW' },
 ];
 
 const Sidebar: React.FC<{ activePath?: string }> = ({ activePath = '/' }) => {
   const router = useRouter();
   const { user, profile } = useAuth();
   return (
-    <aside className="w-64 h-screen bg-white border-r flex flex-col py-6 px-4">
+    <aside className="hidden lg:flex fixed lg:relative w-64 h-screen bg-white border-r flex-col py-6 px-4 transform lg:translate-x-0 transition-transform duration-300 ease-in-out z-50">
       <div className="flex items-center mb-10">
         <img src="/logo.png" alt="Rally Net" className="h-8 w-8 mr-3" />
         <span className="text-xl font-bold text-gray-800">Rally Net</span>

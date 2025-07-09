@@ -1,9 +1,11 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
+import MobileNav from '@/components/MobileNav';
 import Topbar from '@/components/Topbar';
 import PlayerForm from '@/components/PlayerForm';
 import PlayerList from '@/components/PlayerList';
+import FriendToPlayerSelector from '@/components/FriendToPlayerSelector';
 import AuthGuard from '@/components/AuthGuard';
 import { Player } from '@/types/player';
 import { Shot } from '@/types/shot';
@@ -54,6 +56,7 @@ const PlayersPage: React.FC = () => {
     <AuthGuard>
       <div className="flex min-h-screen bg-gray-100">
         <Sidebar activePath="/players" />
+        <MobileNav activePath="/players" />
         <div className="flex-1 flex flex-col">
           <Topbar />
           <main className="flex-1 p-6 lg:p-8">
@@ -61,8 +64,12 @@ const PlayersPage: React.FC = () => {
               <h2 className="text-3xl font-bold text-gray-800">選手管理</h2>
               
               {/* 新規選手登録フォーム */}
-              <div className="max-w-2xl mx-auto">
+              <div className="max-w-2xl mx-auto space-y-6">
                 <PlayerForm onPlayerAdded={handlePlayerAdded} />
+                <FriendToPlayerSelector 
+                  onPlayerAdded={handlePlayerAdded} 
+                  existingPlayers={players}
+                />
               </div>
               
               {/* 登録済み選手一覧 */}

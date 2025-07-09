@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
+import MobileNav from '@/components/MobileNav';
 import Topbar from '@/components/Topbar';
 import { firestoreDb } from '@/utils/db';
 import { useAuth } from '@/context/AuthContext';
 import { UserProfile } from '@/types/userProfile';
 import { Friendship } from '@/types/friendship';
 import { MatchRequest } from '@/types/matchRequest';
-import { FiSearch, FiUserPlus, FiCheckCircle, FiXCircle, FiUsers, FiMail, FiTrash2, FiRefreshCcw, FiCalendar, FiClock, FiUser } from 'react-icons/fi';
+import { FiSearch, FiUserPlus, FiCheckCircle, FiXCircle, FiUsers, FiMail, FiTrash2, FiCalendar, FiClock, FiUser } from 'react-icons/fi';
 
 interface FriendshipWithProfile extends Friendship {
   fromUserProfile?: UserProfile;
@@ -216,6 +217,7 @@ const FriendsPage: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar activePath="/friends" />
+      <MobileNav activePath="/friends" />
       <div className="flex-1 flex flex-col">
         <Topbar />
         <main className="flex-1 p-6 lg:p-8">

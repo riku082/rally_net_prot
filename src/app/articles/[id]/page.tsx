@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
+import MobileNav from '@/components/MobileNav';
 import Topbar from '@/components/Topbar';
 import { Article } from '@/types/article';
 import { FiArrowLeft, FiClock, FiUser, FiCalendar, FiEye, FiTag, FiStar } from 'react-icons/fi';
@@ -121,6 +122,7 @@ const ArticlePage: React.FC<ArticlePageProps> = ({ params }) => {
     return (
       <div className="flex min-h-screen bg-gray-100">
         <Sidebar activePath="/news" />
+        <MobileNav activePath="/news" />
         <div className="flex-1 flex flex-col">
           <Topbar />
           <main className="flex-1 p-6 lg:p-8">
@@ -148,6 +150,7 @@ const ArticlePage: React.FC<ArticlePageProps> = ({ params }) => {
     return (
       <div className="flex min-h-screen bg-gray-100">
         <Sidebar activePath="/news" />
+        <MobileNav activePath="/news" />
         <div className="flex-1 flex flex-col">
           <Topbar />
           <main className="flex-1 p-6 lg:p-8">

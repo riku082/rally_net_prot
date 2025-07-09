@@ -42,7 +42,7 @@ export async function GET() {
     } else {
       return NextResponse.json({ error: 'ニュースの取得に失敗しました' }, { status: 500 });
     }
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: 'ニュースの取得に失敗しました' }, { status: 500 });
   }
 } 

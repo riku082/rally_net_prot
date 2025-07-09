@@ -6,7 +6,8 @@ import { Player } from '@/types/player';
 import { UserProfile } from '@/types/userProfile';
 import { firestoreDb } from '@/utils/db';
 import { useAuth } from '@/context/AuthContext';
-import { FiCalendar, FiUsers, FiUser, FiPlusCircle, FiVideo, FiLink } from 'react-icons/fi';
+import { FiCalendar, FiUsers, FiUser, FiPlusCircle, FiVideo, FiLink, FiChevronDown } from 'react-icons/fi';
+import UnifiedPlayerSelector from './UnifiedPlayerSelector';
 
 // 選手選択ドロップダウンのオプションとして使用する型
 interface SelectablePlayer {
@@ -32,6 +33,8 @@ const MatchForm: React.FC<MatchFormProps> = ({ players, onMatchAdded }) => {
   const [connectedUserProfiles, setConnectedUserProfiles] = useState<UserProfile[]>([]);
   const [videoUrl, setVideoUrl] = useState('');
   const [videoTitle, setVideoTitle] = useState('');
+  const [isPlayerSelectorOpen, setIsPlayerSelectorOpen] = useState(false);
+  const [currentSelectingField, setCurrentSelectingField] = useState<'player1' | 'player2' | 'opponent1' | 'opponent2' | null>(null);
 
   useEffect(() => {
     const loadConnectedUsers = async () => {
@@ -76,6 +79,56 @@ const MatchForm: React.FC<MatchFormProps> = ({ players, onMatchAdded }) => {
     }))
   ];
 
+  const handlePlayerSelectorOpen = (field: 'player1' | 'player2' | 'opponent1' | 'opponent2') => {
+    setCurrentSelectingField(field);
+    setIsPlayerSelectorOpen(true);
+  };
+
+  const handlePlayerSelect = (playerId: string) => {
+    if (currentSelectingField === 'player1') {
+      setPlayer1(playerId);
+    } else if (currentSelectingField === 'player2') {
+      setPlayer2(playerId);
+    } else if (currentSelectingField === 'opponent1') {
+      setOpponent1(playerId);
+    } else if (currentSelectingField === 'opponent2') {
+      setOpponent2(playerId);
+    }
+    setIsPlayerSelectorOpen(false);
+    setCurrentSelectingField(null);
+  };
+
+  const getPlayerName = (playerId: string): string => {
+    if (!playerId) return '選択してください';
+    const player = allSelectablePlayers.find(p => p.id === playerId);
+    return player ? `${player.name} (${player.affiliation})` : '選択してください';
+  };
+
+  const getExcludePlayerIds = (field: 'player1' | 'player2' | 'opponent1' | 'opponent2'): string[] => {
+    const excludeIds = [];
+    if (user?.uid) excludeIds.push(user.uid);
+    
+    if (field === 'player1') {
+      // player1を選択する場合は、player2を除外
+      if (player2) excludeIds.push(player2);
+    } else if (field === 'player2') {
+      // player2を選択する場合は、player1を除外
+      if (player1) excludeIds.push(player1);
+    } else if (field === 'opponent1') {
+      // opponent1を選択する場合は、player1, player2, opponent2を除外
+      if (player1) excludeIds.push(player1);
+      if (player2) excludeIds.push(player2);
+      if (opponent2) excludeIds.push(opponent2);
+    } else if (field === 'opponent2') {
+      // opponent2を選択する場合は、player1, player2, opponent1を除外
+      if (player1) excludeIds.push(player1);
+      if (player2) excludeIds.push(player2);
+      if (opponent1) excludeIds.push(opponent1);
+    }
+    
+    return excludeIds;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.uid) return; // ユーザーIDがない場合は処理しない
@@ -109,17 +162,9 @@ const MatchForm: React.FC<MatchFormProps> = ({ players, onMatchAdded }) => {
   };
 
   // 選択可能な相手選手（自チーム選手以外のすべての選手）
-  const availableOpponents = allSelectablePlayers.filter(
-    (p) => p.id !== player1 && p.id !== player2
-  );
-
-  const renderPlayerOptions = (playerList: SelectablePlayer[]) => (
-    playerList.map((p) => (
-      <option key={p.id} value={p.id}>
-        {p.name} ({p.affiliation}) {p.isUserProfile ? '(ユーザー)' : ''}
-      </option>
-    ))
-  );
+  // const availableOpponents = allSelectablePlayers.filter(
+  //   (p) => p.id !== player1 && p.id !== player2
+  // );
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5 p-6 bg-white rounded-lg shadow-md">
@@ -175,16 +220,16 @@ const MatchForm: React.FC<MatchFormProps> = ({ players, onMatchAdded }) => {
             <label htmlFor="player1" className="block text-sm font-medium text-gray-700 mb-2">
               <FiUser className="inline-block mr-2 text-gray-500" />選手1
             </label>
-            <select
-              id="player1"
-              value={player1}
-              onChange={(e) => setPlayer1(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow appearance-none"
-              required
+            <button
+              type="button"
+              onClick={() => handlePlayerSelectorOpen('player1')}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow appearance-none bg-white text-left flex items-center justify-between"
             >
-              <option value="">選択してください</option>
-              {renderPlayerOptions(allSelectablePlayers.filter(p => p.id !== user?.uid))}
-            </select>
+              <span className={player1 ? 'text-gray-900' : 'text-gray-500'}>
+                {getPlayerName(player1)}
+              </span>
+              <FiChevronDown className="w-5 h-5 text-gray-400" />
+            </button>
           </div>
 
           {type === 'doubles' && (
@@ -192,18 +237,16 @@ const MatchForm: React.FC<MatchFormProps> = ({ players, onMatchAdded }) => {
               <label htmlFor="player2" className="block text-sm font-medium text-gray-700 mb-2">
                 <FiUser className="inline-block mr-2 text-gray-500" />選手2
               </label>
-              <select
-                id="player2"
-                value={player2}
-                onChange={(e) => setPlayer2(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow appearance-none"
-                required
+              <button
+                type="button"
+                onClick={() => handlePlayerSelectorOpen('player2')}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow appearance-none bg-white text-left flex items-center justify-between"
               >
-                <option value="">選択してください</option>
-                {renderPlayerOptions(
-                  allSelectablePlayers.filter((p) => p.id !== player1 && p.id !== user?.uid)
-                )}
-              </select>
+                <span className={player2 ? 'text-gray-900' : 'text-gray-500'}>
+                  {getPlayerName(player2)}
+                </span>
+                <FiChevronDown className="w-5 h-5 text-gray-400" />
+              </button>
             </div>
           )}
         </div>
@@ -217,16 +260,16 @@ const MatchForm: React.FC<MatchFormProps> = ({ players, onMatchAdded }) => {
             <label htmlFor="opponent1" className="block text-sm font-medium text-gray-700 mb-2">
               <FiUser className="inline-block mr-2 text-gray-500" />選手1
             </label>
-            <select
-              id="opponent1"
-              value={opponent1}
-              onChange={(e) => setOpponent1(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow appearance-none"
-              required
+            <button
+              type="button"
+              onClick={() => handlePlayerSelectorOpen('opponent1')}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow appearance-none bg-white text-left flex items-center justify-between"
             >
-              <option value="">選択してください</option>
-              {renderPlayerOptions(availableOpponents)}
-            </select>
+              <span className={opponent1 ? 'text-gray-900' : 'text-gray-500'}>
+                {getPlayerName(opponent1)}
+              </span>
+              <FiChevronDown className="w-5 h-5 text-gray-400" />
+            </button>
           </div>
 
           {type === 'doubles' && (
@@ -234,18 +277,16 @@ const MatchForm: React.FC<MatchFormProps> = ({ players, onMatchAdded }) => {
               <label htmlFor="opponent2" className="block text-sm font-medium text-gray-700 mb-2">
                 <FiUser className="inline-block mr-2 text-gray-500" />選手2
               </label>
-              <select
-                id="opponent2"
-                value={opponent2}
-                onChange={(e) => setOpponent2(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow appearance-none"
-                required
+              <button
+                type="button"
+                onClick={() => handlePlayerSelectorOpen('opponent2')}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow appearance-none bg-white text-left flex items-center justify-between"
               >
-                <option value="">選択してください</option>
-                {renderPlayerOptions(
-                  availableOpponents.filter((p) => p.id !== opponent1)
-                )}
-              </select>
+                <span className={opponent2 ? 'text-gray-900' : 'text-gray-500'}>
+                  {getPlayerName(opponent2)}
+                </span>
+                <FiChevronDown className="w-5 h-5 text-gray-400" />
+              </button>
             </div>
           )}
         </div>
@@ -297,6 +338,22 @@ const MatchForm: React.FC<MatchFormProps> = ({ players, onMatchAdded }) => {
       >
         <FiPlusCircle className="mr-2" />試合を登録
       </button>
+
+      {/* 統合選手セレクター */}
+      <UnifiedPlayerSelector
+        isOpen={isPlayerSelectorOpen}
+        onClose={() => {
+          setIsPlayerSelectorOpen(false);
+          setCurrentSelectingField(null);
+        }}
+        onPlayerSelect={handlePlayerSelect}
+        excludePlayerIds={currentSelectingField ? getExcludePlayerIds(currentSelectingField) : []}
+        registeredPlayers={players}
+        title={currentSelectingField ? `${currentSelectingField === 'player1' ? '自チーム選手1' : 
+                                      currentSelectingField === 'player2' ? '自チーム選手2' : 
+                                      currentSelectingField === 'opponent1' ? '相手チーム選手1' : 
+                                      '相手チーム選手2'}を選択してください` : '選手を選択してください'}
+      />
     </form>
   );
 };

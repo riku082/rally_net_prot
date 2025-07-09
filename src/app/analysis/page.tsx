@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import MobileNav from '@/components/MobileNav';
 import Topbar from '@/components/Topbar';
 import AnalysisPanel from '@/components/AnalysisPanel';
 import BadmintonCourt from '@/components/BadmintonCourt';
@@ -24,7 +25,7 @@ const AnalysisPage: React.FC = () => {
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [showCourt, setShowCourt] = useState(false);
   const [tempShots, setTempShots] = useState<Shot[]>([]);
-  const [gameState, setGameState] = useState<any>(null);
+  const [gameState, setGameState] = useState<unknown>(null);
   const [showVideo, setShowVideo] = useState(false);
 
   // matchIdまたはplayerIdに基づいてショットをフィルタリング
@@ -57,7 +58,7 @@ const AnalysisPage: React.FC = () => {
   };
 
   // ローカルストレージに一時データを保存
-  const saveTempData = (matchId: string, shots: Shot[], score: { player: number; opponent: number }, gameState?: any) => {
+  const saveTempData = (matchId: string, shots: Shot[], score: { player: number; opponent: number }, gameState?: unknown) => {
     try {
       const tempData = { shots, score, gameState, lastUpdated: Date.now() };
       localStorage.setItem(getLocalStorageKey(matchId), JSON.stringify(tempData));
@@ -171,13 +172,16 @@ const AnalysisPage: React.FC = () => {
     setShowVideo(false);
   };
 
-  const handleGameStateChange = (newGameState: any) => {
+  const handleGameStateChange = (newGameState: unknown) => {
     setGameState(newGameState);
     
     // gameStateが変更されたらローカルストレージにも保存
-    if (matchId && newGameState && newGameState.scoreHistory) {
-      const currentScore = newGameState.scoreHistory[newGameState.scoreHistory.length - 1];
-      saveTempData(matchId, tempShots, currentScore, newGameState);
+    if (matchId && newGameState && typeof newGameState === 'object' && newGameState !== null && 'scoreHistory' in newGameState) {
+      const scoreHistory = (newGameState as { scoreHistory: unknown[] }).scoreHistory;
+      if (Array.isArray(scoreHistory) && scoreHistory.length > 0) {
+        const currentScore = scoreHistory[scoreHistory.length - 1];
+        saveTempData(matchId, tempShots, currentScore as { player: number; opponent: number }, newGameState);
+      }
     }
   };
 
@@ -222,6 +226,7 @@ const AnalysisPage: React.FC = () => {
     <AuthGuard>
       <div className="flex min-h-screen bg-gray-100">
         <Sidebar activePath="/analysis" />
+        <MobileNav activePath="/analysis" />
         <div className="flex-1 flex flex-col">
           <Topbar />
           <main className="flex-1 p-8">

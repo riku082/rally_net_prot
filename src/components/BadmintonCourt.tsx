@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Match } from '@/types/match';
 import { Shot, ShotType, CourtArea, ShotResult } from '@/types/shot';
 import { Player } from '@/types/player';
-import { firestoreDb } from '@/utils/db';
-import { useAuth } from '@/context/AuthContext';
+// import { firestoreDb } from '@/utils/db';
+// import { useAuth } from '@/context/AuthContext';
 
 interface BadmintonCourtProps {
   match: Match;
@@ -14,7 +14,7 @@ interface BadmintonCourtProps {
   onLastShotDeleted: () => void;
   onMatchFinished: (matchData: { match: Match; shots: Shot[]; finalScore: { player: number; opponent: number } }) => void;
   shots: Shot[];
-  onGameStateChange?: (gameState: any) => void;
+  onGameStateChange?: (gameState: unknown) => void;
 }
 
 const SHOT_TYPES: { value: ShotType; label: string }[] = [
@@ -83,7 +83,7 @@ const BadmintonCourt: React.FC<BadmintonCourtProps> = ({
   shots,
   onGameStateChange
 }) => {
-  const { user } = useAuth();
+  // const { user } = useAuth();
   const [hitPlayer, setHitPlayer] = useState('');
   const [receivePlayer, setReceivePlayer] = useState('');
   const [shotType, setShotType] = useState<ShotType>('clear');
@@ -157,39 +157,40 @@ const BadmintonCourt: React.FC<BadmintonCourtProps> = ({
   };
 
   // ゲーム状態を復元する関数
-  const restoreGameState = (gameState: any) => {
-    if (gameState) {
+  const restoreGameState = (gameState: unknown) => {
+    if (gameState && typeof gameState === 'object' && gameState !== null) {
       console.log('Restoring game state:', gameState);
-      setHitPlayer(gameState.hitPlayer || '');
-      setReceivePlayer(gameState.receivePlayer || '');
-      setHitArea(gameState.hitArea || null);
-      setReceiveArea(gameState.receiveArea || null);
-      setShotResult(gameState.shotResult || 'continue');
-      setLastShot(gameState.lastShot || null);
-      setIsHitAreaTop(gameState.isHitAreaTop ?? true);
+      const state = gameState as Record<string, unknown>;
+      setHitPlayer((state.hitPlayer as string) || '');
+      setReceivePlayer((state.receivePlayer as string) || '');
+      setHitArea((state.hitArea as CourtArea) || null);
+      setReceiveArea((state.receiveArea as CourtArea) || null);
+      setShotResult((state.shotResult as ShotResult) || 'continue');
+      setLastShot((state.lastShot as Omit<Shot, 'id' | 'timestamp'>) || null);
+      setIsHitAreaTop((state.isHitAreaTop as boolean) ?? true);
       
       // ラリー中かサーブ中かを正しく判断
-      if (gameState.lastShot && gameState.lastShot.result === 'continue') {
+      if (state.lastShot && typeof state.lastShot === 'object' && state.lastShot !== null && (state.lastShot as any).result === 'continue') {
         // 最後のショットが継続の場合はラリー中
         setIsServing(false);
         // ラリー中の場合はshotTypeもclearに設定
-        setShotType(gameState.shotType || 'clear');
+        setShotType((state.shotType as ShotType) || 'clear');
       } else {
         // そうでなければサーブ中
-        setIsServing(gameState.isServing ?? true);
+        setIsServing((state.isServing as boolean) ?? true);
         // サーブ中の場合はshotTypeをshort_serveに設定
-        setShotType(gameState.shotType || 'short_serve');
+        setShotType((state.shotType as ShotType) || 'short_serve');
       }
       
-      setIsFirstClick(gameState.isFirstClick ?? true);
+      setIsFirstClick((state.isFirstClick as boolean) ?? true);
       // ゲーム状態を復元する場合は初期選手選択は既に完了している
       setIsInitialPlayerSelected(true);
-      setScoreHistory(gameState.scoreHistory || [{ player: 0, opponent: 0 }]);
+      setScoreHistory((state.scoreHistory as { player: number; opponent: number }[]) || [{ player: 0, opponent: 0 }]);
       
       // スコアも復元（scoreHistoryの最後の要素を使用）
-      if (gameState.scoreHistory && gameState.scoreHistory.length > 0) {
-        const lastScore = gameState.scoreHistory[gameState.scoreHistory.length - 1];
-        setScore(lastScore);
+      if (state.scoreHistory && Array.isArray(state.scoreHistory) && state.scoreHistory.length > 0) {
+        const lastScore = state.scoreHistory[state.scoreHistory.length - 1];
+        setScore(lastScore as { player: number; opponent: number });
       }
     }
   };

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { firestoreDb } from '@/utils/db';
-import { MBTIDiagnostic } from '@/types/mbti';
 
 // MBTI診断進行状況を取得
 export async function GET(request: NextRequest) {

@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
+import MobileNav from '@/components/MobileNav';
 import Topbar from '@/components/Topbar';
 import MatchForm from '@/components/MatchForm';
 import MatchList from '@/components/MatchList';
@@ -80,6 +81,7 @@ const MatchesPage: React.FC = () => {
     <AuthGuard>
       <div className="flex min-h-screen bg-gray-100">
         <Sidebar activePath="/matches" />
+        <MobileNav activePath="/matches" />
         <div className="flex-1 flex flex-col">
           <Topbar />
           <main className="flex-1 p-6 lg:p-8">

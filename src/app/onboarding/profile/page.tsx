@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { firestoreDb } from '@/utils/db';
 import { useRouter } from 'next/navigation';
-import { FiUser, FiMail, FiUsers, FiAward, FiCalendar, FiEdit, FiSave, FiXCircle, FiImage, FiUpload } from 'react-icons/fi';
+import { FiUser, FiUsers, FiAward, FiCalendar, FiSave } from 'react-icons/fi';
 import { UserProfile } from '@/types/userProfile';
 
 const OnboardingProfilePage: React.FC = () => {
