@@ -19,7 +19,6 @@ export const metadata: Metadata = {
   description: 'バドミントンの試合分析、選手管理、MBTI診断を統合した総合プラットフォーム',
   keywords: 'バドミントン,分析,試合,選手管理,MBTI診断',
   authors: [{ name: 'Rally Net Team' }],
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
   robots: 'index, follow',
   openGraph: {
     title: 'Rally Net - バドミントン分析システム',
