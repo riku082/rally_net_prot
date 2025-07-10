@@ -1,31 +1,55 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { BadmintonProvider } from "@/context/BadmintonContext";
-import { AuthProvider } from "@/context/AuthContext";
+import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
+import './globals.css';
+import { AuthProvider } from '@/context/AuthContext';
+import { BadmintonProvider } from '@/context/BadmintonContext';
 
-const inter = Inter({ subsets: ["latin"] });
+const geistSans = Geist({
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+});
+
+const geistMono = Geist({
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+});
 
 export const metadata: Metadata = {
-  title: "Rally Net - バドミントン解析システム",
-  description: "Rally Net - バドミントンの配球分析システム「ヨシダシステム」",
+  title: 'Rally Net - バドミントン分析システム',
+  description: 'バドミントンの試合分析、選手管理、MBTI診断を統合した総合プラットフォーム',
+  keywords: 'バドミントン,分析,試合,選手管理,MBTI診断',
+  authors: [{ name: 'Rally Net Team' }],
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
+  robots: 'index, follow',
+  openGraph: {
+    title: 'Rally Net - バドミントン分析システム',
+    description: 'バドミントンの試合分析、選手管理、MBTI診断を統合した総合プラットフォーム',
+    type: 'website',
+    locale: 'ja_JP',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Rally Net - バドミントン分析システム',
+    description: 'バドミントンの試合分析、選手管理、MBTI診断を統合した総合プラットフォーム',
+  },
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="ja">
       <head>
-        <title>Rally Net - バドミントン解析システム</title>
-        <meta name="description" content="Rally Net - バドミントンの配球分析システム「ヨシダシステム」" />
-        <link rel="icon" href="/logo.png" />
-        <link rel="apple-touch-icon" href="/logo.png" />
         <meta name="theme-color" content="#3B82F6" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Rally Net" />
+        <link rel="apple-touch-icon" href="/logo.png" />
+        <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className={inter.className}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>
           <BadmintonProvider>
             {children}

@@ -194,11 +194,11 @@ const RallyAnalysisPanel: React.FC<RallyAnalysisPanelProps> = ({ analysis, playe
             <div className="bg-gray-50 p-4 rounded-lg">
               <h4 className="font-semibold text-gray-800 mb-4">よく出るラリー数</h4>
               <div className="space-y-2">
-                {topRallyCounts.map(([rallyCount, frequency], index) => (
+                {topRallyCounts.map(([rallyCount, frequency], idx) => (
                   <div key={rallyCount} className="flex justify-between items-center p-2 bg-white rounded">
                     <div className="flex items-center">
                       <span className="w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm font-medium mr-2">
-                        {index + 1}
+                        {idx + 1}
                       </span>
                       <span className="font-medium text-gray-800">{rallyCount}打</span>
                     </div>

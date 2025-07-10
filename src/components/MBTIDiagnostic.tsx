@@ -90,7 +90,6 @@ const MBTIDiagnostic: React.FC<MBTIDiagnosticProps> = ({ onComplete }) => {
 
       // 高度な分析を実行
       const advancedAnalysis = performAdvancedAnalysis(answers, scores, mbtiType);
-      // const growthLevel = assessGrowthLevel(answers, mbtiType);
 
       const result: MBTIResult = {
         id: `mbti_${Date.now()}`,

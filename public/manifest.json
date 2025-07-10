@@ -1,0 +1,27 @@
+{
+  "name": "Rally Net - バドミントン分析システム",
+  "short_name": "Rally Net",
+  "description": "バドミントンの試合分析、選手管理、MBTI診断を統合した総合プラットフォーム",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3B82F6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["sports", "productivity", "education"],
+  "lang": "ja",
+  "dir": "ltr"
+} 

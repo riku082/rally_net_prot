@@ -1,5 +1,5 @@
 import { db, storage } from './firebase';
-import { collection, getDocs, deleteDoc, doc, setDoc, getDoc, query, where, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, setDoc, getDoc, query, where, updateDoc, enableNetwork, disableNetwork } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Player } from '@/types/player';
 import { Match } from '@/types/match';
@@ -8,6 +8,29 @@ import { UserProfile } from '@/types/userProfile';
 import { Friendship, FriendshipStatus } from '@/types/friendship';
 import { MatchRequest, MatchRequestStatus } from '@/types/matchRequest';
 import { MBTIResult, MBTIDiagnostic } from '@/types/mbti';
+
+// Firebase接続の最適化設定
+const optimizeFirebaseConnection = () => {
+  // 同時接続数の制限を緩和
+  const maxConcurrentRequests = 10;
+  let currentRequests = 0;
+  
+  return {
+    async executeWithLimit<T>(operation: () => Promise<T>): Promise<T> {
+      if (currentRequests >= maxConcurrentRequests) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      currentRequests++;
+      try {
+        return await operation();
+      } finally {
+        currentRequests--;
+      }
+    }
+  };
+};
+
+const connectionOptimizer = optimizeFirebaseConnection();
 
 export const firestoreDb = {
   // 選手

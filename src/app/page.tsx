@@ -7,11 +7,9 @@ import Topbar from '@/components/Topbar';
 import TopNewsPanel from '@/components/TopNewsPanel';
 import AuthGuard from '@/components/AuthGuard';
 import { Match } from '@/types/match';
-import { Shot } from '@/types/shot';
-import { Player } from '@/types/player';
 import { firestoreDb } from '@/utils/db';
 import { useAuth } from '@/context/AuthContext';
-import { FaUsers, FaUserCircle, FaEdit, FaArrowUp, FaArrowDown, FaBrain, FaEye } from 'react-icons/fa';
+import { FaUsers, FaUserCircle, FaEdit, FaBrain, FaEye } from 'react-icons/fa';
 import { FiCalendar, FiPlay } from 'react-icons/fi';
 import { GiShuttlecock } from 'react-icons/gi';
 import Link from 'next/link';
@@ -219,10 +217,9 @@ const ModernProfileCard: React.FC = () => {
         {/* アバター */}
         <div className="relative mb-4 sm:mb-6 inline-block">
           {profile?.avatar ? (
-            <img 
-              src={profile.avatar} 
-              alt="Profile" 
-              className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl sm:rounded-2xl object-cover border-4 border-white shadow-lg"
+            <div 
+              style={{ backgroundImage: `url(${profile.avatar})` }}
+              className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl sm:rounded-2xl bg-cover bg-center border-4 border-white shadow-lg"
             />
           ) : (
             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center shadow-lg">

@@ -16,7 +16,7 @@ export const signInWithGoogle = async () => {
     const userCredential = await signInWithPopup(auth, provider);
     return { user: userCredential.user, error: null };
   } catch (error: unknown) {
-    return { user: null, error: error.message };
+    return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 };
 
@@ -26,7 +26,7 @@ export const signInWithEmail = async (email: string, password: string) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return { user: userCredential.user, error: null };
   } catch (error: unknown) {
-    return { user: null, error: error.message };
+    return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 };
 
@@ -36,7 +36,7 @@ export const signUpWithEmail = async (email: string, password: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     return { user: userCredential.user, error: null };
   } catch (error: unknown) {
-    return { user: null, error: error.message };
+    return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 };
 
@@ -46,7 +46,7 @@ export const signOutUser = async () => {
     await signOut(auth);
     return { error: null };
   } catch (error: unknown) {
-    return { error: error.message };
+    return { error: error instanceof Error ? error.message : 'Unknown error' };
   }
 };
 

@@ -147,8 +147,8 @@ function calculateConsistency(answers: MBTIAnswer[]): number {
   };
   
   // カテゴリ別に回答を分類（実際の実装では質問とカテゴリのマッピングが必要）
-  answers.forEach((answer, index) => {
-    const questionIndex = index + 1;
+  answers.forEach((answer, idx) => {
+    const questionIndex = idx + 1;
     if (questionIndex <= 4) categories['E/I'].push(answer.selectedValue);
     else if (questionIndex <= 8) categories['S/N'].push(answer.selectedValue);
     else if (questionIndex <= 12) categories['T/F'].push(answer.selectedValue);
@@ -158,9 +158,9 @@ function calculateConsistency(answers: MBTIAnswer[]): number {
   let totalConsistency = 0;
   let categoryCount = 0;
   
-  Object.entries(categories).forEach(([category, values]) => {
+  Object.entries(categories).forEach(([categoryName, values]) => {
     if (values.length > 0) {
-      const [trait1, trait2] = category.split('/');
+      const [trait1, trait2] = categoryName.split('/');
       const trait1Count = values.filter(v => v === trait1).length;
       const trait2Count = values.filter(v => v === trait2).length;
       const consistency = Math.max(trait1Count, trait2Count) / values.length;
@@ -179,16 +179,7 @@ function calculateAlternativeTypes(
   const questionsPerDimension = totalQuestions / 4;
   
   // 各次元での確率を計算
-  // const probabilities = {
-  //   E: scores.E / questionsPerDimension,
-  //   I: scores.I / questionsPerDimension,
-  //   S: scores.S / questionsPerDimension,
-  //   N: scores.N / questionsPerDimension,
-  //   T: scores.T / questionsPerDimension,
-  //   F: scores.F / questionsPerDimension,
-  //   J: scores.J / questionsPerDimension,
-  //   P: scores.P / questionsPerDimension
-  // };
+  // Variables kept in comment for future implementation
   
   // 上位3つの代替タイプを生成
   const alternatives: { type: string; probability: number }[] = [];

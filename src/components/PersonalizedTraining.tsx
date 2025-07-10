@@ -31,8 +31,6 @@ interface Exercise {
 const PersonalizedTraining: React.FC<PersonalizedTrainingProps> = ({ result }) => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [completedExercises, setCompletedExercises] = useState<Set<string>>(new Set());
-  
-  // const typeData = badmintonMBTITypes[result.result as keyof typeof badmintonMBTITypes];
 
   // タイプ別のトレーニングプランを生成
   const generateTrainingPlans = (): TrainingPlan[] => {
