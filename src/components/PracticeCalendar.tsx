@@ -155,88 +155,89 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
   const monthlyStats = getMonthlyStats();
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+    <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 p-3 sm:p-4 lg:p-6">
       {/* ヘッダー */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 space-y-4 lg:space-y-0">
-        <div className="flex items-center space-x-4">
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-            <FaCalendarAlt className="w-6 h-6 mr-2 text-blue-600" />
+      <div className="flex flex-col space-y-3 sm:space-y-4 lg:space-y-0 lg:flex-row justify-between items-start lg:items-center mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full lg:w-auto">
+          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 flex items-center">
+            <FaCalendarAlt className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 mr-2 text-blue-600" />
             練習カレンダー
           </h2>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center justify-center space-x-2 sm:space-x-3">
             <button
               onClick={() => navigateMonth('prev')}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <FaChevronLeft className="w-4 h-4 text-gray-600" />
+              <FaChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
             </button>
-            <h3 className="text-lg font-semibold text-gray-800 min-w-[120px] text-center">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800 min-w-[100px] sm:min-w-[120px] text-center">
               {currentDate.getFullYear()}年 {months[currentDate.getMonth()]}
             </h3>
             <button
               onClick={() => navigateMonth('next')}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <FaChevronRight className="w-4 h-4 text-gray-600" />
+              <FaChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
             </button>
           </div>
         </div>
         
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2 sm:space-x-3 w-full lg:w-auto">
           <button
             onClick={goToToday}
-            className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex-1 lg:flex-none"
           >
             今日
           </button>
           <button
             onClick={() => setShowQuickAdd(!showQuickAdd)}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center justify-center px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm flex-1 lg:flex-none"
           >
-            <FaPlus className="w-4 h-4 mr-2" />
-            練習追加
+            <FaPlus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">練習追加</span>
+            <span className="sm:hidden">追加</span>
           </button>
         </div>
       </div>
 
       {/* 月次統計 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-blue-50 rounded-lg p-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6">
+        <div className="bg-blue-50 rounded-lg p-2 sm:p-3">
           <div className="flex items-center">
-            <GiShuttlecock className="w-5 h-5 text-blue-600 mr-2" />
+            <GiShuttlecock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mr-1 sm:mr-2" />
             <div>
               <p className="text-xs text-blue-600 font-medium">練習回数</p>
-              <p className="text-lg font-bold text-blue-800">{monthlyStats.totalPractices}</p>
+              <p className="text-sm sm:text-lg font-bold text-blue-800">{monthlyStats.totalPractices}</p>
             </div>
           </div>
         </div>
         
-        <div className="bg-green-50 rounded-lg p-3">
+        <div className="bg-green-50 rounded-lg p-2 sm:p-3">
           <div className="flex items-center">
-            <FaClock className="w-5 h-5 text-green-600 mr-2" />
+            <FaClock className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mr-1 sm:mr-2" />
             <div>
               <p className="text-xs text-green-600 font-medium">総時間</p>
-              <p className="text-lg font-bold text-green-800">{formatDuration(monthlyStats.totalDuration)}</p>
+              <p className="text-sm sm:text-lg font-bold text-green-800">{formatDuration(monthlyStats.totalDuration)}</p>
             </div>
           </div>
         </div>
         
-        <div className="bg-purple-50 rounded-lg p-3">
+        <div className="bg-purple-50 rounded-lg p-2 sm:p-3">
           <div className="flex items-center">
-            <FaCalendarAlt className="w-5 h-5 text-purple-600 mr-2" />
+            <FaCalendarAlt className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 mr-1 sm:mr-2" />
             <div>
               <p className="text-xs text-purple-600 font-medium">練習日数</p>
-              <p className="text-lg font-bold text-purple-800">{monthlyStats.practiceDays}</p>
+              <p className="text-sm sm:text-lg font-bold text-purple-800">{monthlyStats.practiceDays}</p>
             </div>
           </div>
         </div>
         
-        <div className="bg-orange-50 rounded-lg p-3">
+        <div className="bg-orange-50 rounded-lg p-2 sm:p-3">
           <div className="flex items-center">
-            <FaClock className="w-5 h-5 text-orange-600 mr-2" />
+            <FaClock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 mr-1 sm:mr-2" />
             <div>
               <p className="text-xs text-orange-600 font-medium">平均時間</p>
-              <p className="text-lg font-bold text-orange-800">{formatDuration(monthlyStats.avgDuration)}</p>
+              <p className="text-sm sm:text-lg font-bold text-orange-800">{formatDuration(monthlyStats.avgDuration)}</p>
             </div>
           </div>
         </div>
@@ -244,8 +245,8 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
 
       {/* クイック追加パネル */}
       {showQuickAdd && (
-        <div className="bg-gray-50 rounded-lg p-4 mb-6">
-          <h4 className="text-sm font-medium text-gray-700 mb-3">クイック追加</h4>
+        <div className="bg-gray-50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+          <h4 className="text-sm font-medium text-gray-700 mb-2 sm:mb-3">クイック追加</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <p className="text-xs text-gray-600 mb-2">練習カードから追加</p>
@@ -263,8 +264,8 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
                     disabled={!selectedDate}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-800">{card.title}</span>
-                      <span className="text-xs text-gray-500">30分</span>
+                      <span className="text-xs sm:text-sm font-medium text-gray-800 truncate">{card.title}</span>
+                      <span className="text-xs text-gray-500 ml-2">30分</span>
                     </div>
                   </button>
                 ))}
@@ -279,10 +280,10 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
                     setShowQuickAdd(false);
                   }
                 }}
-                className="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                className="w-full p-2 sm:p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-xs sm:text-sm"
                 disabled={!selectedDate}
               >
-                <FaPlus className="w-4 h-4 mr-2 inline" />
+                <FaPlus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 inline" />
                 新しい練習記録
               </button>
               <p className="text-xs text-gray-500 mt-2">
@@ -294,10 +295,10 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
       )}
 
       {/* カレンダーグリッド */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
         {/* 曜日ヘッダー */}
         {weekdays.map(day => (
-          <div key={day} className="p-3 text-center font-medium text-gray-600 text-sm">
+          <div key={day} className="p-2 sm:p-3 text-center font-medium text-gray-600 text-xs sm:text-sm">
             {day}
           </div>
         ))}
@@ -307,7 +308,7 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
           <div
             key={index}
             onClick={() => handleDateClick(day)}
-            className={`min-h-[80px] p-1 border rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md ${
+            className={`min-h-[60px] sm:min-h-[80px] p-0.5 sm:p-1 border rounded cursor-pointer transition-all duration-200 hover:shadow-md ${
               !day.isCurrentMonth 
                 ? 'bg-gray-50 text-gray-400' 
                 : day.isToday
@@ -320,16 +321,16 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
             }`}
           >
             <div className="flex flex-col h-full">
-              <div className="text-sm font-medium mb-1">
+              <div className="text-xs sm:text-sm font-medium mb-0.5 sm:mb-1 text-center sm:text-left">
                 {day.date.getDate()}
               </div>
               
               {day.practices.length > 0 && (
-                <div className="flex-1 space-y-1">
-                  {day.practices.slice(0, 2).map(practice => (
+                <div className="flex-1 space-y-0.5 sm:space-y-1">
+                  {day.practices.slice(0, window.innerWidth < 640 ? 1 : 2).map(practice => (
                     <div
                       key={practice.id}
-                      className="bg-white bg-opacity-80 rounded px-1 py-0.5 text-xs truncate"
+                      className="bg-white bg-opacity-80 rounded px-0.5 sm:px-1 py-0.5 text-xs truncate"
                       title={`${practice.title} (${formatDuration(practice.duration)})`}
                     >
                       <div className="flex items-center justify-between">
@@ -339,17 +340,17 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
                             e.stopPropagation();
                             onEditPractice(practice);
                           }}
-                          className="ml-1 text-gray-500 hover:text-blue-600"
+                          className="ml-0.5 sm:ml-1 text-gray-500 hover:text-blue-600 hidden sm:block"
                         >
-                          <FaEdit className="w-3 h-3" />
+                          <FaEdit className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                         </button>
                       </div>
                     </div>
                   ))}
                   
-                  {day.practices.length > 2 && (
-                    <div className="text-xs text-gray-600 px-1">
-                      +{day.practices.length - 2} 件
+                  {day.practices.length > (window.innerWidth < 640 ? 1 : 2) && (
+                    <div className="text-xs text-gray-600 px-0.5 sm:px-1">
+                      +{day.practices.length - (window.innerWidth < 640 ? 1 : 2)} 件
                     </div>
                   )}
                 </div>
@@ -357,7 +358,7 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
               
               {day.practices.length === 0 && day.isCurrentMonth && (
                 <div className="flex-1 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                  <FaPlus className="w-3 h-3 text-gray-400" />
+                  <FaPlus className="w-2 h-2 sm:w-3 sm:h-3 text-gray-400" />
                 </div>
               )}
             </div>
@@ -366,21 +367,21 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
       </div>
 
       {/* 凡例 */}
-      <div className="mt-6 flex flex-wrap items-center justify-center space-x-6 text-xs text-gray-600">
-        <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
+      <div className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs text-gray-600">
+        <div className="flex items-center space-x-1 sm:space-x-2">
+          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-100 border border-green-300 rounded"></div>
           <span>軽い練習</span>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 bg-yellow-100 border border-yellow-300 rounded"></div>
+        <div className="flex items-center space-x-1 sm:space-x-2">
+          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-yellow-100 border border-yellow-300 rounded"></div>
           <span>普通の練習</span>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 bg-orange-100 border border-orange-300 rounded"></div>
+        <div className="flex items-center space-x-1 sm:space-x-2">
+          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-orange-100 border border-orange-300 rounded"></div>
           <span>きつい練習</span>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 bg-red-100 border border-red-300 rounded"></div>
+        <div className="flex items-center space-x-1 sm:space-x-2">
+          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-red-100 border border-red-300 rounded"></div>
           <span>非常にきつい練習</span>
         </div>
       </div>
