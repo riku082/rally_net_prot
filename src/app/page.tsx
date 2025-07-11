@@ -6,7 +6,10 @@ import MobileNav from '@/components/MobileNav';
 import Topbar from '@/components/Topbar';
 import TopNewsPanel from '@/components/TopNewsPanel';
 import AuthGuard from '@/components/AuthGuard';
+import PerformanceMonitor from '@/components/PerformanceMonitor';
+import PracticeSummary from '@/components/PracticeSummary';
 import { Match } from '@/types/match';
+import { Practice } from '@/types/practice';
 import { firestoreDb } from '@/utils/db';
 import { useAuth } from '@/context/AuthContext';
 import { FaUsers, FaUserCircle, FaEdit, FaBrain, FaEye } from 'react-icons/fa';
@@ -14,11 +17,12 @@ import { FiCalendar, FiPlay } from 'react-icons/fi';
 import { GiShuttlecock } from 'react-icons/gi';
 import Link from 'next/link';
 
-export default function DashboardPage() {
+export default function HomePage() {
   const { user } = useAuth();
   const [matches, setMatches] = useState<Match[]>([]);
-  const [friends, setFriends] = useState<unknown[]>([]);
-  const [mbtiResult, setMbtiResult] = useState<unknown | null>(null);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [mbtiResult, setMbtiResult] = useState<{ result: string; createdAt: number; analysis?: { confidenceScore: number } } | null>(null);
+  const [practices, setPractices] = useState<Practice[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -36,11 +40,15 @@ export default function DashboardPage() {
           friendship.fromUserId === user.uid ? friendship.toUserId : friendship.fromUserId
         );
         const friendProfiles = await firestoreDb.getUserProfilesByIds(friendUserIds);
-        setFriends(friendProfiles.slice(0, 5)); // 最大5人まで表示
+        setFriends(friendProfiles.slice(0, 5) as Friend[]); // 最大5人まで表示
 
         // MBTI診断結果を取得
         const mbtiData = await firestoreDb.getMBTIResult(user.uid);
         setMbtiResult(mbtiData);
+
+        // 練習記録を取得
+        const userPractices = await firestoreDb.getPractices(user.uid);
+        setPractices(userPractices);
 
       } catch (error) {
         console.error('データの読み込みに失敗しました:', error);
@@ -55,11 +63,12 @@ export default function DashboardPage() {
   return (
     <AuthGuard>
       <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <Sidebar activePath="/" />
-        <MobileNav activePath="/" />
+        <Sidebar activePath="/dashboard" />
+        <MobileNav activePath="/dashboard" />
         <div className="flex-1 flex flex-col lg:ml-0">
           <Topbar />
           <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8">
+            <PerformanceMonitor />
             <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
               {/* ヘッダーセクション */}
               <div className="relative">
@@ -73,15 +82,15 @@ export default function DashboardPage() {
               </div>
 
               {/* メインコンテンツグリッド - レスポンシブレイアウト */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
                 {/* 左側：プロフィールとBPSI診断 */}
-                <div className="space-y-4 sm:space-y-6 order-1 md:order-1">
+                <div className="space-y-4 sm:space-y-6 order-1 lg:order-1">
                   <ModernProfileCard />
                   <BPSIResultCard mbtiResult={mbtiResult} />
                 </div>
 
-                {/* 右側：最近の試合とフレンド */}
-                <div className="space-y-4 sm:space-y-6 order-2 md:order-2">
+                {/* 中央：最近の試合と練習 */}
+                <div className="space-y-4 sm:space-y-6 order-2 lg:order-2">
                   {/* 最近の試合 */}
                   <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
                     <div className="flex items-center justify-between mb-4 sm:mb-6">
@@ -110,7 +119,12 @@ export default function DashboardPage() {
                     )}
                   </div>
 
-                  {/* フレンド */}
+                  {/* 練習記録 */}
+                  <PracticeSummary practices={practices} />
+                </div>
+
+                {/* 右側：フレンド */}
+                <div className="space-y-4 sm:space-y-6 order-3 lg:order-3">
                   <FriendsListCard friends={friends} />
                 </div>
               </div>
@@ -269,8 +283,13 @@ const ModernProfileCard: React.FC = () => {
   );
 };
 
+interface Friend {
+  name: string;
+  email: string;
+}
+
 // フレンド一覧カード
-const FriendsListCard: React.FC<{ friends: unknown[] }> = ({ friends }) => {
+const FriendsListCard: React.FC<{ friends: Friend[] }> = ({ friends }) => {
   return (
     <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
       <div className="flex items-center justify-between mb-4">
@@ -312,7 +331,7 @@ const FriendsListCard: React.FC<{ friends: unknown[] }> = ({ friends }) => {
 };
 
 // BPSI診断結果カード
-const BPSIResultCard: React.FC<{ mbtiResult: unknown | null }> = ({ mbtiResult }) => {
+const BPSIResultCard: React.FC<{ mbtiResult: { result: string; createdAt: number; analysis?: { confidenceScore: number } } | null }> = ({ mbtiResult }) => {
   if (!mbtiResult) {
     return (
       <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">

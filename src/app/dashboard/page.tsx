@@ -6,6 +6,7 @@ import MobileNav from '@/components/MobileNav';
 import Topbar from '@/components/Topbar';
 import TopNewsPanel from '@/components/TopNewsPanel';
 import AuthGuard from '@/components/AuthGuard';
+import PerformanceMonitor from '@/components/PerformanceMonitor';
 import { Match } from '@/types/match';
 import { firestoreDb } from '@/utils/db';
 import { useAuth } from '@/context/AuthContext';
@@ -14,20 +15,31 @@ import { FiCalendar, FiPlay } from 'react-icons/fi';
 import { GiShuttlecock } from 'react-icons/gi';
 import Link from 'next/link';
 
+interface Friend {
+  name: string;
+  email: string;
+}
+
+interface MbtiAnalysisResult {
+  result: string;
+  createdAt: number;
+  analysis?: {
+    confidenceScore: number;
+  };
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const [matches, setMatches] = useState<Match[]>([]);
-  const [friends, setFriends] = useState<unknown[]>([]);
-  const [mbtiResult, setMbtiResult] = useState<unknown | null>(null);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [mbtiResult, setMbtiResult] = useState<MbtiAnalysisResult | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
       if (!user || !user.uid) return;
       
       try {
-        const [loadedMatches] = await Promise.all([
-          firestoreDb.getMatches(user.uid),
-        ]);
+        const loadedMatches = await firestoreDb.getMatches(user.uid);
         setMatches(loadedMatches);
 
         // フレンド一覧を取得
@@ -36,11 +48,11 @@ export default function DashboardPage() {
           friendship.fromUserId === user.uid ? friendship.toUserId : friendship.fromUserId
         );
         const friendProfiles = await firestoreDb.getUserProfilesByIds(friendUserIds);
-        setFriends(friendProfiles.slice(0, 5)); // 最大5人まで表示
+        setFriends(friendProfiles.slice(0, 5) as Friend[]); // 最大5人まで表示
 
         // MBTI診断結果を取得
         const mbtiData = await firestoreDb.getMBTIResult(user.uid);
-        setMbtiResult(mbtiData);
+        setMbtiResult(mbtiData as MbtiAnalysisResult);
 
       } catch (error) {
         console.error('データの読み込みに失敗しました:', error);
@@ -60,6 +72,7 @@ export default function DashboardPage() {
         <div className="flex-1 flex flex-col lg:ml-0">
           <Topbar />
           <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8">
+            <PerformanceMonitor />
             <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
               {/* ヘッダーセクション */}
               <div className="relative">
@@ -269,8 +282,8 @@ const ModernProfileCard: React.FC = () => {
   );
 };
 
-// フレンド一覧カード
-const FriendsListCard: React.FC<{ friends: unknown[] }> = ({ friends }) => {
+// フレンドリストカードコンポーネント
+const FriendsListCard: React.FC<{ friends: Friend[] }> = ({ friends }) => {
   return (
     <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
       <div className="flex items-center justify-between mb-4">
@@ -311,8 +324,8 @@ const FriendsListCard: React.FC<{ friends: unknown[] }> = ({ friends }) => {
   );
 };
 
-// BPSI診断結果カード
-const BPSIResultCard: React.FC<{ mbtiResult: unknown | null }> = ({ mbtiResult }) => {
+// BPSI診断結果カードコンポーネント
+const BPSIResultCard: React.FC<{ mbtiResult: MbtiAnalysisResult | null }> = ({ mbtiResult }) => {
   if (!mbtiResult) {
     return (
       <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
@@ -336,7 +349,7 @@ const BPSIResultCard: React.FC<{ mbtiResult: unknown | null }> = ({ mbtiResult }
     );
   }
 
-  const result = mbtiResult as { result: string; createdAt: number; analysis?: { confidenceScore: number } };
+  const result = mbtiResult;
   
   return (
     <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
@@ -389,25 +402,26 @@ const BPSIResultCard: React.FC<{ mbtiResult: unknown | null }> = ({ mbtiResult }
   );
 };
 
-// タイプタイトルを取得するヘルパー関数
+// MBTIタイプのタイトルを取得する関数
 const getTypeTitle = (type: string): string => {
   const typeTitles: { [key: string]: string } = {
-    'ESTJ': '統率者',
-    'ESTP': '冒険家',
-    'ESFJ': '世話好き',
-    'ESFP': '自由人',
-    'ENTJ': '指揮官',
-    'ENTP': '発明家',
-    'ENFJ': 'カリスマ',
-    'ENFP': 'インスピレーター',
-    'ISTJ': '職人',
-    'ISTP': '技術者',
-    'ISFJ': '保護者',
-    'ISFP': '芸術家',
     'INTJ': '戦略家',
-    'INTP': '研究者',
+    'INTP': '論理学者',
+    'ENTJ': '指揮官',
+    'ENTP': '討論家',
     'INFJ': '提唱者',
-    'INFP': '理想主義者'
+    'INFP': '仲介者',
+    'ENFJ': '主人公',
+    'ENFP': '運動家',
+    'ISTJ': '管理者',
+    'ISFJ': '擁護者',
+    'ESTJ': '幹部',
+    'ESFJ': '領事官',
+    'ISTP': '巨匠',
+    'ISFP': '冒険家',
+    'ESTP': '起業家',
+    'ESFP': 'エンターテイナー'
   };
+  
   return typeTitles[type] || type;
 };

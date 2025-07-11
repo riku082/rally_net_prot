@@ -1,0 +1,9 @@
+version: "2"
+authtoken: your_auth_token_here
+tunnels:
+  rally-net:
+    proto: http
+    addr: 3002
+    subdomain: rally-net
+    region: jp
+    inspect: true 

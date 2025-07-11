@@ -1,13 +1,15 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { FaTachometerAlt, FaUser, FaChartBar, FaUserCircle, FaRss, FaUserFriends, FaBrain } from 'react-icons/fa';
-import { GiShuttlecock } from 'react-icons/gi'; // GiShuttlecockをインポート
+import { FaTachometerAlt, FaUser, FaChartBar, FaUserCircle, FaRss, FaUserFriends, FaBrain, FaBook } from 'react-icons/fa';
+import { GiShuttlecock } from 'react-icons/gi';
+import Image from 'next/image';
 
 const navItems = [
-  { label: 'ダッシュボード', icon: <FaTachometerAlt />, path: '/' },
+  { label: 'ダッシュボード', icon: <FaTachometerAlt />, path: '/dashboard' },
   { label: '選手管理', icon: <FaUser />, path: '/players' },
   { label: '試合記録', icon: <GiShuttlecock />, path: '/matches', badge: 'ヨシダシステム' }, // GiShuttlecockを使用
+  { label: '練習管理', icon: <FaBook />, path: '/practice-management', badge: 'NEW' },
   { label: '分析', icon: <FaChartBar />, path: '/analysis' },
   { label: 'ニュース', icon: <FaRss />, path: '/news' },
   { label: 'フレンド', icon: <FaUserFriends />, path: '/friends' },
@@ -20,7 +22,7 @@ const Sidebar: React.FC<{ activePath?: string }> = ({ activePath = '/' }) => {
   return (
     <aside className="hidden lg:flex fixed lg:relative w-64 h-screen bg-white border-r flex-col py-6 px-4 transform lg:translate-x-0 transition-transform duration-300 ease-in-out z-50">
       <div className="flex items-center mb-10">
-        <img src="/logo.png" alt="Rally Net" className="h-8 w-8 mr-3" />
+        <Image src="/logo.png" alt="Rally Net" width={32} height={32} className="mr-3" />
         <span className="text-xl font-bold text-gray-800">Rally Net</span>
       </div>
       <nav className="flex-1">

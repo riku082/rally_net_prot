@@ -8,6 +8,7 @@ import { UserProfile } from '@/types/userProfile';
 import { Friendship, FriendshipStatus } from '@/types/friendship';
 import { MatchRequest, MatchRequestStatus } from '@/types/matchRequest';
 import { MBTIResult, MBTIDiagnostic } from '@/types/mbti';
+import { Practice, PracticeGoal, PracticeStats } from '@/types/practice';
 
 // Firebase接続の最適化設定
 const optimizeFirebaseConnection = () => {
@@ -532,5 +533,180 @@ export const firestoreDb = {
       mbtiResult,
       mbtiCompletedAt: Date.now()
     });
+  },
+
+  // 練習記録関連
+  async getPractices(userId: string): Promise<Practice[]> {
+    if (!userId) {
+      console.warn('getPractices: userId is undefined or empty');
+      return [];
+    }
+    const q = query(collection(db, `users/${userId}/practices`));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Practice));
+  },
+
+  async addPractice(practice: Practice): Promise<void> {
+    const cleanedPractice = this.removeUndefinedFields(practice);
+    await setDoc(doc(db, `users/${practice.userId}/practices`, practice.id), cleanedPractice);
+  },
+
+  async updatePractice(practice: Practice): Promise<void> {
+    const cleanedPractice = this.removeUndefinedFields(practice);
+    await setDoc(doc(db, `users/${practice.userId}/practices`, practice.id), cleanedPractice);
+  },
+
+  async deletePractice(practiceId: string, userId: string): Promise<void> {
+    if (!userId || !practiceId) {
+      console.warn('deletePractice: userId or practiceId is undefined or empty');
+      return;
+    }
+    await deleteDoc(doc(db, `users/${userId}/practices`, practiceId));
+  },
+
+  async getPracticeStats(userId: string): Promise<PracticeStats | null> {
+    if (!userId) {
+      console.warn('getPracticeStats: userId is undefined or empty');
+      return null;
+    }
+    
+    const practices = await this.getPractices(userId);
+    if (practices.length === 0) {
+      return null;
+    }
+
+    // 統計を計算
+    const totalPractices = practices.length;
+    const totalDuration = practices.reduce((sum, p) => sum + p.duration, 0);
+    const averageDuration = totalDuration / totalPractices;
+
+    // タイプ別練習回数
+    const practicesByType = practices.reduce((acc, practice) => {
+      acc[practice.type] = (acc[practice.type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // 強度別練習回数
+    const practicesByIntensity = practices.reduce((acc, practice) => {
+      acc[practice.intensity] = (acc[practice.intensity] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // スキル平均
+    const skillAverages = {} as Record<string, number>;
+    const skillCounts = {} as Record<string, number>;
+
+    practices.forEach(practice => {
+      practice.skills.forEach(skill => {
+        if (!skillAverages[skill.category]) {
+          skillAverages[skill.category] = 0;
+          skillCounts[skill.category] = 0;
+        }
+        skillAverages[skill.category] += skill.rating;
+        skillCounts[skill.category]++;
+      });
+    });
+
+    Object.keys(skillAverages).forEach(category => {
+      skillAverages[category] = skillAverages[category] / skillCounts[category];
+    });
+
+    // 月別統計
+    const monthlyStats = practices.reduce((acc, practice) => {
+      const month = practice.date.substring(0, 7); // YYYY-MM
+      const existing = acc.find(m => m.month === month);
+      if (existing) {
+        existing.practices++;
+        existing.duration += practice.duration;
+      } else {
+        acc.push({
+          month,
+          practices: 1,
+          duration: practice.duration
+        });
+      }
+      return acc;
+    }, [] as { month: string; practices: number; duration: number }[]);
+
+    // 連続練習日数を計算
+    const sortedDates = [...new Set(practices.map(p => p.date))].sort();
+    let currentStreak = 0;
+    let longestStreak = 0;
+    let tempStreak = 1;
+
+    for (let i = 1; i < sortedDates.length; i++) {
+      const prevDate = new Date(sortedDates[i - 1]);
+      const currDate = new Date(sortedDates[i]);
+      const diffDays = (currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24);
+
+      if (diffDays === 1) {
+        tempStreak++;
+      } else {
+        longestStreak = Math.max(longestStreak, tempStreak);
+        tempStreak = 1;
+      }
+    }
+    longestStreak = Math.max(longestStreak, tempStreak);
+
+    // 現在の連続日数（今日から逆算）
+    const today = new Date().toISOString().split('T')[0];
+    const lastPracticeDate = sortedDates[sortedDates.length - 1];
+    if (lastPracticeDate === today) {
+      currentStreak = 1;
+      for (let i = sortedDates.length - 2; i >= 0; i--) {
+        const prevDate = new Date(sortedDates[i]);
+        const nextDate = new Date(sortedDates[i + 1]);
+        const diffDays = (nextDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24);
+        if (diffDays === 1) {
+          currentStreak++;
+        } else {
+          break;
+        }
+      }
+    }
+
+    return {
+      userId,
+      totalPractices,
+      totalDuration,
+      averageDuration,
+      practicesByType: practicesByType as any,
+      practicesByIntensity: practicesByIntensity as any,
+      skillAverages: skillAverages as any,
+      improvementTrends: {} as any, // 今回は簡略化
+      monthlyStats,
+      currentStreak,
+      longestStreak,
+      lastPracticeDate: lastPracticeDate || undefined,
+    };
+  },
+
+  // 練習目標関連
+  async getPracticeGoals(userId: string): Promise<PracticeGoal[]> {
+    if (!userId) {
+      console.warn('getPracticeGoals: userId is undefined or empty');
+      return [];
+    }
+    const q = query(collection(db, `users/${userId}/practiceGoals`));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PracticeGoal));
+  },
+
+  async addPracticeGoal(goal: PracticeGoal): Promise<void> {
+    const cleanedGoal = this.removeUndefinedFields(goal);
+    await setDoc(doc(db, `users/${goal.userId}/practiceGoals`, goal.id), cleanedGoal);
+  },
+
+  async updatePracticeGoal(goal: PracticeGoal): Promise<void> {
+    const cleanedGoal = this.removeUndefinedFields(goal);
+    await setDoc(doc(db, `users/${goal.userId}/practiceGoals`, goal.id), cleanedGoal);
+  },
+
+  async deletePracticeGoal(goalId: string, userId: string): Promise<void> {
+    if (!userId || !goalId) {
+      console.warn('deletePracticeGoal: userId or goalId is undefined or empty');
+      return;
+    }
+    await deleteDoc(doc(db, `users/${userId}/practiceGoals`, goalId));
   }
 };

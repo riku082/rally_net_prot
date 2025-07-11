@@ -36,8 +36,8 @@ const OnboardingProfilePage: React.FC = () => {
       };
       checkProfile();
     } else {
-      // ユーザーが認証されていない場合はサインインページへ
-      router.push('/signin');
+      // ユーザーが認証されていない場合は認証ページへ
+      router.push('/auth');
     }
   }, [user, router]);
 
@@ -81,7 +81,7 @@ const OnboardingProfilePage: React.FC = () => {
 
       await firestoreDb.saveUserProfile(newProfile);
       // プロフィール作成後、ダッシュボードへリダイレクト
-      router.push('/');
+      router.push('/dashboard');
 
     } catch (error) {
       console.error('プロフィールの保存に失敗しました:', error);

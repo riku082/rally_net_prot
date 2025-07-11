@@ -1,0 +1,361 @@
+'use client';
+
+import React, { useState } from 'react';
+import { Practice, PracticeType, PracticeIntensity, PracticeSkill, SkillCategory } from '@/types/practice';
+import { FaClock, FaCalendarAlt, FaStar, FaPlus, FaTrash } from 'react-icons/fa';
+import { FiSave, FiX } from 'react-icons/fi';
+
+interface PracticeFormProps {
+  practice?: Practice;
+  onSave: (practice: Omit<Practice, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => void;
+  onCancel: () => void;
+  isLoading?: boolean;
+  initialDate?: string;
+}
+
+const PracticeForm: React.FC<PracticeFormProps> = ({ 
+  practice, 
+  onSave, 
+  onCancel, 
+  isLoading = false,
+  initialDate
+}) => {
+  const [formData, setFormData] = useState({
+    date: practice?.date || initialDate || new Date().toISOString().split('T')[0],
+    startTime: practice?.startTime || '10:00',
+    endTime: practice?.endTime || '12:00',
+    type: practice?.type || 'basic_practice' as PracticeType,
+    intensity: practice?.intensity || 'medium' as PracticeIntensity,
+    title: practice?.title || '',
+    description: practice?.description || '',
+    notes: practice?.notes || '',
+    skills: practice?.skills || [] as PracticeSkill[],
+    goals: practice?.goals || [],
+    achievements: practice?.achievements || [],
+  });
+
+  const practiceTypes = [
+    { value: 'basic_practice', label: '基礎練習' },
+    { value: 'game_practice', label: 'ゲーム練習' },
+    { value: 'physical_training', label: 'フィジカル' },
+    { value: 'technical_drill', label: 'テクニカル' },
+    { value: 'strategy_practice', label: '戦術練習' },
+    { value: 'match_simulation', label: '試合形式' },
+    { value: 'individual_practice', label: '個人練習' },
+    { value: 'group_practice', label: 'グループ練習' },
+  ];
+
+  const intensityLevels = [
+    { value: 'low', label: '軽い', color: 'bg-green-100 text-green-800' },
+    { value: 'medium', label: '普通', color: 'bg-yellow-100 text-yellow-800' },
+    { value: 'high', label: 'きつい', color: 'bg-orange-100 text-orange-800' },
+    { value: 'very_high', label: '非常にきつい', color: 'bg-red-100 text-red-800' },
+  ];
+
+  const skillCategories = [
+    { value: 'serve', label: 'サーブ' },
+    { value: 'receive', label: 'レシーブ' },
+    { value: 'clear', label: 'クリア' },
+    { value: 'drop', label: 'ドロップ' },
+    { value: 'smash', label: 'スマッシュ' },
+    { value: 'net_play', label: 'ネットプレイ' },
+    { value: 'drive', label: 'ドライブ' },
+    { value: 'footwork', label: 'フットワーク' },
+    { value: 'defense', label: '守備' },
+    { value: 'strategy', label: '戦術' },
+    { value: 'physical', label: 'フィジカル' },
+    { value: 'mental', label: 'メンタル' },
+  ];
+
+  const calculateDuration = () => {
+    if (!formData.startTime || !formData.endTime) return 0;
+    const start = new Date(`2000-01-01T${formData.startTime}`);
+    const end = new Date(`2000-01-01T${formData.endTime}`);
+    return Math.max(0, (end.getTime() - start.getTime()) / (1000 * 60));
+  };
+
+  const addSkill = () => {
+    const newSkill: PracticeSkill = {
+      id: Date.now().toString(),
+      name: '',
+      category: 'serve',
+      rating: 3,
+      improvement: 0,
+      notes: '',
+    };
+    setFormData(prev => ({
+      ...prev,
+      skills: [...prev.skills, newSkill]
+    }));
+  };
+
+  const updateSkill = (index: number, updates: Partial<PracticeSkill>) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: prev.skills.map((skill, i) => 
+        i === index ? { ...skill, ...updates } : skill
+      )
+    }));
+  };
+
+  const removeSkill = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: prev.skills.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const duration = calculateDuration();
+    
+    onSave({
+      ...formData,
+      duration,
+    });
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 max-w-4xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">
+          {practice ? '練習記録を編集' : '新しい練習記録'}
+        </h2>
+        <button
+          onClick={onCancel}
+          className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <FiX className="w-6 h-6" />
+        </button>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* 基本情報 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <FaCalendarAlt className="inline w-4 h-4 mr-1" />
+              練習日
+            </label>
+            <input
+              type="date"
+              value={formData.date}
+              onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              練習タイトル
+            </label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              placeholder="例: 午前練習、個人練習"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+        </div>
+
+        {/* 時間設定 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <FaClock className="inline w-4 h-4 mr-1" />
+              開始時間
+            </label>
+            <input
+              type="time"
+              value={formData.startTime}
+              onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              終了時間
+            </label>
+            <input
+              type="time"
+              value={formData.endTime}
+              onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              練習時間
+            </label>
+            <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
+              {calculateDuration()}分
+            </div>
+          </div>
+        </div>
+
+        {/* 練習タイプと強度 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              練習タイプ
+            </label>
+            <select
+              value={formData.type}
+              onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as PracticeType }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {practiceTypes.map(type => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              練習強度
+            </label>
+            <select
+              value={formData.intensity}
+              onChange={(e) => setFormData(prev => ({ ...prev, intensity: e.target.value as PracticeIntensity }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {intensityLevels.map(level => (
+                <option key={level.value} value={level.value}>
+                  {level.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* 説明 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            練習内容
+          </label>
+          <textarea
+            value={formData.description}
+            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            placeholder="練習メニューや内容を記録してください"
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {/* スキル評価 */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <label className="block text-sm font-medium text-gray-700">
+              スキル評価
+            </label>
+            <button
+              type="button"
+              onClick={addSkill}
+              className="flex items-center px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <FaPlus className="w-3 h-3 mr-1" />
+              スキル追加
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {formData.skills.map((skill, index) => (
+              <div key={skill.id} className="bg-gray-50 rounded-lg p-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
+                  <div>
+                    <input
+                      type="text"
+                      value={skill.name}
+                      onChange={(e) => updateSkill(index, { name: e.target.value })}
+                      placeholder="スキル名"
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <select
+                      value={skill.category}
+                      onChange={(e) => updateSkill(index, { category: e.target.value as SkillCategory })}
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      {skillCategories.map(cat => (
+                        <option key={cat.value} value={cat.value}>
+                          {cat.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex items-center space-x-1">
+                    {[1, 2, 3, 4, 5].map(rating => (
+                      <button
+                        key={rating}
+                        type="button"
+                        onClick={() => updateSkill(index, { rating })}
+                        className={`p-1 ${rating <= skill.rating ? 'text-yellow-500' : 'text-gray-300'}`}
+                      >
+                        <FaStar className="w-4 h-4" />
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => removeSkill(index)}
+                    className="p-1 text-red-500 hover:text-red-700 transition-colors"
+                  >
+                    <FaTrash className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* メモ */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            メモ・反省点
+          </label>
+          <textarea
+            value={formData.notes}
+            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+            placeholder="練習の反省点や気づいたことを記録してください"
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {/* 送信ボタン */}
+        <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            キャンセル
+          </button>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+          >
+            <FiSave className="w-4 h-4 mr-2" />
+            {isLoading ? '保存中...' : '保存'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default PracticeForm;

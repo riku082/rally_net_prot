@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmail, signUpWithEmail, signInWithGoogle } from '@/utils/auth';
 import { firestoreDb } from '@/utils/db';
+import Image from 'next/image';
 
 const AuthPage: React.FC = () => {
   const router = useRouter();
@@ -19,11 +20,11 @@ const AuthPage: React.FC = () => {
       if (profile) {
         router.push('/');
       } else {
-        router.push('/profile');
+        router.push('/onboarding/profile');
       }
     } catch (error) {
       console.error('プロフィールチェックエラー:', error);
-      router.push('/profile');
+      router.push('/onboarding/profile');
     }
   };
 
@@ -74,10 +75,12 @@ const AuthPage: React.FC = () => {
         {/* ロゴとサイト名セクション */}
         <div className="text-center">
           <div className="flex items-center justify-center mb-6">
-            <img 
+            <Image 
               src="/logo.png" 
               alt="Rally Net" 
-              className="h-16 w-16 mr-4"
+              width={64}
+              height={64}
+              className="mr-4"
             />
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">

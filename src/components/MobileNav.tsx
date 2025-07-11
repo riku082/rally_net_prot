@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { FaTachometerAlt, FaUser, FaChartBar, FaUserCircle, FaRss, FaUserFriends, FaBrain, FaBars, FaTimes } from 'react-icons/fa';
+import { FaTachometerAlt, FaUser, FaChartBar, FaUserCircle, FaRss, FaUserFriends, FaBrain, FaBars, FaTimes, FaBook } from 'react-icons/fa';
 import { GiShuttlecock } from 'react-icons/gi';
+import Image from 'next/image';
 
 const navItems = [
-  { label: 'ダッシュボード', icon: <FaTachometerAlt />, path: '/' },
+  { label: 'ダッシュボード', icon: <FaTachometerAlt />, path: '/dashboard' },
   { label: '選手管理', icon: <FaUser />, path: '/players' },
   { label: '試合記録', icon: <GiShuttlecock />, path: '/matches', badge: 'ヨシダシステム' },
+  { label: '練習管理', icon: <FaBook />, path: '/practice-management', badge: 'NEW' },
   { label: '分析', icon: <FaChartBar />, path: '/analysis' },
   { label: 'ニュース', icon: <FaRss />, path: '/news' },
   { label: 'フレンド', icon: <FaUserFriends />, path: '/friends' },
@@ -50,7 +52,7 @@ const MobileNav: React.FC<{ activePath?: string }> = ({ activePath = '/' }) => {
           {/* ヘッダー */}
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center">
-              <img src="/logo.png" alt="Rally Net" className="h-8 w-8 mr-3" />
+              <Image src="/logo.png" alt="Rally Net" width={32} height={32} className="mr-3" />
               <span className="text-xl font-bold text-gray-800">Rally Net</span>
             </div>
             <button

@@ -17,7 +17,7 @@ export default function RootPage() {
           router.push('/onboarding/profile');
         } else {
           // プロフィールが存在する場合、ダッシュボードへリダイレクト
-          router.push('/');
+          router.push('/dashboard');
         }
       } else {
         // ユーザーがログインしていない場合、認証選択ページへリダイレクト
