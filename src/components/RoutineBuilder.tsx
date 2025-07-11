@@ -88,13 +88,13 @@ const RoutineBuilder: React.FC<RoutineBuilderProps> = ({
   );
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-3 sm:space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
         <h4 className="text-sm font-medium text-gray-700">練習ルーティン</h4>
         <button
           type="button"
           onClick={() => setShowCardSelector(true)}
-          className="flex items-center px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center justify-center px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <FaPlus className="w-3 h-3 mr-1" />
           カード追加
@@ -104,7 +104,7 @@ const RoutineBuilder: React.FC<RoutineBuilderProps> = ({
       {/* 選択されたカード一覧 */}
       <div className="space-y-2">
         {selectedCards.length === 0 ? (
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 text-center">
             <p className="text-gray-500 text-sm">練習カードを追加してルーティンを作成してください</p>
           </div>
         ) : (
@@ -118,20 +118,20 @@ const RoutineBuilder: React.FC<RoutineBuilderProps> = ({
                 onDragStart={(e) => handleDragStart(e, index)}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, index)}
-                className={`bg-gray-50 border rounded-lg p-3 cursor-move hover:bg-gray-100 transition-colors ${
+                className={`bg-gray-50 border rounded-lg p-2 sm:p-3 cursor-move hover:bg-gray-100 transition-colors ${
                   draggedIndex === index ? 'opacity-50' : ''
                 }`}
               >
-                <div className="flex items-center space-x-3">
-                  <FaGripVertical className="w-4 h-4 text-gray-400" />
-                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium">
+                <div className="flex items-start sm:items-center space-x-2 sm:space-x-3">
+                  <FaGripVertical className="w-4 h-4 text-gray-400 mt-1 sm:mt-0 flex-shrink-0" />
+                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium flex-shrink-0">
                     {cardExecution.order}
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <h5 className="font-medium text-gray-900">{cardExecution.cardTitle}</h5>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-600 flex items-center">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                      <h5 className="font-medium text-gray-900 text-sm sm:text-base truncate">{cardExecution.cardTitle}</h5>
+                      <div className="flex items-center space-x-2 flex-shrink-0">
+                        <span className="text-xs sm:text-sm text-gray-600 flex items-center">
                           <FaClock className="w-3 h-3 mr-1" />
                           {cardExecution.plannedDuration}分
                         </span>
@@ -145,13 +145,13 @@ const RoutineBuilder: React.FC<RoutineBuilderProps> = ({
                       </div>
                     </div>
                     {card && (
-                      <p className="text-xs text-gray-600 mt-1">{card.description}</p>
+                      <p className="text-xs text-gray-600 mt-1 line-clamp-2">{card.description}</p>
                     )}
                   </div>
                 </div>
 
                 {/* カスタム設定 */}
-                <div className="mt-3 ml-10 grid grid-cols-2 gap-3">
+                <div className="mt-3 ml-6 sm:ml-10 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">実際の時間（分）</label>
                     <input
@@ -183,7 +183,7 @@ const RoutineBuilder: React.FC<RoutineBuilderProps> = ({
                   </div>
                 </div>
 
-                <div className="mt-2 ml-10">
+                <div className="mt-2 ml-6 sm:ml-10">
                   <textarea
                     value={cardExecution.notes || ''}
                     onChange={(e) => updateCard(index, { notes: e.target.value })}
@@ -193,7 +193,7 @@ const RoutineBuilder: React.FC<RoutineBuilderProps> = ({
                   />
                 </div>
 
-                <div className="mt-2 ml-10 flex items-center">
+                <div className="mt-2 ml-6 sm:ml-10 flex items-center">
                   <label className="flex items-center space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -228,21 +228,21 @@ const RoutineBuilder: React.FC<RoutineBuilderProps> = ({
 
       {/* カード選択モーダル */}
       {showCardSelector && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full m-4 max-h-[80vh] overflow-hidden">
-            <div className="p-4 border-b border-gray-200">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] sm:max-h-[80vh] overflow-hidden">
+            <div className="p-3 sm:p-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">練習カードを選択</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">練習カードを選択</h3>
                 <button
                   onClick={() => setShowCardSelector(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 text-lg"
                 >
                   ×
                 </button>
               </div>
             </div>
             
-            <div className="p-4 max-h-96 overflow-y-auto">
+            <div className="p-3 sm:p-4 max-h-96 overflow-y-auto">
               {availableCardsToAdd.length === 0 ? (
                 <p className="text-gray-500 text-center">追加可能な練習カードがありません</p>
               ) : (
@@ -250,16 +250,16 @@ const RoutineBuilder: React.FC<RoutineBuilderProps> = ({
                   {availableCardsToAdd.map(card => (
                     <div
                       key={card.id}
-                      className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer"
+                      className="border border-gray-200 rounded-lg p-2 sm:p-3 hover:bg-gray-50 cursor-pointer"
                       onClick={() => addCard(card)}
                     >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium text-gray-900">{card.title}</h4>
-                          <p className="text-sm text-gray-600">{card.description}</p>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-medium text-gray-900 text-sm sm:text-base truncate">{card.title}</h4>
+                          <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">{card.description}</p>
                         </div>
-                        <div className="text-right">
-                          <div className="text-sm text-gray-600 flex items-center">
+                        <div className="text-left sm:text-right flex-shrink-0">
+                          <div className="text-xs sm:text-sm text-gray-600 flex items-center">
                             <FaClock className="w-3 h-3 mr-1" />
                             {card.drill.duration}分
                           </div>

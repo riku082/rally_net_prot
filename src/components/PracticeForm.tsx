@@ -176,22 +176,22 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">
+    <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-4 sm:p-6 max-w-4xl mx-auto">
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
           {practice ? '練習記録を編集' : '新しい練習記録'}
         </h2>
         <button
           onClick={onCancel}
           className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
         >
-          <FiX className="w-6 h-6" />
+          <FiX className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         {/* 基本情報 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <FaCalendarAlt className="inline w-4 h-4 mr-1" />
@@ -222,7 +222,7 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
         </div>
 
         {/* 時間設定 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <FaClock className="inline w-4 h-4 mr-1" />
@@ -261,7 +261,7 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
         </div>
 
         {/* 練習タイプと強度 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               練習タイプ
@@ -312,18 +312,18 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
         </div>
 
         {/* ルーティンモード切り替え */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-4">
-            <label className="flex items-center space-x-2 cursor-pointer">
+        <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
+          <div className="flex items-start sm:items-center justify-between mb-4">
+            <label className="flex items-start sm:items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={useRoutine}
                 onChange={(e) => toggleRoutineMode(e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-0.5 sm:mt-0"
               />
-              <span className="text-sm font-medium text-gray-700 flex items-center">
-                <FaLayerGroup className="w-4 h-4 mr-2" />
-                練習カードを組み合わせてルーティンを作成
+              <span className="text-sm font-medium text-gray-700 flex items-start sm:items-center">
+                <FaLayerGroup className="w-4 h-4 mr-1 sm:mr-2 mt-0.5 sm:mt-0 flex-shrink-0" />
+                <span className="leading-tight">練習カードを組み合わせてルーティンを作成</span>
               </span>
             </label>
           </div>
@@ -363,8 +363,8 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
 
           <div className="space-y-3">
             {formData.skills.map((skill, index) => (
-              <div key={skill.id} className="bg-gray-50 rounded-lg p-4">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
+              <div key={skill.id} className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-start sm:items-center">
                   <div>
                     <input
                       type="text"
@@ -389,7 +389,7 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
                     </select>
                   </div>
 
-                  <div className="flex items-center space-x-1">
+                  <div className="flex items-center space-x-1 sm:justify-center">
                     {[1, 2, 3, 4, 5].map(rating => (
                       <button
                         key={rating}
@@ -402,13 +402,15 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
                     ))}
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => removeSkill(index)}
-                    className="p-1 text-red-500 hover:text-red-700 transition-colors"
-                  >
-                    <FaTrash className="w-4 h-4" />
-                  </button>
+                  <div className="flex justify-end sm:justify-center">
+                    <button
+                      type="button"
+                      onClick={() => removeSkill(index)}
+                      className="p-1 text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      <FaTrash className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -430,18 +432,18 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
         </div>
 
         {/* 送信ボタン */}
-        <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-4 sm:pt-6 border-t border-gray-200">
           <button
             type="button"
             onClick={onCancel}
-            className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+            className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors order-2 sm:order-1"
           >
             キャンセル
           </button>
           <button
             type="submit"
             disabled={isLoading}
-            className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="flex items-center justify-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 order-1 sm:order-2"
           >
             <FiSave className="w-4 h-4 mr-2" />
             {isLoading ? '保存中...' : '保存'}

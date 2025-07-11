@@ -6,7 +6,6 @@ const nextConfig = {
   },
   // パフォーマンス最適化
   experimental: {
-    optimizeCss: true,
     optimizePackageImports: ['react-icons', 'firebase'],
   },
   // 同時接続数の最適化

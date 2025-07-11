@@ -1,26 +1,7 @@
 {
   "version": 2,
-  "name": "rally-net",
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
   "framework": "nextjs",
-  "functions": {
-    "src/app/api/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
-  },
-  "env": {
-    "NEXT_PUBLIC_APP_URL": "https://rally-net.vercel.app"
-  },
-  "build": {
-    "env": {
-      "NEXT_PUBLIC_APP_URL": "@app-url"
-    }
-  },
-  "domains": [
-    "rally-net.vercel.app",
-    "rallynet.com",
-    "www.rallynet.com"
-  ]
+  "github": {
+    "autoAlias": false
+  }
 } 

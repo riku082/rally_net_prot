@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
@@ -14,7 +14,7 @@ import { Match } from '@/types/match';
 import { firestoreDb } from '@/utils/db';
 import { useAuth } from '@/context/AuthContext';
 
-const AnalysisPage: React.FC = () => {
+const AnalysisContent: React.FC = () => {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const matchId = searchParams.get('matchId');
@@ -306,6 +306,14 @@ const AnalysisPage: React.FC = () => {
         </div>
       </div>
     </AuthGuard>
+  );
+};
+
+const AnalysisPage: React.FC = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AnalysisContent />
+    </Suspense>
   );
 };
 

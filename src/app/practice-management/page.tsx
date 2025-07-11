@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import Topbar from '@/components/Topbar';
@@ -19,7 +19,7 @@ import { GiShuttlecock } from 'react-icons/gi';
 
 type ViewMode = 'calendar' | 'records' | 'cards';
 
-export default function PracticeManagementPage() {
+function PracticeManagementContent() {
   const { user } = useAuth();
   // const router = useRouter(); // 将来的な機能拡張用
   const searchParams = useSearchParams();
@@ -693,5 +693,13 @@ export default function PracticeManagementPage() {
         </div>
       )}
     </AuthGuard>
+  );
+}
+
+export default function PracticeManagementPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PracticeManagementContent />
+    </Suspense>
   );
 }

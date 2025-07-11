@@ -1,0 +1,9 @@
+rallynet-mobile/
+node_modules/
+.next/
+.git/
+README.md
+*.md
+tsconfig.tsbuildinfo
+.env.local
+.env.example
