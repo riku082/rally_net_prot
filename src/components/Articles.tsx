@@ -112,40 +112,39 @@ const Articles: React.FC = () => {
           <p className="text-gray-600">現在表示できる記事がありません。</p>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {articles.map((article) => (
             <Link key={article.id} href={`/articles/${article.id}`}>
-              <article className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-6 pb-8 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 rounded-lg p-4 transition-all duration-200 cursor-pointer group">
-                <div className="flex-shrink-0">
-                  <div className="relative">
-                    <img 
-                      src={article.thumbnail} 
-                      alt={article.title}
-                      className="w-full md:w-40 h-32 object-cover rounded-lg group-hover:shadow-lg transition-shadow"
-                    />
-                    {article.featured && (
-                      <div className="absolute top-2 left-2">
-                        <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800 shadow-sm">
-                          <FiStar className="w-3 h-3 mr-1" />
-                          注目
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className={`px-3 py-1 text-xs font-medium rounded-full ${getCategoryColor(article.category)}`}>
+              <article className="bg-white rounded-xl shadow-lg overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300">
+                {/* アイキャッチ画像 */}
+                <div className="relative">
+                  <img 
+                    src={article.thumbnail} 
+                    alt={article.title}
+                    className="w-full h-48 md:h-56 object-cover group-hover:scale-105 transition-all duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                  {article.featured && (
+                    <div className="absolute top-4 left-4">
+                      <span className="flex items-center px-3 py-1 text-sm font-medium rounded-full bg-yellow-400 text-yellow-900 shadow-lg">
+                        <FiStar className="w-4 h-4 mr-1" />
+                        注目記事
+                      </span>
+                    </div>
+                  )}
+                  <div className="absolute bottom-4 left-4">
+                    <span className={`px-3 py-1 text-sm font-medium rounded-full ${getCategoryColor(article.category)} shadow-lg`}>
                       {getCategoryLabel(article.category)}
                     </span>
                   </div>
-                  
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                </div>
+                
+                <div className="px-4 pb-6">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
                     {article.title}
                   </h3>
                   
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-3 leading-relaxed">
+                  <p className="text-gray-600 text-base mb-4 line-clamp-3 leading-relaxed">
                     {article.summary}
                   </p>
                   
