@@ -215,8 +215,8 @@ const ProfilePage: React.FC = () => {
         updatedProfile.preferredGameType = formData.preferredGameType as 'singles' | 'doubles' | 'both';
       }
 
-      await firestoreDb.saveUserProfile(updatedProfile);
-      setProfile(updatedProfile);
+      await firestoreDb.saveUserProfile(updatedProfile as UserProfile);
+      setProfile(updatedProfile as UserProfile);
       setIsEditing(false);
       setAvatarFile(null); // アップロード後ファイルをクリア
 

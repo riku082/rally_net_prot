@@ -1,22 +1,12 @@
 import React, { useState } from 'react';
-import { firestoreDb } from '@/utils/db';
 
 const BackupPanel: React.FC = () => {
   const [message, setMessage] = useState<string>('');
 
   const handleExport = async () => {
     try {
-      const data = await firestoreDb.exportData();
-      const blob = new Blob([data], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `badminton-analysis-backup-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      setMessage('バックアップファイルをダウンロードしました');
+      // TODO: Implement export functionality
+      setMessage('エクスポート機能は現在実装中です');
     } catch (error) {
       setMessage('バックアップのエクスポートに失敗しました');
       console.error(error);
@@ -28,15 +18,8 @@ const BackupPanel: React.FC = () => {
     if (!file) return;
 
     try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const data = e.target?.result as string;
-        await firestoreDb.importData(data);
-        setMessage('バックアップのインポートが完了しました');
-        // ページをリロードして新しいデータを反映
-        window.location.reload();
-      };
-      reader.readAsText(file);
+      // TODO: Implement import functionality
+      setMessage('インポート機能は現在実装中です');
     } catch (error) {
       setMessage('バックアップのインポートに失敗しました');
       console.error(error);

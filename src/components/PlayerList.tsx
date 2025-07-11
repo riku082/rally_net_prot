@@ -132,7 +132,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, shots, onPlayerDeleted
         labels: {
           font: {
             size: 11,
-            weight: '500'
+            weight: 500
           },
           color: '#6B7280',
           usePointStyle: true,

@@ -145,7 +145,7 @@ export class PrivacyChecker {
   static async checkIsFriend(
     userId: string,
     targetUserId: string,
-    firestoreDb: unknown
+    firestoreDb: { getAcceptedFriendships: (userId: string) => Promise<unknown[]> }
   ): Promise<boolean> {
     try {
       const friendships = await firestoreDb.getAcceptedFriendships(userId);

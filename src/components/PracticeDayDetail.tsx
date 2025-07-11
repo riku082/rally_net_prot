@@ -292,7 +292,7 @@ const PracticeDayDetail: React.FC<PracticeDayDetailProps> = ({
                                 {card.difficulty === 'beginner' ? '初級' : card.difficulty === 'intermediate' ? '中級' : '上級'}
                               </span>
                               <span className="text-xs text-gray-500">
-                                {formatDuration(card.estimatedDuration)}
+                                30分
                               </span>
                             </div>
                           </div>

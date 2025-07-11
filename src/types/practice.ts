@@ -13,8 +13,30 @@ export interface Practice {
   skills: PracticeSkill[];
   goals?: string[];
   achievements?: string[];
+  routine?: PracticeRoutineExecution; // 練習カードのルーティン情報
   createdAt: number; // timestamp
   updatedAt: number; // timestamp
+}
+
+// 練習記録内でのルーティン実行情報
+export interface PracticeRoutineExecution {
+  cards: PracticeCardExecution[]; // 実行した練習カード
+  totalPlannedDuration: number; // 計画された総時間
+  totalActualDuration: number; // 実際の総時間
+  completedCards: number; // 完了したカード数
+  notes?: string; // ルーティン全体のメモ
+}
+
+// 練習記録内での個別カード実行情報
+export interface PracticeCardExecution {
+  cardId: string;
+  cardTitle: string;
+  order: number; // 実行順序
+  plannedDuration: number; // 計画時間
+  actualDuration?: number; // 実際の時間
+  completed: boolean; // 完了したかどうか
+  notes?: string; // このカード特有のメモ
+  rating?: number; // このカードの評価（1-5）
 }
 
 export type PracticeType = 

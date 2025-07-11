@@ -7,7 +7,7 @@ import Topbar from '@/components/Topbar';
 import AuthGuard from '@/components/AuthGuard';
 import MBTIDiagnostic from '@/components/MBTIDiagnostic';
 import MBTIResult from '@/components/MBTIResult';
-import { MBTIResult as MBTIResultType } from '@/types/mbti';
+import { MBTIResult as MBTIResultType, MBTIType } from '@/types/mbti';
 import { useAuth } from '@/context/AuthContext';
 import { FaBrain, FaPlay, FaHistory, FaChartBar, FaUsers, FaHandshake } from 'react-icons/fa';
 import { GiShuttlecock } from 'react-icons/gi';
@@ -104,7 +104,7 @@ export default function MBTIPage() {
       case DiagnosticState.TEAM_ANALYZER:
         return <TeamAnalyzer />;
       case DiagnosticState.PARTNER_MATCHER:
-        return currentResult ? <PartnerMatcher userMBTIType={currentResult.result as string} /> : <div>診断を先に受けてください</div>;
+        return currentResult ? <PartnerMatcher userMBTIType={currentResult.result as MBTIType} /> : <div>診断を先に受けてください</div>;
       case DiagnosticState.STATISTICS:
         return <StatisticsPanel />;
       default:

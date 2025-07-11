@@ -247,23 +247,23 @@ export default function LandingPage() {
 }
 
 // 機能カードコンポーネント
+const colorClasses = {
+  blue: 'from-blue-500 to-blue-600',
+  purple: 'from-purple-500 to-purple-600',
+  green: 'from-green-500 to-green-600',
+  orange: 'from-orange-500 to-orange-600',
+  red: 'from-red-500 to-red-600',
+  indigo: 'from-indigo-500 to-indigo-600',
+} as const;
+
 interface FeatureCardProps {
   icon: React.ReactNode;
   title: string;
   description: string;
-  color: string;
+  color: keyof typeof colorClasses;
 }
 
 const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description, color }) => {
-  const colorClasses = {
-    blue: 'from-blue-500 to-blue-600',
-    purple: 'from-purple-500 to-purple-600',
-    green: 'from-green-500 to-green-600',
-    orange: 'from-orange-500 to-orange-600',
-    red: 'from-red-500 to-red-600',
-    indigo: 'from-indigo-500 to-indigo-600',
-  };
-
   return (
     <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
       <div className={`inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r ${colorClasses[color]} rounded-lg mb-4`}>

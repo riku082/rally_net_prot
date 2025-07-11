@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { MBTIResult, MBTIType } from '@/types/mbti';
+import type { MBTIResult, MBTIType } from '@/types/mbti';
 import { badmintonMBTITypes } from '@/data/badmintonMBTITypes';
 import { FaShare, FaUser, FaChartBar, FaLightbulb, FaExclamationTriangle, FaUsers, FaTrophy, FaShieldAlt, FaEye, FaCog, FaPercent } from 'react-icons/fa';
 import { GiShuttlecock } from 'react-icons/gi';
@@ -18,7 +18,7 @@ interface MBTIResultProps {
 }
 
 const MBTIResult: React.FC<MBTIResultProps> = ({ result, onRestart, previousResults }) => {
-  const typeData = badmintonMBTITypes[result.result];
+  const typeData = badmintonMBTITypes[result.result as MBTIType];
   
 
   const totalAnswers = Object.values(result.scores).reduce((a, b) => a + b, 0);

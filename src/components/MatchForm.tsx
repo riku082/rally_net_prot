@@ -146,7 +146,7 @@ const MatchForm: React.FC<MatchFormProps> = ({ players, onMatchAdded }) => {
         },
         ownerUserId: user.uid, // 試合を記録したユーザーのID
         createdAt: Date.now(),
-        youtubeVideoId: extractYouTubeVideoId(videoUrl),
+        youtubeVideoId: extractYouTubeVideoId(videoUrl) || undefined,
         youtubeVideoTitle: videoTitle || '動画',
       });
       // フォームをリセット

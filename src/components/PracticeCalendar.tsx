@@ -264,7 +264,7 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-800">{card.title}</span>
-                      <span className="text-xs text-gray-500">{formatDuration(card.estimatedDuration)}</span>
+                      <span className="text-xs text-gray-500">30分</span>
                     </div>
                   </button>
                 ))}

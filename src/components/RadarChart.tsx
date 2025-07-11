@@ -19,7 +19,7 @@ interface RadarChartProps {
 
 const RadarChart: React.FC<RadarChartProps> = ({ data, maxValue = 4, size = 300 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number>(0);
   const progressRef = useRef<number>(0);
 
   // 4つの主要軸のデータを準備

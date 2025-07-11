@@ -737,7 +737,7 @@ const BadmintonCourt: React.FC<BadmintonCourtProps> = ({
                     {availablePlayers.map((playerId) => (
                       <button
                         key={playerId}
-                        onClick={() => setHitPlayer(playerId)}
+                        onClick={() => setHitPlayer(playerId || '')}
                         className={`p-3 text-sm font-medium rounded-lg ${
                           hitPlayer === playerId
                             ? 'bg-blue-500 text-white shadow-lg'
@@ -745,7 +745,7 @@ const BadmintonCourt: React.FC<BadmintonCourtProps> = ({
                         } transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
                         disabled={playerId === receivePlayer}
                       >
-                        {getPlayerName(playerId)}
+                        {getPlayerName(playerId || '')}
                       </button>
                     ))}
                   </div>
@@ -758,7 +758,7 @@ const BadmintonCourt: React.FC<BadmintonCourtProps> = ({
                     {availablePlayers.map((playerId) => (
                       <button
                         key={playerId}
-                        onClick={() => setReceivePlayer(playerId)}
+                        onClick={() => setReceivePlayer(playerId || '')}
                         className={`p-3 text-sm font-medium rounded-lg ${
                           receivePlayer === playerId
                             ? 'bg-blue-500 text-white shadow-lg'
@@ -766,7 +766,7 @@ const BadmintonCourt: React.FC<BadmintonCourtProps> = ({
                         } transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
                         disabled={playerId === hitPlayer}
                       >
-                        {getPlayerName(playerId)}
+                        {getPlayerName(playerId || '')}
                       </button>
                     ))}
                   </div>

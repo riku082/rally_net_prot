@@ -239,7 +239,7 @@ function generateAlternativeType(mainType: string, dimensionToFlip: string): str
 }
 
 // 成長レベルの判定
-export function assessGrowthLevel(answers: MBTIAnswer[], type: MBTIType): {
+export function assessGrowthLevel(answers: MBTIAnswer[]): {
   level: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
   description: string;
   nextSteps: string[];

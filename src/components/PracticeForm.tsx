@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Practice, PracticeType, PracticeIntensity, PracticeSkill, SkillCategory } from '@/types/practice';
-import { FaClock, FaCalendarAlt, FaStar, FaPlus, FaTrash } from 'react-icons/fa';
+import { Practice, PracticeType, PracticeIntensity, PracticeSkill, SkillCategory, PracticeCard, PracticeCardExecution, PracticeRoutineExecution } from '@/types/practice';
+import { FaClock, FaCalendarAlt, FaStar, FaPlus, FaTrash, FaLayerGroup } from 'react-icons/fa';
 import { FiSave, FiX } from 'react-icons/fi';
+import RoutineBuilder from './RoutineBuilder';
 
 interface PracticeFormProps {
   practice?: Practice;
@@ -11,6 +12,7 @@ interface PracticeFormProps {
   onCancel: () => void;
   isLoading?: boolean;
   initialDate?: string;
+  availableCards?: PracticeCard[];
 }
 
 const PracticeForm: React.FC<PracticeFormProps> = ({ 
@@ -18,7 +20,8 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
   onSave, 
   onCancel, 
   isLoading = false,
-  initialDate
+  initialDate,
+  availableCards = []
 }) => {
   const [formData, setFormData] = useState({
     date: practice?.date || initialDate || new Date().toISOString().split('T')[0],
@@ -32,7 +35,13 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
     skills: practice?.skills || [] as PracticeSkill[],
     goals: practice?.goals || [],
     achievements: practice?.achievements || [],
+    routine: practice?.routine || null as PracticeRoutineExecution | null,
   });
+
+  const [routineCards, setRoutineCards] = useState<PracticeCardExecution[]>(
+    practice?.routine?.cards || []
+  );
+  const [useRoutine, setUseRoutine] = useState(!!practice?.routine);
 
   const practiceTypes = [
     { value: 'basic_practice', label: '基礎練習' },
@@ -68,10 +77,48 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
   ];
 
   const calculateDuration = () => {
+    if (useRoutine && routineCards.length > 0) {
+      // ルーティンを使用する場合は、カードの合計時間を使用
+      return routineCards.reduce((sum, card) => sum + (card.actualDuration || card.plannedDuration), 0);
+    }
+    
+    // 通常の練習の場合は、開始時間と終了時間から計算
     if (!formData.startTime || !formData.endTime) return 0;
     const start = new Date(`2000-01-01T${formData.startTime}`);
     const end = new Date(`2000-01-01T${formData.endTime}`);
     return Math.max(0, (end.getTime() - start.getTime()) / (1000 * 60));
+  };
+
+  const handleRoutineCardsChange = (cards: PracticeCardExecution[]) => {
+    setRoutineCards(cards);
+    
+    // ルーティンを使用している場合、時間を自動調整
+    if (useRoutine && cards.length > 0) {
+      const totalDuration = cards.reduce((sum, card) => sum + card.plannedDuration, 0);
+      const startTime = new Date(`2000-01-01T${formData.startTime}:00`);
+      const endTime = new Date(startTime.getTime() + totalDuration * 60000);
+      
+      setFormData(prev => ({
+        ...prev,
+        endTime: endTime.toTimeString().slice(0, 5),
+        title: prev.title || `練習ルーティン (${cards.length}種目)`,
+        goals: cards.map(card => card.cardTitle)
+      }));
+    }
+  };
+
+  const toggleRoutineMode = (enabled: boolean) => {
+    setUseRoutine(enabled);
+    if (!enabled) {
+      setRoutineCards([]);
+      setFormData(prev => ({ ...prev, routine: null }));
+    } else if (routineCards.length === 0) {
+      // ルーティンモードを有効にしたときに、タイトルを初期化
+      setFormData(prev => ({
+        ...prev,
+        title: prev.title || '練習ルーティン'
+      }));
+    }
   };
 
   const addSkill = () => {
@@ -109,9 +156,22 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
     e.preventDefault();
     const duration = calculateDuration();
     
+    let routine: PracticeRoutineExecution | undefined = undefined;
+    
+    if (useRoutine && routineCards.length > 0) {
+      routine = {
+        cards: routineCards,
+        totalPlannedDuration: routineCards.reduce((sum, card) => sum + card.plannedDuration, 0),
+        totalActualDuration: routineCards.reduce((sum, card) => sum + (card.actualDuration || card.plannedDuration), 0),
+        completedCards: routineCards.filter(card => card.completed).length,
+        notes: formData.notes
+      };
+    }
+    
     onSave({
       ...formData,
       duration,
+      routine,
     });
   };
 
@@ -249,6 +309,40 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
             rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+        </div>
+
+        {/* ルーティンモード切り替え */}
+        <div className="border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-4">
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={useRoutine}
+                onChange={(e) => toggleRoutineMode(e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700 flex items-center">
+                <FaLayerGroup className="w-4 h-4 mr-2" />
+                練習カードを組み合わせてルーティンを作成
+              </span>
+            </label>
+          </div>
+          
+          {useRoutine && (
+            <div className="mt-4">
+              <RoutineBuilder
+                availableCards={availableCards}
+                selectedCards={routineCards}
+                onCardsChange={handleRoutineCardsChange}
+              />
+            </div>
+          )}
+          
+          {!useRoutine && (
+            <p className="text-sm text-gray-500">
+              練習カードを選択して組み合わせることで、構造化された練習ルーティンを作成できます。
+            </p>
+          )}
         </div>
 
         {/* スキル評価 */}

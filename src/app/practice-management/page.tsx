@@ -671,6 +671,7 @@ export default function PracticeManagementPage() {
               }}
               isLoading={isSaving}
               initialDate={formInitialDate}
+              availableCards={practiceCards}
             />
           </div>
         </div>

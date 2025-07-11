@@ -1,5 +1,5 @@
 import { db, storage } from './firebase';
-import { collection, getDocs, deleteDoc, doc, setDoc, getDoc, query, where, updateDoc, enableNetwork, disableNetwork } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, setDoc, getDoc, query, where, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Player } from '@/types/player';
 import { Match } from '@/types/match';
@@ -10,28 +10,7 @@ import { MatchRequest, MatchRequestStatus } from '@/types/matchRequest';
 import { MBTIResult, MBTIDiagnostic } from '@/types/mbti';
 import { Practice, PracticeGoal, PracticeStats } from '@/types/practice';
 
-// Firebase接続の最適化設定
-const optimizeFirebaseConnection = () => {
-  // 同時接続数の制限を緩和
-  const maxConcurrentRequests = 10;
-  let currentRequests = 0;
-  
-  return {
-    async executeWithLimit<T>(operation: () => Promise<T>): Promise<T> {
-      if (currentRequests >= maxConcurrentRequests) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-      currentRequests++;
-      try {
-        return await operation();
-      } finally {
-        currentRequests--;
-      }
-    }
-  };
-};
 
-const connectionOptimizer = optimizeFirebaseConnection();
 
 export const firestoreDb = {
   // 選手
@@ -135,7 +114,14 @@ export const firestoreDb = {
         status: 'pending',
         createdAt: Date.now(),
         updatedAt: Date.now(),
-        matchData: matchData, // 試合データ全体をリクエストに含める
+        matchData: {
+          ...matchData,
+          players: {
+            ...matchData.players,
+            player2: matchData.players.player2 || undefined,
+            opponent2: matchData.players.opponent2 || undefined,
+          }
+        }, // 試合データ全体をリクエストに含める
       };
       await setDoc(doc(db, 'matchRequests', matchRequestId), newMatchRequest);
     }));
@@ -670,10 +656,10 @@ export const firestoreDb = {
       totalPractices,
       totalDuration,
       averageDuration,
-      practicesByType: practicesByType as any,
-      practicesByIntensity: practicesByIntensity as any,
-      skillAverages: skillAverages as any,
-      improvementTrends: {} as any, // 今回は簡略化
+      practicesByType: practicesByType as Record<string, number>,
+      practicesByIntensity: practicesByIntensity as Record<string, number>,
+      skillAverages: skillAverages as Record<string, number>,
+      improvementTrends: {} as Record<string, number[]>, // 今回は簡略化
       monthlyStats,
       currentStreak,
       longestStreak,

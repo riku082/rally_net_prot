@@ -128,8 +128,7 @@ const AnalysisPage: React.FC = () => {
     const newShot: Shot = {
       ...shot,
       id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date().toISOString(),
-      userId: user.uid
+      timestamp: Date.now()
     };
     
     // 一時データに追加

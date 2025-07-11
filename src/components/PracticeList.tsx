@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Practice, PracticeType, PracticeIntensity } from '@/types/practice';
-import { FaClock, FaCalendarAlt, FaEdit, FaTrash, FaStar, FaFilter } from 'react-icons/fa';
+import { FaClock, FaCalendarAlt, FaEdit, FaTrash, FaStar, FaFilter, FaLayerGroup, FaCheckCircle } from 'react-icons/fa';
 import { FiTrendingUp, FiTarget } from 'react-icons/fi';
 import { GiShuttlecock } from 'react-icons/gi';
 
@@ -262,13 +262,23 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <div className="flex items-center space-x-3 mb-2">
-              <h3 className="text-lg font-semibold text-gray-900">{practice.title}</h3>
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                {practice.title}
+                {practice.routine && (
+                  <FaLayerGroup className="w-4 h-4 ml-2 text-purple-600" title="ルーティン練習" />
+                )}
+              </h3>
               <span className={`px-2 py-1 rounded-full text-xs font-medium ${intensityColor}`}>
                 {intensityLabel}
               </span>
               <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
                 {typeLabel}
               </span>
+              {practice.routine && (
+                <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
+                  ルーティン
+                </span>
+              )}
             </div>
             
             <div className="flex items-center space-x-4 text-sm text-gray-600">
@@ -320,6 +330,43 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
             <div className="mt-3">
               <h4 className="text-sm font-medium text-gray-700 mb-1">練習内容</h4>
               <p className="text-sm text-gray-600">{practice.description}</p>
+            </div>
+          )}
+
+          {practice.routine && (
+            <div className="mt-3">
+              <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                <FaLayerGroup className="w-3 h-3 mr-1" />
+                練習ルーティン ({practice.routine.completedCards}/{practice.routine.cards.length}種目完了)
+              </h4>
+              <div className="space-y-2">
+                {practice.routine.cards.map((card, index) => (
+                  <div key={`${card.cardId}-${index}`} className="flex items-center justify-between text-sm bg-white rounded p-2">
+                    <div className="flex items-center space-x-2">
+                      <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                        {card.order}
+                      </span>
+                      <span className="text-gray-700">{card.cardTitle}</span>
+                      {card.completed && (
+                        <FaCheckCircle className="w-3 h-3 text-green-500" />
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2 text-xs text-gray-500">
+                      <span>{card.actualDuration || card.plannedDuration}分</span>
+                      {card.rating && (
+                        <div className="flex items-center">
+                          <FaStar className="w-3 h-3 text-yellow-500 mr-1" />
+                          <span>{card.rating}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 text-xs text-gray-500 flex justify-between">
+                <span>計画時間: {practice.routine.totalPlannedDuration}分</span>
+                <span>実際時間: {practice.routine.totalActualDuration}分</span>
+              </div>
             </div>
           )}
           
