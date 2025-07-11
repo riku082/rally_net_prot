@@ -90,15 +90,13 @@ export interface PracticeStats {
   lastPracticeDate?: string;
 }
 
-// 練習カード関連の型定義
+// 練習カード関連の型定義（単一練習用）
 export interface PracticeCard {
   id: string;
   userId: string;
-  title: string;
+  title: string; // 例: "基礎うち", "クリア練習", "ネット前ドロップ"
   description: string;
-  objectives: string[]; // 練習目標
-  drills: PracticeDrill[]; // 練習メニュー
-  estimatedDuration: number; // 推定時間（分）
+  drill: PracticeDrill; // 単一の練習メニュー
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   skillCategories: SkillCategory[]; // 対象スキル
   equipment: string[]; // 必要な用具
@@ -111,6 +109,36 @@ export interface PracticeCard {
   rating?: number; // 1-5の評価
   createdAt: number;
   updatedAt: number;
+}
+
+// 練習ルーティン（複数のカードを組み合わせ）
+export interface PracticeRoutine {
+  id: string;
+  userId: string;
+  title: string;
+  description: string;
+  cardSequence: PracticeRoutineItem[]; // カードの順序と設定
+  totalDuration: number; // 総時間（分）
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  objectives: string[]; // 全体的な練習目標
+  notes?: string;
+  tags: string[];
+  isPublic: boolean;
+  usageCount: number;
+  lastUsed?: string;
+  rating?: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+// ルーティン内のカード項目
+export interface PracticeRoutineItem {
+  cardId: string;
+  order: number; // 実行順序
+  repetitions?: number; // 繰り返し回数
+  restTime?: number; // 次のカードまでの休憩時間（秒）
+  customDuration?: number; // カスタム時間（分）オリジナルと異なる場合
+  notes?: string; // この項目特有のメモ
 }
 
 export interface PracticeDrill {

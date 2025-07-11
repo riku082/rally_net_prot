@@ -74,10 +74,10 @@ const PracticeCardList: React.FC<PracticeCardListProps> = ({
     }
 
     // 時間フィルター
-    if (filter.maxDuration && card.estimatedDuration > filter.maxDuration) {
+    if (filter.maxDuration && card.drill.duration > filter.maxDuration) {
       return false;
     }
-    if (filter.minDuration && card.estimatedDuration < filter.minDuration) {
+    if (filter.minDuration && card.drill.duration < filter.minDuration) {
       return false;
     }
 
@@ -271,7 +271,7 @@ const PracticeCardList: React.FC<PracticeCardListProps> = ({
               <div>
                 <p className="text-sm text-green-600 font-medium">平均時間</p>
                 <p className="text-2xl font-bold text-green-800">
-                  {Math.round(cards.reduce((sum, c) => sum + c.estimatedDuration, 0) / cards.length)}分
+                  {Math.round(cards.reduce((sum, c) => sum + c.drill.duration, 0) / cards.length)}分
                 </p>
               </div>
             </div>
@@ -423,7 +423,7 @@ const PracticeCardItem: React.FC<PracticeCardItemProps> = ({
               </span>
               <span className="flex items-center text-sm text-gray-600">
                 <FaClock className="w-3 h-3 mr-1" />
-                {formatDuration(card.estimatedDuration)}
+                {formatDuration(card.drill.duration)}
               </span>
             </div>
           </div>
@@ -532,46 +532,26 @@ const PracticeCardItem: React.FC<PracticeCardItemProps> = ({
       {/* 詳細情報 */}
       {showDetails && (
         <div className="px-4 pb-4 border-t border-gray-100 bg-gray-50 space-y-3">
-          {/* 練習目標 */}
-          {card.objectives.length > 0 && (
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
-                <FaBullseye className="w-3 h-3 mr-1" />
-                練習目標
-              </h4>
-              <ul className="text-sm text-gray-600 space-y-1">
-                {card.objectives.map((objective, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="w-1 h-1 bg-gray-400 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                    {objective}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* 練習メニュー */}
-          {card.drills.length > 0 && (
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">練習メニュー ({card.drills.length}個)</h4>
-              <div className="space-y-2">
-                {card.drills.slice(0, 3).map((drill) => (
-                  <div key={drill.id} className="text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-gray-700">{drill.name}</span>
-                      <span className="text-gray-500">{drill.duration}分</span>
-                    </div>
-                    {drill.description && (
-                      <p className="text-gray-600 text-xs mt-1">{drill.description}</p>
-                    )}
-                  </div>
-                ))}
-                {card.drills.length > 3 && (
-                  <p className="text-xs text-gray-500">他 {card.drills.length - 3} 個のメニュー</p>
-                )}
+          {/* 練習詳細 */}
+          <div>
+            <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+              <FaBullseye className="w-3 h-3 mr-1" />
+              練習詳細
+            </h4>
+            <div className="bg-white rounded p-3 text-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium text-gray-700">{card.drill.name}</span>
+                <span className="text-gray-500">{card.drill.duration}分</span>
               </div>
+              <div className="flex items-center space-x-4 mb-2 text-xs text-gray-600">
+                <span>スキル: {getSkillCategoryLabel(card.drill.skillCategory)}</span>
+                <span>強度: {card.drill.intensity}</span>
+              </div>
+              {card.drill.description && (
+                <p className="text-gray-600 text-xs">{card.drill.description}</p>
+              )}
             </div>
-          )}
+          </div>
 
           {/* 必要な用具 */}
           {card.equipment.length > 0 && (
