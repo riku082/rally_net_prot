@@ -16,24 +16,34 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
   const [notes, setNotes] = useState(courtInfo?.notes || '');
 
   const courtZones = [
-    { id: 'backcourt_left', name: '後衛左' },
-    { id: 'backcourt_center', name: '後衛中央' },
-    { id: 'backcourt_right', name: '後衛右' },
-    { id: 'midcourt_left', name: '中衛左' },
-    { id: 'midcourt_center', name: '中衛中央' },
-    { id: 'midcourt_right', name: '中衛右' },
-    { id: 'frontcourt_left', name: '前衛左' },
-    { id: 'frontcourt_center', name: '前衛中央' },
-    { id: 'frontcourt_right', name: '前衛右' },
-    { id: 'net_left', name: 'ネット際左' },
-    { id: 'net_center', name: 'ネット際中央' },
-    { id: 'net_right', name: 'ネット際右' },
-    { id: 'service_box_left', name: '左サービスボックス' },
-    { id: 'service_box_right', name: '右サービスボックス' },
-    { id: 'baseline', name: 'ベースライン' },
-    { id: 'sideline_left', name: '左サイドライン' },
-    { id: 'sideline_right', name: '右サイドライン' },
-    { id: 'full_court', name: 'コート全体' },
+    // 上側コート（相手側）
+    { id: 'backcourt_left', name: '後衛左', side: 'top' },
+    { id: 'backcourt_center', name: '後衛中央', side: 'top' },
+    { id: 'backcourt_right', name: '後衛右', side: 'top' },
+    { id: 'midcourt_left', name: '中衛左', side: 'top' },
+    { id: 'midcourt_center', name: '中衛中央', side: 'top' },
+    { id: 'midcourt_right', name: '中衛右', side: 'top' },
+    { id: 'frontcourt_left', name: '前衛左', side: 'top' },
+    { id: 'frontcourt_center', name: '前衛中央', side: 'top' },
+    { id: 'frontcourt_right', name: '前衛右', side: 'top' },
+    { id: 'service_box_left', name: '左サービスボックス', side: 'top' },
+    { id: 'service_box_right', name: '右サービスボックス', side: 'top' },
+    
+    // 下側コート（自分側）- 上側と対称
+    { id: 'frontcourt_left_own', name: '前衛左（自分側）', side: 'bottom' },
+    { id: 'frontcourt_center_own', name: '前衛中央（自分側）', side: 'bottom' },
+    { id: 'frontcourt_right_own', name: '前衛右（自分側）', side: 'bottom' },
+    { id: 'service_box_left_own', name: '左サービスボックス（自分側）', side: 'bottom' },
+    { id: 'service_box_right_own', name: '右サービスボックス（自分側）', side: 'bottom' },
+    { id: 'midcourt_left_own', name: '中衛左（自分側）', side: 'bottom' },
+    { id: 'midcourt_center_own', name: '中衛中央（自分側）', side: 'bottom' },
+    { id: 'midcourt_right_own', name: '中衛右（自分側）', side: 'bottom' },
+    { id: 'backcourt_left_own', name: '後衛左（自分側）', side: 'bottom' },
+    { id: 'backcourt_center_own', name: '後衛中央（自分側）', side: 'bottom' },
+    { id: 'backcourt_right_own', name: '後衛右（自分側）', side: 'bottom' },
+    
+    // 全体
+    { id: 'full_court', name: 'コート全体', side: 'both' },
   ] as const;
 
   const handleAreaToggle = (zoneId: CourtZone) => {
@@ -121,11 +131,12 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
           </div>
         </div>
 
-        {/* 簡単なコート図 */}
+        {/* 対称的なコート図 */}
         <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-4">
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {/* 後衛 */}
-            <div className="text-center text-xs text-gray-600 mb-2 col-span-3">後衛エリア</div>
+          <div className="text-center text-sm text-gray-700 mb-3 font-semibold">相手側コート</div>
+          
+          {/* 上側コート - 後衛 */}
+          <div className="grid grid-cols-3 gap-2 mb-2">
             {['backcourt_left', 'backcourt_center', 'backcourt_right'].map(zoneId => {
               const zone = courtZones.find(z => z.id === zoneId);
               const isSelected = selectedAreas.includes(zoneId as CourtZone);
@@ -135,7 +146,7 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
                 <button
                   key={zoneId}
                   onClick={() => handleAreaToggle(zoneId as CourtZone)}
-                  className={`p-3 rounded border-2 text-xs font-medium transition-colors ${
+                  className={`p-2 rounded border-2 text-xs font-medium transition-colors ${
                     isSelected
                       ? isFocus
                         ? 'border-red-500 bg-red-200 text-red-800'
@@ -144,15 +155,14 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
                   }`}
                 >
                   {isSelected && <FaCheck className="w-3 h-3 mx-auto mb-1" />}
-                  {zone?.name}
+                  <div className="text-xs">{zone?.name}</div>
                 </button>
               );
             })}
           </div>
 
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {/* 中衛 */}
-            <div className="text-center text-xs text-gray-600 mb-2 col-span-3">中衛エリア</div>
+          {/* 上側コート - 中衛 */}
+          <div className="grid grid-cols-3 gap-2 mb-2">
             {['midcourt_left', 'midcourt_center', 'midcourt_right'].map(zoneId => {
               const zone = courtZones.find(z => z.id === zoneId);
               const isSelected = selectedAreas.includes(zoneId as CourtZone);
@@ -162,7 +172,7 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
                 <button
                   key={zoneId}
                   onClick={() => handleAreaToggle(zoneId as CourtZone)}
-                  className={`p-3 rounded border-2 text-xs font-medium transition-colors ${
+                  className={`p-2 rounded border-2 text-xs font-medium transition-colors ${
                     isSelected
                       ? isFocus
                         ? 'border-red-500 bg-red-200 text-red-800'
@@ -171,15 +181,14 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
                   }`}
                 >
                   {isSelected && <FaCheck className="w-3 h-3 mx-auto mb-1" />}
-                  {zone?.name}
+                  <div className="text-xs">{zone?.name}</div>
                 </button>
               );
             })}
           </div>
 
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {/* 前衛 */}
-            <div className="text-center text-xs text-gray-600 mb-2 col-span-3">前衛エリア</div>
+          {/* 上側コート - 前衛 */}
+          <div className="grid grid-cols-3 gap-2 mb-2">
             {['frontcourt_left', 'frontcourt_center', 'frontcourt_right'].map(zoneId => {
               const zone = courtZones.find(z => z.id === zoneId);
               const isSelected = selectedAreas.includes(zoneId as CourtZone);
@@ -189,7 +198,7 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
                 <button
                   key={zoneId}
                   onClick={() => handleAreaToggle(zoneId as CourtZone)}
-                  className={`p-3 rounded border-2 text-xs font-medium transition-colors ${
+                  className={`p-2 rounded border-2 text-xs font-medium transition-colors ${
                     isSelected
                       ? isFocus
                         ? 'border-red-500 bg-red-200 text-red-800'
@@ -198,23 +207,86 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
                   }`}
                 >
                   {isSelected && <FaCheck className="w-3 h-3 mx-auto mb-1" />}
-                  {zone?.name}
+                  <div className="text-xs">{zone?.name}</div>
                 </button>
               );
             })}
+          </div>
+
+          {/* 上側コート - サービスボックス */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <button
+              onClick={() => handleAreaToggle('service_box_left' as CourtZone)}
+              className={`p-2 rounded border-2 text-xs font-medium transition-colors ${
+                selectedAreas.includes('service_box_left' as CourtZone)
+                  ? focusArea === 'service_box_left'
+                    ? 'border-red-500 bg-red-200 text-red-800'
+                    : 'border-blue-500 bg-blue-200 text-blue-800'
+                  : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {selectedAreas.includes('service_box_left' as CourtZone) && <FaCheck className="w-3 h-3 mx-auto mb-1" />}
+              <div className="text-xs">左サービス</div>
+            </button>
+            <div></div>
+            <button
+              onClick={() => handleAreaToggle('service_box_right' as CourtZone)}
+              className={`p-2 rounded border-2 text-xs font-medium transition-colors ${
+                selectedAreas.includes('service_box_right' as CourtZone)
+                  ? focusArea === 'service_box_right'
+                    ? 'border-red-500 bg-red-200 text-red-800'
+                    : 'border-blue-500 bg-blue-200 text-blue-800'
+                  : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {selectedAreas.includes('service_box_right' as CourtZone) && <FaCheck className="w-3 h-3 mx-auto mb-1" />}
+              <div className="text-xs">右サービス</div>
+            </button>
           </div>
 
           {/* ネット */}
           <div className="border-t-4 border-gray-800 my-4 relative">
-            <div className="absolute left-1/2 top-0 transform -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-xs text-gray-600 font-semibold">
+            <div className="absolute left-1/2 top-0 transform -translate-x-1/2 -translate-y-1/2 bg-white px-3 py-1 rounded text-xs text-gray-600 font-semibold shadow">
               ネット
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {/* ネット際 */}
-            <div className="text-center text-xs text-gray-600 mb-2 col-span-3">ネット際エリア</div>
-            {['net_left', 'net_center', 'net_right'].map(zoneId => {
+          <div className="text-center text-sm text-gray-700 mb-3 font-semibold">自分側コート</div>
+
+          {/* 下側コート - サービスボックス */}
+          <div className="grid grid-cols-3 gap-2 mb-2">
+            <button
+              onClick={() => handleAreaToggle('service_box_left_own' as CourtZone)}
+              className={`p-2 rounded border-2 text-xs font-medium transition-colors ${
+                selectedAreas.includes('service_box_left_own' as CourtZone)
+                  ? focusArea === 'service_box_left_own'
+                    ? 'border-red-500 bg-red-200 text-red-800'
+                    : 'border-blue-500 bg-blue-200 text-blue-800'
+                  : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {selectedAreas.includes('service_box_left_own' as CourtZone) && <FaCheck className="w-3 h-3 mx-auto mb-1" />}
+              <div className="text-xs">左サービス</div>
+            </button>
+            <div></div>
+            <button
+              onClick={() => handleAreaToggle('service_box_right_own' as CourtZone)}
+              className={`p-2 rounded border-2 text-xs font-medium transition-colors ${
+                selectedAreas.includes('service_box_right_own' as CourtZone)
+                  ? focusArea === 'service_box_right_own'
+                    ? 'border-red-500 bg-red-200 text-red-800'
+                    : 'border-blue-500 bg-blue-200 text-blue-800'
+                  : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {selectedAreas.includes('service_box_right_own' as CourtZone) && <FaCheck className="w-3 h-3 mx-auto mb-1" />}
+              <div className="text-xs">右サービス</div>
+            </button>
+          </div>
+
+          {/* 下側コート - 前衛 */}
+          <div className="grid grid-cols-3 gap-2 mb-2">
+            {['frontcourt_left_own', 'frontcourt_center_own', 'frontcourt_right_own'].map(zoneId => {
               const zone = courtZones.find(z => z.id === zoneId);
               const isSelected = selectedAreas.includes(zoneId as CourtZone);
               const isFocus = focusArea === zoneId;
@@ -223,7 +295,7 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
                 <button
                   key={zoneId}
                   onClick={() => handleAreaToggle(zoneId as CourtZone)}
-                  className={`p-3 rounded border-2 text-xs font-medium transition-colors ${
+                  className={`p-2 rounded border-2 text-xs font-medium transition-colors ${
                     isSelected
                       ? isFocus
                         ? 'border-red-500 bg-red-200 text-red-800'
@@ -232,16 +304,15 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
                   }`}
                 >
                   {isSelected && <FaCheck className="w-3 h-3 mx-auto mb-1" />}
-                  {zone?.name}
+                  <div className="text-xs">{zone?.name}</div>
                 </button>
               );
             })}
           </div>
 
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            {/* サービスボックス */}
-            <div className="text-center text-xs text-gray-600 mb-2 col-span-2">サービスボックス</div>
-            {['service_box_left', 'service_box_right'].map(zoneId => {
+          {/* 下側コート - 中衛 */}
+          <div className="grid grid-cols-3 gap-2 mb-2">
+            {['midcourt_left_own', 'midcourt_center_own', 'midcourt_right_own'].map(zoneId => {
               const zone = courtZones.find(z => z.id === zoneId);
               const isSelected = selectedAreas.includes(zoneId as CourtZone);
               const isFocus = focusArea === zoneId;
@@ -250,7 +321,7 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
                 <button
                   key={zoneId}
                   onClick={() => handleAreaToggle(zoneId as CourtZone)}
-                  className={`p-3 rounded border-2 text-xs font-medium transition-colors ${
+                  className={`p-2 rounded border-2 text-xs font-medium transition-colors ${
                     isSelected
                       ? isFocus
                         ? 'border-red-500 bg-red-200 text-red-800'
@@ -259,7 +330,33 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
                   }`}
                 >
                   {isSelected && <FaCheck className="w-3 h-3 mx-auto mb-1" />}
-                  {zone?.name}
+                  <div className="text-xs">{zone?.name}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 下側コート - 後衛 */}
+          <div className="grid grid-cols-3 gap-2">
+            {['backcourt_left_own', 'backcourt_center_own', 'backcourt_right_own'].map(zoneId => {
+              const zone = courtZones.find(z => z.id === zoneId);
+              const isSelected = selectedAreas.includes(zoneId as CourtZone);
+              const isFocus = focusArea === zoneId;
+              
+              return (
+                <button
+                  key={zoneId}
+                  onClick={() => handleAreaToggle(zoneId as CourtZone)}
+                  className={`p-2 rounded border-2 text-xs font-medium transition-colors ${
+                    isSelected
+                      ? isFocus
+                        ? 'border-red-500 bg-red-200 text-red-800'
+                        : 'border-blue-500 bg-blue-200 text-blue-800'
+                      : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {isSelected && <FaCheck className="w-3 h-3 mx-auto mb-1" />}
+                  <div className="text-xs">{zone?.name}</div>
                 </button>
               );
             })}
@@ -319,7 +416,17 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
                 }}
                 className="w-full text-left px-3 py-2 text-sm bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors"
               >
-                前衛エリア全体
+                相手側前衛エリア
+              </button>
+              <button
+                onClick={() => {
+                  const allAreas: CourtZone[] = ['frontcourt_left_own', 'frontcourt_center_own', 'frontcourt_right_own'];
+                  setSelectedAreas(allAreas);
+                  updateCourtInfo(allAreas, focusArea, courtType, notes);
+                }}
+                className="w-full text-left px-3 py-2 text-sm bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors"
+              >
+                自分側前衛エリア
               </button>
               <button
                 onClick={() => {
@@ -329,17 +436,27 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
                 }}
                 className="w-full text-left px-3 py-2 text-sm bg-red-50 text-red-700 rounded hover:bg-red-100 transition-colors"
               >
-                後衛エリア全体
+                相手側後衛エリア
               </button>
               <button
                 onClick={() => {
-                  const allAreas: CourtZone[] = ['service_box_left', 'service_box_right'];
+                  const allAreas: CourtZone[] = ['backcourt_left_own', 'backcourt_center_own', 'backcourt_right_own'];
+                  setSelectedAreas(allAreas);
+                  updateCourtInfo(allAreas, focusArea, courtType, notes);
+                }}
+                className="w-full text-left px-3 py-2 text-sm bg-red-50 text-red-700 rounded hover:bg-red-100 transition-colors"
+              >
+                自分側後衛エリア
+              </button>
+              <button
+                onClick={() => {
+                  const allAreas: CourtZone[] = ['service_box_left', 'service_box_right', 'service_box_left_own', 'service_box_right_own'];
                   setSelectedAreas(allAreas);
                   updateCourtInfo(allAreas, focusArea, courtType, notes);
                 }}
                 className="w-full text-left px-3 py-2 text-sm bg-purple-50 text-purple-700 rounded hover:bg-purple-100 transition-colors"
               >
-                サービスエリア
+                全サービスエリア
               </button>
               <button
                 onClick={() => {

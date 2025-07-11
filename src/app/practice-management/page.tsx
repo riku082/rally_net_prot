@@ -150,7 +150,7 @@ export default function PracticeManagementPage() {
           skillCategories: ['serve'],
           equipment: ['シャトル', 'ラケット'],
           courtInfo: {
-            targetAreas: ['service_box_left', 'service_box_right', 'backcourt_left', 'backcourt_right'],
+            targetAreas: ['service_box_left', 'service_box_right', 'backcourt_left', 'backcourt_center'],
             focusArea: 'backcourt_center',
             courtType: 'doubles',
             notes: 'サーブの到達地点を意識して練習する'
@@ -176,7 +176,7 @@ export default function PracticeManagementPage() {
           skillCategories: ['clear', 'drop'],
           equipment: ['シャトル', 'ラケット'],
           courtInfo: {
-            targetAreas: ['backcourt_center', 'frontcourt_left', 'frontcourt_right'],
+            targetAreas: ['backcourt_center', 'frontcourt_left_own', 'frontcourt_right_own'],
             focusArea: 'backcourt_center',
             courtType: 'singles',
             notes: 'クリアは後衛から、ドロップは前衛エリアへの精密なコントロールを練習'

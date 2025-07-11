@@ -144,6 +144,7 @@ export interface CourtArea {
 }
 
 export type CourtZone = 
+  // 相手側コート
   | 'frontcourt_left'      // 前衛左
   | 'frontcourt_center'    // 前衛中央
   | 'frontcourt_right'     // 前衛右
@@ -153,14 +154,31 @@ export type CourtZone =
   | 'backcourt_left'       // 後衛左
   | 'backcourt_center'     // 後衛中央
   | 'backcourt_right'      // 後衛右
+  | 'service_box_left'     // 左サービスボックス
+  | 'service_box_right'    // 右サービスボックス
+  
+  // 自分側コート（対称）
+  | 'frontcourt_left_own'      // 前衛左（自分側）
+  | 'frontcourt_center_own'    // 前衛中央（自分側）
+  | 'frontcourt_right_own'     // 前衛右（自分側）
+  | 'midcourt_left_own'        // 中衛左（自分側）
+  | 'midcourt_center_own'      // 中衛中央（自分側）
+  | 'midcourt_right_own'       // 中衛右（自分側）
+  | 'backcourt_left_own'       // 後衛左（自分側）
+  | 'backcourt_center_own'     // 後衛中央（自分側）
+  | 'backcourt_right_own'      // 後衛右（自分側）
+  | 'service_box_left_own'     // 左サービスボックス（自分側）
+  | 'service_box_right_own'    // 右サービスボックス（自分側）
+  
+  // 廃止されたエリア（後方互換性のため）
   | 'net_left'             // ネット際左
   | 'net_center'           // ネット際中央
   | 'net_right'            // ネット際右
-  | 'service_box_right'    // 右サービスボックス
-  | 'service_box_left'     // 左サービスボックス
   | 'baseline'             // ベースライン
   | 'sideline_left'        // 左サイドライン
   | 'sideline_right'       // 右サイドライン
+  
+  // 全体
   | 'full_court';          // コート全体
 
 export interface PracticeCourtInfo {
