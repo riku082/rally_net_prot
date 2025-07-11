@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import Topbar from '@/components/Topbar';
-import { FiMail, FiMessageSquare, FiSend, FiAlertCircle, FiCheck } from 'react-icons/fi';
+import { FiMail, FiSend, FiAlertCircle, FiCheck } from 'react-icons/fi';
 
 const FeedbackPage: React.FC = () => {
   const [formData, setFormData] = useState({
