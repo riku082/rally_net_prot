@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { MBTIResult } from '@/types/mbti';
-import { badmintonMBTITypes } from '@/data/badmintonMBTITypes';
 import { FaBullseye, FaCheckCircle, FaClock, FaFire } from 'react-icons/fa';
 
 interface PersonalizedTrainingProps {

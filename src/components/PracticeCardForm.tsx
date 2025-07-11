@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { PracticeCard, PracticeDrill, PracticeDifficulty, SkillCategory, PracticeIntensity, PracticeCourtInfo } from '@/types/practice';
 import { FaClock, FaPlus, FaTrash, FaTag, FaTools, FaBullseye } from 'react-icons/fa';
 import { FiSave, FiX } from 'react-icons/fi';
-import CourtSelector from './CourtSelector';
+import CourtSelector from './CourtSelectorSimple';
 
 interface PracticeCardFormProps {
   card?: PracticeCard;

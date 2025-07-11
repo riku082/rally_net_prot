@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Practice } from '@/types/practice';
-import { FaBook, FaClock, FaStar, FaPlus, FaArrowRight } from 'react-icons/fa';
+import { FaBook, FaClock, FaStar, FaPlus } from 'react-icons/fa';
 import { FiTrendingUp } from 'react-icons/fi';
 
 interface PracticeSummaryProps {
