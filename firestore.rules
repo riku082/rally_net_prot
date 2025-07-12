@@ -124,8 +124,13 @@ service cloud.firestore {
     }
     
     match /users/{userId}/shots/{shotId} {
-      allow read, write: if isOwner(userId) &&
-                        request.resource.data.userId == userId;
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && 
+                   request.resource.data.userId == userId;
+      allow update: if isOwner(userId) && 
+                   resource.data.userId == userId &&
+                   request.resource.data.userId == userId;
+      allow delete: if isOwner(userId) && resource.data.userId == userId;
     }
     
     match /users/{userId}/practices/{practiceId} {
@@ -138,13 +143,36 @@ service cloud.firestore {
     }
     
     match /users/{userId}/practiceGoals/{goalId} {
-      allow read, write: if isOwner(userId) &&
-                        request.resource.data.userId == userId;
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && 
+                   request.resource.data.userId == userId &&
+                   request.resource.data.keys().hasAll(['userId', 'goal', 'targetDate']) &&
+                   request.resource.data.goal is string &&
+                   request.resource.data.goal.size() > 0;
+      allow update: if isOwner(userId) && 
+                   resource.data.userId == userId &&
+                   request.resource.data.userId == userId;
+      allow delete: if isOwner(userId) && resource.data.userId == userId;
     }
     
     match /users/{userId}/practiceCards/{cardId} {
-      allow read, write: if isOwner(userId) &&
-                        request.resource.data.userId == userId;
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && 
+                   request.resource.data.userId == userId &&
+                   request.resource.data.keys().hasAll(['userId', 'title', 'description', 'createdAt']) &&
+                   request.resource.data.title is string &&
+                   request.resource.data.title.size() > 0 &&
+                   request.resource.data.description is string &&
+                   (request.resource.data.createdAt is timestamp || request.resource.data.createdAt is number);
+      allow update: if isOwner(userId) && 
+                   resource.data.userId == userId &&
+                   request.resource.data.userId == userId &&
+                   request.resource.data.keys().hasAll(['userId', 'title', 'description', 'updatedAt']) &&
+                   request.resource.data.title is string &&
+                   request.resource.data.title.size() > 0 &&
+                   request.resource.data.description is string &&
+                   (request.resource.data.updatedAt is timestamp || request.resource.data.updatedAt is number);
+      allow delete: if isOwner(userId) && resource.data.userId == userId;
     }
     
     match /users/{userId}/agreements/{agreementId} {
