@@ -56,8 +56,18 @@ const OnboardingProfilePage: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      console.error('User is not authenticated');
+      alert('ユーザー認証が確認できません。再度ログインしてください。');
+      return;
+    }
 
+    if (!formData.name.trim()) {
+      alert('名前を入力してください。');
+      return;
+    }
+
+    console.log('Starting profile creation for user:', user.uid, 'email:', user.email);
     setSaving(true);
     let avatarUrlToSave = formData.avatar;
 
@@ -71,20 +81,24 @@ const OnboardingProfilePage: React.FC = () => {
       const newProfile: UserProfile = {
         id: user.uid,
         email: user.email || '',
-        name: formData.name,
-        team: formData.team,
-        position: formData.position,
-        experience: formData.experience,
+        name: formData.name.trim(),
+        team: formData.team || undefined,
+        position: formData.position || undefined,
+        experience: formData.experience || undefined,
         createdAt: Date.now(), // 新規作成時は現在時刻（number型）
-        avatar: avatarUrlToSave
+        avatar: avatarUrlToSave || undefined
       };
 
+      console.log('Saving profile:', newProfile);
       await firestoreDb.saveUserProfile(newProfile);
+      console.log('Profile saved successfully');
       
       // AuthContextのプロフィールを即座に更新してからリダイレクト
       setProfileDirectly(newProfile);
+      console.log('Profile set in AuthContext');
       
       // プロフィール作成後、ダッシュボードへ直接リダイレクト
+      console.log('Redirecting to dashboard...');
       router.push('/dashboard');
 
     } catch (error) {
