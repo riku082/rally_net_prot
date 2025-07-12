@@ -298,12 +298,20 @@ function PracticeManagementContent() {
   };
 
   const handleDeletePractice = async (practiceId: string) => {
+    if (!user?.uid) {
+      console.error('ユーザーIDが取得できません');
+      return;
+    }
+    
     try {
-      await firestoreDb.deletePractice(practiceId);
+      console.log('練習記録削除開始 - PracticeID:', practiceId, 'UserID:', user.uid);
+      await firestoreDb.deletePractice(practiceId, user.uid);
       setPractices(prev => prev.filter(p => p.id !== practiceId));
       setSelectedDatePractices(prev => prev.filter(p => p.id !== practiceId));
+      console.log('練習記録削除成功 - PracticeID:', practiceId);
     } catch (error) {
       console.error('練習記録の削除に失敗しました:', error);
+      alert('練習記録の削除に失敗しました。再度お試しください。');
     }
   };
 

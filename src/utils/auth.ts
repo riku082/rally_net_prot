@@ -4,6 +4,9 @@ import {
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  signInAnonymously,
+  linkWithCredential,
+  EmailAuthProvider,
   signOut,
   onAuthStateChanged,
   User,
@@ -135,4 +138,42 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
 // 現在のユーザーを取得
 export const getCurrentUser = () => {
   return auth.currentUser;
+};
+
+// 匿名認証でログイン
+export const signInAnonymouslyUser = async () => {
+  try {
+    const userCredential = await signInAnonymously(auth);
+    return { user: userCredential.user, error: null };
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      if ('code' in error) {
+        return { user: null, error: getJapaneseErrorMessage(error as AuthError) };
+      }
+      return { user: null, error: error.message };
+    }
+    return { user: null, error: '匿名ログインに失敗しました。' };
+  }
+};
+
+// 匿名アカウントをメールアカウントにアップグレード
+export const linkAnonymousWithEmail = async (email: string, password: string) => {
+  try {
+    const user = auth.currentUser;
+    if (!user || !user.isAnonymous) {
+      return { user: null, error: '匿名ユーザーではありません。' };
+    }
+
+    const credential = EmailAuthProvider.credential(email, password);
+    const userCredential = await linkWithCredential(user, credential);
+    return { user: userCredential.user, error: null };
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      if ('code' in error) {
+        return { user: null, error: getJapaneseErrorMessage(error as AuthError) };
+      }
+      return { user: null, error: error.message };
+    }
+    return { user: null, error: 'アカウントの連携に失敗しました。' };
+  }
 }; 

@@ -708,22 +708,41 @@ export const firestoreDb = {
     await setDoc(doc(db, `users/${practice.userId}/practices`, practiceId), cleanedPractice);
   },
 
-  async deletePractice(practiceId: string, userId?: string): Promise<void> {
+  async deletePractice(practiceId: string, userId: string): Promise<void> {
     if (!practiceId) {
       console.warn('deletePractice: practiceId is undefined or empty');
-      return;
+      throw new Error('練習IDが指定されていません');
     }
-    // userIdが提供されない場合は、practiceからuserIdを取得
     if (!userId) {
-      const practiceDoc = await getDoc(doc(db, 'practices', practiceId));
-      if (practiceDoc.exists()) {
-        userId = practiceDoc.data().userId;
-      } else {
-        console.warn('deletePractice: Practice not found');
-        return;
-      }
+      console.warn('deletePractice: userId is undefined or empty');
+      throw new Error('ユーザーIDが指定されていません');
     }
-    await deleteDoc(doc(db, `users/${userId}/practices`, practiceId));
+    
+    const docPath = `users/${userId}/practices/${practiceId}`;
+    console.log(`Deleting practice: ${practiceId} for user: ${userId}`);
+    console.log(`Document path: ${docPath}`);
+    
+    try {
+      const docRef = doc(db, docPath);
+      console.log('Document reference created:', docRef.path);
+      
+      // 削除前に文書が存在するか確認
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) {
+        console.warn('Practice document does not exist');
+        throw new Error('削除対象の練習記録が見つかりません');
+      }
+      
+      console.log('Practice document exists, proceeding with deletion...');
+      await deleteDoc(docRef);
+      console.log(`Successfully deleted practice: ${practiceId}`);
+    } catch (error) {
+      console.error('Failed to delete practice:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('練習記録の削除に失敗しました');
+    }
   },
 
   async getPracticeStats(userId: string): Promise<PracticeStats | null> {

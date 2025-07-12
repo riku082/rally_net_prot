@@ -24,7 +24,12 @@ service cloud.firestore {
              data.name is string &&
              data.name.size() > 0 &&
              data.name.size() <= 100 &&
-             (data.createdAt is timestamp || data.createdAt is number);
+             (data.createdAt is timestamp || data.createdAt is number) &&
+             // オプションフィールドの検証
+             (!data.keys().hasAny(['team']) || data.team is string) &&
+             (!data.keys().hasAny(['position']) || data.position is string) &&
+             (!data.keys().hasAny(['experience']) || data.experience is string) &&
+             (!data.keys().hasAny(['avatar']) || data.avatar is string);
     }
     
     function isValidPracticeData(data) {
@@ -94,8 +99,9 @@ service cloud.firestore {
         true  // 認証済みユーザーは全てのプロフィール読み取り可能
       );
       allow create: if isOwner(userId) && 
-                   isValidUserProfile(request.resource.data) &&
-                   request.resource.data.email == request.auth.token.email;
+                   request.resource.data.name is string &&
+                   request.resource.data.name.size() > 0 &&
+                   request.resource.data.email is string;
       allow update: if isOwner(userId) && 
                    isValidUserProfile(request.resource.data) &&
                    request.resource.data.email == resource.data.email &&

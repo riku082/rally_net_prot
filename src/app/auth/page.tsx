@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmail, signUpWithEmail, signInWithGoogle } from '@/utils/auth';
+import { signInWithEmail, signUpWithEmail, signInWithGoogle, signInAnonymouslyUser } from '@/utils/auth';
 import { firestoreDb } from '@/utils/db';
 import Image from 'next/image';
 
@@ -72,6 +72,26 @@ const AuthPage: React.FC = () => {
       }
     } catch {
       setError('Google認証に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAnonymousAuth = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const { user, error: authError } = await signInAnonymouslyUser();
+      
+      if (authError) {
+        setError(authError);
+      } else if (user) {
+        // 匿名ユーザーは直接利用規約同意ページへ
+        router.push('/terms-agreement');
+      }
+    } catch {
+      setError('匿名ログインに失敗しました');
     } finally {
       setLoading(false);
     }
@@ -185,7 +205,7 @@ const AuthPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="mt-6">
+                <div className="mt-6 space-y-3">
                   <button
                     type="button"
                     onClick={handleGoogleAuth}
@@ -211,6 +231,18 @@ const AuthPage: React.FC = () => {
                       />
                     </svg>
                     <span>Googleで{isSignUp ? 'アカウント作成' : 'ログイン'}</span>
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={handleAnonymousAuth}
+                    disabled={loading}
+                    className="w-full inline-flex justify-center items-center py-3 px-4 border-2 border-dashed border-gray-300 rounded-xl text-sm font-medium text-gray-600 hover:border-theme-primary-300 hover:text-theme-primary-600 hover:bg-theme-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                    <span>匿名でスタート（お試し）</span>
                   </button>
                 </div>
               </div>

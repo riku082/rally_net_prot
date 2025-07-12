@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { firestoreDb } from '@/utils/db';
 import { useRouter } from 'next/navigation';
-import { FiUser, FiUsers, FiAward, FiCalendar, FiSave } from 'react-icons/fi';
+import { FiUser, FiUsers, FiAward, FiCalendar, FiSave, FiMail, FiLock } from 'react-icons/fi';
 import { UserProfile } from '@/types/userProfile';
+import { linkAnonymousWithEmail } from '@/utils/auth';
 
 const OnboardingProfilePage: React.FC = () => {
   const { user, setProfileDirectly } = useAuth();
@@ -16,15 +17,19 @@ const OnboardingProfilePage: React.FC = () => {
     team: '',
     position: '',
     experience: '',
-    avatar: ''
+    avatar: '',
+    email: '',
+    password: ''
   });
   const [saving, setSaving] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [isAnonymousUser, setIsAnonymousUser] = useState(false);
 
   useEffect(() => {
     // 新規作成ページなので、ユーザーが認証済みであれば読み込み完了
     if (user) {
+      setIsAnonymousUser(user.isAnonymous);
       setLoading(false);
       // 既にプロフィールが存在する場合はダッシュボードへリダイレクト
       // （root.tsxで制御されるが、念のためここでもチェック）
@@ -67,11 +72,44 @@ const OnboardingProfilePage: React.FC = () => {
       return;
     }
 
-    console.log('Starting profile creation for user:', user.uid, 'email:', user.email);
+    // 匿名ユーザーの場合はメールアドレスとパスワードが必要
+    if (isAnonymousUser) {
+      if (!formData.email.trim() || !formData.password.trim()) {
+        alert('メールアドレスとパスワードを入力してください。');
+        return;
+      }
+      if (formData.password.length < 6) {
+        alert('パスワードは6文字以上で入力してください。');
+        return;
+      }
+    }
+
+    console.log('Starting profile creation for user:', user.uid, 'isAnonymous:', user.isAnonymous);
     setSaving(true);
     let avatarUrlToSave = formData.avatar;
 
     try {
+      // 匿名ユーザーの場合、まずアカウントをアップグレード
+      if (isAnonymousUser) {
+        console.log('Upgrading anonymous account to email account...');
+        const { user: upgradedUser, error: linkError } = await linkAnonymousWithEmail(
+          formData.email.trim(), 
+          formData.password
+        );
+        
+        if (linkError) {
+          alert(`アカウントの作成に失敗しました: ${linkError}`);
+          return;
+        }
+        
+        if (!upgradedUser) {
+          alert('アカウントのアップグレードに失敗しました。');
+          return;
+        }
+        
+        console.log('Account upgraded successfully');
+      }
+
       if (avatarFile) {
         setUploadingAvatar(true);
         avatarUrlToSave = await firestoreDb.uploadAvatar(user.uid, avatarFile);
@@ -80,7 +118,7 @@ const OnboardingProfilePage: React.FC = () => {
 
       const newProfile: UserProfile = {
         id: user.uid,
-        email: user.email || '',
+        email: isAnonymousUser ? formData.email.trim() : (user.email || ''),
         name: formData.name.trim(),
         team: formData.team || undefined,
         position: formData.position || undefined,
@@ -138,6 +176,29 @@ const OnboardingProfilePage: React.FC = () => {
                   <input type="text" name="name" value={formData.name} onChange={handleInputChange} className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" required />
                 </div>
               </div>
+              
+              {/* 匿名ユーザーの場合のみメールアドレス・パスワード入力を表示 */}
+              {isAnonymousUser && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">メールアドレス <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                      <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" required />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">アカウント作成後のログインに使用します</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">パスワード <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                      <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input type="password" name="password" value={formData.password} onChange={handleInputChange} className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" required />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">6文字以上で入力してください</p>
+                  </div>
+                </>
+              )}
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">チーム</label>
                 <div className="relative">
@@ -200,7 +261,16 @@ const OnboardingProfilePage: React.FC = () => {
             </div>
           </div>
           <div className="flex justify-center mt-8">
-            <button onClick={handleSave} disabled={saving || uploadingAvatar || !formData.name.trim()} className="flex items-center px-8 py-3 bg-theme-primary-600 text-white rounded-lg shadow-md hover:bg-theme-primary-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary-500 transition-all">
+            <button 
+              onClick={handleSave} 
+              disabled={
+                saving || 
+                uploadingAvatar || 
+                !formData.name.trim() || 
+                (isAnonymousUser && (!formData.email.trim() || !formData.password.trim()))
+              } 
+              className="flex items-center px-8 py-3 bg-theme-primary-600 text-white rounded-lg shadow-md hover:bg-theme-primary-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary-500 transition-all"
+            >
               <FiSave className="mr-2" />
               {saving || uploadingAvatar ? '保存中...' : 'プロフィールを作成して開始'}
             </button>
