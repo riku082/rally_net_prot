@@ -160,9 +160,15 @@ service cloud.firestore {
     
     // フレンド関係
     match /friendships/{friendshipId} {
-      allow read: if isAuthenticated() && 
+      // フレンド検索で必要なクエリを許可
+      allow read: if isAuthenticated() && (
+        // 個別document読み取り（従来通り）
         (friendshipId.matches('^' + request.auth.uid + '_.*') || 
-         friendshipId.matches('.*_' + request.auth.uid + '$'));
+         friendshipId.matches('.*_' + request.auth.uid + '$')) ||
+        // クエリベース読み取り（フレンド機能で必要）
+        (resource.data.fromUserId == request.auth.uid || 
+         resource.data.toUserId == request.auth.uid)
+      );
       allow create: if isAuthenticated() && 
         friendshipId.matches('^' + request.auth.uid + '_.*') &&
         request.resource.data.fromUserId == request.auth.uid &&
