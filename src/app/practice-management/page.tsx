@@ -140,7 +140,6 @@ function PracticeManagementContent() {
             reps: 20
           },
           difficulty: 'beginner',
-          skillCategories: ['serve'],
           equipment: ['シャトル', 'ラケット'],
           courtInfo: {
             targetAreas: ['service_box_left', 'service_box_right', 'backcourt_left', 'backcourt_center'],
@@ -172,7 +171,6 @@ function PracticeManagementContent() {
             reps: 15
           },
           difficulty: 'intermediate',
-          skillCategories: ['clear'],
           equipment: ['シャトル', 'ラケット'],
           courtInfo: {
             targetAreas: ['backcourt_center', 'backcourt_left', 'backcourt_right'],
@@ -204,7 +202,6 @@ function PracticeManagementContent() {
             reps: 10
           },
           difficulty: 'advanced',
-          skillCategories: ['drop', 'net_play'],
           equipment: ['シャトル', 'ラケット'],
           courtInfo: {
             targetAreas: ['frontcourt_left_own', 'frontcourt_center_own', 'frontcourt_right_own'],
