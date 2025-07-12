@@ -846,7 +846,7 @@ const ProfilePage: React.FC = () => {
                     <div>
                       <h3 className="text-lg font-semibold text-gray-800 mb-4">戦績・目標</h3>
                       <div className="space-y-6">
-                        {profile.achievements?.length > 0 && (
+                        {profile.achievements && profile.achievements.length > 0 && (
                           <div className="space-y-3">
                             <h4 className="text-sm font-medium text-gray-500">大会戦績</h4>
                             {profile.achievements.map((achievement, index) => (
@@ -861,7 +861,7 @@ const ProfilePage: React.FC = () => {
                             ))}
                           </div>
                         )}
-                        {profile.goals?.length > 0 && (
+                        {profile.goals && profile.goals.length > 0 && (
                           <div className="space-y-3">
                             <h4 className="text-sm font-medium text-gray-500">目標・モチベーション</h4>
                             <div className="space-y-2">
