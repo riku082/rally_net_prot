@@ -1025,9 +1025,7 @@ const ModernProfileCard: React.FC = () => {
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg sm:rounded-xl p-2 sm:p-3">
               <p className="text-xs text-theme-primary-600 font-medium">レベル</p>
               <p className="text-xs sm:text-sm font-bold text-theme-primary-800">
-                {profile?.skillLevel === 'beginner' ? '初心者' :
-                 profile?.skillLevel === 'intermediate' ? '中級者' :
-                 profile?.skillLevel === 'advanced' ? '上級者' : 'プロ'}
+                {profile?.experience || '設定なし'}
               </p>
             </div>
             <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg sm:rounded-xl p-2 sm:p-3">
