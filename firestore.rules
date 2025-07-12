@@ -179,7 +179,9 @@ service cloud.firestore {
       allow read: if isOwner(userId);
       allow create: if isOwner(userId) &&
                    request.resource.data.userId == userId &&
-                   request.resource.data.type is string &&
+                   request.resource.data.keys().hasAll(['userId', 'termsAgreed', 'policyAgreed', 'agreedAt', 'version']) &&
+                   request.resource.data.termsAgreed == true &&
+                   request.resource.data.policyAgreed == true &&
                    request.resource.data.version is string &&
                    (request.resource.data.agreedAt is timestamp || request.resource.data.agreedAt is number);
       allow update: if false; // 同意は変更不可
