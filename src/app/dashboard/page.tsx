@@ -6,7 +6,6 @@ import MobileNav from '@/components/MobileNav';
 import Topbar from '@/components/Topbar';
 import TopNewsPanel from '@/components/TopNewsPanel';
 import AuthGuard from '@/components/AuthGuard';
-import PerformanceMonitor from '@/components/PerformanceMonitor';
 import BPSIIntroCard from '@/components/BPSIIntroCard';
 
 import { Match } from '@/types/match';
@@ -757,7 +756,6 @@ export default function DashboardPage() {
         <div className="flex-1 flex flex-col lg:ml-0">
           <Topbar />
           <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8">
-            <PerformanceMonitor />
             <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
               {/* ヘッダーセクション */}
               <div className="relative">
