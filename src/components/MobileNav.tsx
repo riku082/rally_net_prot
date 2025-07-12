@@ -33,7 +33,7 @@ const MobileNav: React.FC<{ activePath?: string }> = ({ activePath = '/' }) => {
     <>
       {/* モバイルメニューボタン */}
       <button
-        className="lg:hidden fixed top-20 left-4 z-50 p-2 bg-white rounded-lg shadow-lg"
+        className="lg:hidden fixed top-16 left-4 z-50 p-2 bg-white rounded-lg shadow-lg"
         onClick={() => setIsOpen(!isOpen)}
         style={{ color: '#000000' }}
       >
