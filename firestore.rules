@@ -24,7 +24,7 @@ service cloud.firestore {
              data.name is string &&
              data.name.size() > 0 &&
              data.name.size() <= 100 &&
-             data.createdAt is timestamp;
+             (data.createdAt is timestamp || data.createdAt is number);
     }
     
     function isValidPracticeData(data) {
@@ -62,7 +62,7 @@ service cloud.firestore {
              data.message.size() > 0 &&
              data.message.size() <= 2000 &&
              data.type in ['bug', 'feature', 'improvement', 'other'] &&
-             data.createdAt is timestamp;
+             (data.createdAt is timestamp || data.createdAt is number);
     }
     
     // プライバシー設定チェック
@@ -153,7 +153,7 @@ service cloud.firestore {
                    request.resource.data.userId == userId &&
                    request.resource.data.type is string &&
                    request.resource.data.version is string &&
-                   request.resource.data.agreedAt is timestamp;
+                   (request.resource.data.agreedAt is timestamp || request.resource.data.agreedAt is number);
       allow update: if false; // 同意は変更不可
       allow delete: if false; // 同意は削除不可
     }
@@ -174,7 +174,7 @@ service cloud.firestore {
         request.resource.data.fromUserId == request.auth.uid &&
         request.resource.data.toUserId is string &&
         request.resource.data.status == 'pending' &&
-        request.resource.data.createdAt is timestamp;
+        (request.resource.data.createdAt is timestamp || request.resource.data.createdAt is number);
       allow update: if isAuthenticated() && 
         ((friendshipId.matches('^' + request.auth.uid + '_.*') && 
           resource.data.fromUserId == request.auth.uid) ||
@@ -198,7 +198,7 @@ service cloud.firestore {
         request.resource.data.fromUserId == request.auth.uid &&
         request.resource.data.toUserId is string &&
         request.resource.data.status == 'pending' &&
-        request.resource.data.createdAt is timestamp;
+        (request.resource.data.createdAt is timestamp || request.resource.data.createdAt is number);
       allow update: if isAuthenticated() && 
         ((requestId.matches('^' + request.auth.uid + '_.*') && 
           resource.data.fromUserId == request.auth.uid) ||
@@ -220,7 +220,7 @@ service cloud.firestore {
                    request.resource.data.keys().hasAll(['userId', 'result', 'createdAt']) &&
                    request.resource.data.result is string &&
                    request.resource.data.result.size() == 4 &&
-                   request.resource.data.createdAt is timestamp;
+                   (request.resource.data.createdAt is timestamp || request.resource.data.createdAt is number);
       allow update: if false; // MBTI結果は変更不可
       allow delete: if false; // MBTI結果は削除不可
     }
@@ -229,7 +229,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow create: if isAuthenticated() && 
                    request.resource.data.userId == request.auth.uid &&
-                   request.resource.data.createdAt is timestamp;
+                   (request.resource.data.createdAt is timestamp || request.resource.data.createdAt is number);
       allow update: if isAuthenticated() && 
                    resource.data.userId == request.auth.uid &&
                    request.resource.data.userId == request.auth.uid;
