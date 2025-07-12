@@ -111,6 +111,8 @@ const MatchesPage: React.FC = () => {
   };
 
   const handleDeclineMatchRequest = async (requestId: string) => {
+    if (!user) return;
+    
     try {
       await firestoreDb.updateMatchRequestStatus(requestId, 'declined');
       const updatedRequests = await firestoreDb.getPendingMatchRequests(user.uid);
