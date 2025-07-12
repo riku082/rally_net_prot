@@ -89,7 +89,9 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (
         isOwner(userId) || 
         isProfilePublic(userId) || 
-        isFriend(request.auth.uid, userId)
+        isFriend(request.auth.uid, userId) ||
+        // フレンド検索とおすすめユーザー機能のために基本情報の読み取りを許可
+        true  // 認証済みユーザーは全てのプロフィール読み取り可能
       );
       allow create: if isOwner(userId) && 
                    isValidUserProfile(request.resource.data) &&
