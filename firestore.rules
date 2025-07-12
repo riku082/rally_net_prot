@@ -1,0 +1,201 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ユーザーが認証されているかチェック
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // ユーザーが自分のデータにアクセスしているかチェック
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // データの検証関数
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['email', 'name', 'createdAt']) &&
+             data.email is string &&
+             data.name is string &&
+             data.createdAt is timestamp;
+    }
+    
+    function isValidPracticeData(data) {
+      return data.keys().hasAll(['userId', 'date', 'title', 'type']) &&
+             data.userId == request.auth.uid &&
+             data.date is string &&
+             data.title is string;
+    }
+    
+    function isValidMatchData(data) {
+      return data.keys().hasAll(['userId', 'date', 'type']) &&
+             data.userId == request.auth.uid &&
+             data.date is string &&
+             data.type in ['singles', 'doubles'];
+    }
+    
+    // ユーザーがフレンド関係にあるかチェック（より厳密）
+    function isFriend(userId1, userId2) {
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/friendships/$(userId1 + '_' + userId2)) &&
+        get(/databases/$(database)/documents/friendships/$(userId1 + '_' + userId2)).data.status == 'accepted'
+      ) || (
+        exists(/databases/$(database)/documents/friendships/$(userId2 + '_' + userId1)) &&
+        get(/databases/$(database)/documents/friendships/$(userId2 + '_' + userId1)).data.status == 'accepted'
+      );
+    }
+    
+    // プロフィールの公開設定チェック
+    function isProfilePublic(userId) {
+      let profile = get(/databases/$(database)/documents/userProfiles/$(userId));
+      return profile.data.privacySettings.profilePublic == true;
+    }
+    
+    // ユーザープロフィール - より厳密なバリデーション
+    match /userProfiles/{userId} {
+      allow read: if isAuthenticated() && (
+        isOwner(userId) || 
+        isProfilePublic(userId) || 
+        isFriend(request.auth.uid, userId)
+      );
+      allow create: if isOwner(userId) && isValidUserProfile(request.resource.data);
+      allow update: if isOwner(userId) && isValidUserProfile(request.resource.data) &&
+                   request.resource.data.email == resource.data.email; // メール変更禁止
+      allow delete: if false; // プロフィール削除は禁止
+    }
+    
+    // 選手データ - より厳密な検証
+    match /players/{playerId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && 
+                   request.resource.data.userId == request.auth.uid &&
+                   request.resource.data.keys().hasAll(['userId', 'name']);
+      allow update: if isAuthenticated() && 
+                   resource.data.userId == request.auth.uid &&
+                   request.resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+    
+    // ユーザーサブコレクション - データ検証を追加
+    match /users/{userId}/matches/{matchId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidMatchData(request.resource.data);
+      allow update: if isOwner(userId) && isValidMatchData(request.resource.data);
+      allow delete: if isOwner(userId);
+    }
+    
+    match /users/{userId}/shots/{shotId} {
+      allow read, write: if isOwner(userId) &&
+                        request.resource.data.userId == userId;
+    }
+    
+    match /users/{userId}/practices/{practiceId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidPracticeData(request.resource.data);
+      allow update: if isOwner(userId) && isValidPracticeData(request.resource.data);
+      allow delete: if isOwner(userId);
+    }
+    
+    match /users/{userId}/practiceGoals/{goalId} {
+      allow read, write: if isOwner(userId) &&
+                        request.resource.data.userId == userId;
+    }
+    
+    match /users/{userId}/practiceCards/{cardId} {
+      allow read, write: if isOwner(userId) &&
+                        request.resource.data.userId == userId;
+    }
+    
+    match /users/{userId}/agreements/{agreementId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // フレンド関係 - より厳密なバリデーション
+    match /friendships/{friendshipId} {
+      allow read: if isAuthenticated() && 
+        (friendshipId.matches(request.auth.uid + '_.*') || 
+         friendshipId.matches('.*_' + request.auth.uid));
+      allow create: if isAuthenticated() && 
+        friendshipId.matches(request.auth.uid + '_.*') &&
+        request.resource.data.fromUserId == request.auth.uid &&
+        request.resource.data.status == 'pending';
+      allow update: if isAuthenticated() && 
+        ((friendshipId.matches(request.auth.uid + '_.*') && 
+          resource.data.fromUserId == request.auth.uid) ||
+         (friendshipId.matches('.*_' + request.auth.uid) && 
+          resource.data.toUserId == request.auth.uid)) &&
+        request.resource.data.status in ['pending', 'accepted', 'declined'];
+      allow delete: if isAuthenticated() && 
+        (friendshipId.matches(request.auth.uid + '_.*') || 
+         friendshipId.matches('.*_' + request.auth.uid));
+    }
+    
+    // 試合リクエスト - より厳密なバリデーション
+    match /matchRequests/{requestId} {
+      allow read: if isAuthenticated() && 
+        (requestId.matches('.*_' + request.auth.uid) || 
+         requestId.matches(request.auth.uid + '_.*'));
+      allow create: if isAuthenticated() && 
+        requestId.matches(request.auth.uid + '_.*') &&
+        request.resource.data.fromUserId == request.auth.uid &&
+        request.resource.data.status == 'pending';
+      allow update: if isAuthenticated() && 
+        ((requestId.matches(request.auth.uid + '_.*') && 
+          resource.data.fromUserId == request.auth.uid) ||
+         (requestId.matches('.*_' + request.auth.uid) && 
+          resource.data.toUserId == request.auth.uid)) &&
+        request.resource.data.status in ['pending', 'accepted', 'declined'];
+      allow delete: if isAuthenticated() && 
+        (requestId.matches('.*_' + request.auth.uid) || 
+         requestId.matches(request.auth.uid + '_.*'));
+    }
+    
+    // MBTI診断結果 - より厳密な検証
+    match /mbtiResults/{resultId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && 
+                   request.resource.data.userId == request.auth.uid &&
+                   request.resource.data.keys().hasAll(['userId', 'result', 'createdAt']);
+      allow update: if isAuthenticated() && 
+                   resource.data.userId == request.auth.uid &&
+                   request.resource.data.userId == request.auth.uid;
+      allow delete: if false; // MBTI結果の削除は禁止
+    }
+    
+    match /mbtiDiagnostics/{diagnosticId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && 
+                   request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                   resource.data.userId == request.auth.uid &&
+                   request.resource.data.userId == request.auth.uid;
+      allow delete: if false; // 診断データの削除は禁止
+    }
+    
+    // フィードバック - レート制限を考慮
+    match /user_feedback/{feedbackId} {
+      allow create: if isAuthenticated() &&
+                   request.resource.data.userId == request.auth.uid &&
+                   request.resource.data.keys().hasAll(['userId', 'message', 'createdAt']) &&
+                   request.resource.data.message is string &&
+                   request.resource.data.message.size() <= 2000; // 最大2000文字
+      allow read, update, delete: if false; // 管理者のみ（別途設定）
+    }
+    
+    // 公開データ（読み取り専用）
+    match /public/{document=**} {
+      allow read: if true;
+      allow write: if false; // 管理者のみ書き込み可能
+    }
+    
+    // システム設定（読み取り専用）
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // 管理者のみ
+    }
+    
+    // その他のコレクションはデフォルトで拒否
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
