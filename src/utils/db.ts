@@ -471,15 +471,27 @@ export const firestoreDb = {
 
   async getUserProfilesByIds(userIds: string[]): Promise<UserProfile[]> {
     if (userIds.length === 0) return [];
-    // where('id', 'in', ...) は最大10個のIDしか指定できないため、分割して取得
+    
     const results: UserProfile[] = [];
-    const chunkSize = 10;
-    for (let i = 0; i < userIds.length; i += chunkSize) {
-      const chunk = userIds.slice(i, i + chunkSize);
-      const q = query(collection(db, 'userProfiles'), where('id', 'in', chunk));
-      const snapshot = await getDocs(q);
-      snapshot.docs.forEach(doc => results.push(doc.data() as UserProfile));
+    
+    // 各userIdに対して個別にdocumentを取得
+    for (const userId of userIds) {
+      try {
+        const docRef = doc(db, 'userProfiles', userId);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          const userData = docSnap.data() as UserProfile;
+          results.push({
+            ...userData,
+            id: docSnap.id  // document IDを明示的に設定
+          });
+        }
+      } catch (error) {
+        console.warn(`Failed to get user profile for ID ${userId}:`, error);
+      }
     }
+    
     return results;
   },
 
