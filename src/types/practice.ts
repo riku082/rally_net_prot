@@ -236,4 +236,5 @@ export interface PracticeCardFilter {
   minDuration?: number; // 最小時間
   tags?: string[];
   searchTerm?: string;
+  sortBy?: 'updated' | 'usage' | 'duration';
 }
