@@ -56,7 +56,7 @@ const FriendToPlayerSelector: React.FC<FriendToPlayerSelectorProps> = ({
       const friendsWithPlayerStatus = friendProfiles.map(friend => ({
         ...friend,
         isAlreadyPlayer: existingPlayers.some(player => 
-          player.name === friend.name || player.email === friend.email
+          player.name === friend.name
         )
       }));
       
@@ -97,8 +97,7 @@ const FriendToPlayerSelector: React.FC<FriendToPlayerSelectorProps> = ({
   };
 
   const filteredFriends = friends.filter(friend =>
-    friend.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    friend.email.toLowerCase().includes(searchTerm.toLowerCase())
+    friend.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const availableFriends = filteredFriends.filter(friend => !friend.isAlreadyPlayer);
@@ -175,7 +174,6 @@ const FriendToPlayerSelector: React.FC<FriendToPlayerSelectorProps> = ({
                       </div>
                       <div>
                         <h4 className="font-medium text-gray-800">{friend.name}</h4>
-                        <p className="text-sm text-gray-600">{friend.email}</p>
                       </div>
                     </div>
                     
@@ -222,7 +220,6 @@ const FriendToPlayerSelector: React.FC<FriendToPlayerSelectorProps> = ({
                       </div>
                       <div>
                         <h4 className="font-medium text-gray-700">{friend.name}</h4>
-                        <p className="text-sm text-gray-500">{friend.email}</p>
                       </div>
                     </div>
                     <div className="flex items-center text-green-600">

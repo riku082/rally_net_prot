@@ -10,7 +10,36 @@ import { MatchRequest, MatchRequestStatus } from '@/types/matchRequest';
 import { MBTIResult, MBTIDiagnostic } from '@/types/mbti';
 import { Practice, PracticeGoal, PracticeStats, PracticeCard } from '@/types/practice';
 
+interface TermsAgreement {
+  userId: string;
+  termsAgreed: boolean;
+  policyAgreed: boolean;
+  agreedAt: number;
+  version: string;
+}
 
+// Firebaseにundefinedを送信しないようにクリーンアップする関数
+const cleanUndefinedFields = (obj: any): any => {
+  if (obj === null || obj === undefined) {
+    return null;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(cleanUndefinedFields);
+  }
+  
+  if (typeof obj === 'object') {
+    const cleaned: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        cleaned[key] = cleanUndefinedFields(value);
+      }
+    }
+    return cleaned;
+  }
+  
+  return obj;
+};
 
 export const firestoreDb = {
   // 選手
@@ -332,6 +361,26 @@ export const firestoreDb = {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile));
   },
 
+  async searchUsersByName(name: string): Promise<UserProfile[]> {
+    // Firestoreでは部分一致検索ができないため、全ユーザーを取得してフィルタリング
+    const snapshot = await getDocs(collection(db, 'userProfiles'));
+    const allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile));
+    
+    // 名前での部分一致検索（大文字小文字を区別しない）
+    const searchTerm = name.toLowerCase().trim();
+    return allUsers.filter(user => 
+      user.name && user.name.toLowerCase().includes(searchTerm)
+    );
+  },
+
+  async searchUsers(searchTerm: string, searchType: 'email' | 'name'): Promise<UserProfile[]> {
+    if (searchType === 'email') {
+      return this.searchUsersByEmail(searchTerm);
+    } else {
+      return this.searchUsersByName(searchTerm);
+    }
+  },
+
   async sendFriendRequest(fromUserId: string, toUserId: string): Promise<void> {
     const friendshipId = `${fromUserId}_${toUserId}`;
     const existingFriendshipRef = doc(db, 'friendships', friendshipId);
@@ -381,6 +430,16 @@ export const firestoreDb = {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Friendship));
   },
 
+  async getSentFriendRequests(userId: string): Promise<Friendship[]> {
+    const q = query(
+      collection(db, 'friendships'),
+      where('fromUserId', '==', userId),
+      where('status', '==', 'pending')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Friendship));
+  },
+
   async getAcceptedFriendships(userId: string): Promise<Friendship[]> {
     const q1 = query(
       collection(db, 'friendships'),
@@ -422,6 +481,101 @@ export const firestoreDb = {
       snapshot.docs.forEach(doc => results.push(doc.data() as UserProfile));
     }
     return results;
+  },
+
+  async getRecommendedUsersByRegion(userId: string, limit: number = 10): Promise<UserProfile[]> {
+    const currentUser = await this.getUserProfile(userId);
+    if (!currentUser?.playRegion) {
+      return [];
+    }
+
+    // 既存のフレンド関係を取得
+    const acceptedFriendships = await this.getAcceptedFriendships(userId);
+    const pendingRequests = await this.getPendingFriendRequests(userId);
+    
+    const friendUserIds = new Set([
+      ...acceptedFriendships.flatMap(f => [f.fromUserId, f.toUserId]),
+      ...pendingRequests.map(r => r.fromUserId)
+    ]);
+
+    // まず同じ地域のユーザーを検索
+    let allUsers: Array<UserProfile & { regionDistance: number }> = [];
+    
+    const sameRegionQuery = query(
+      collection(db, 'userProfiles'),
+      where('playRegion', '==', currentUser.playRegion)
+    );
+    const sameRegionSnapshot = await getDocs(sameRegionQuery);
+    
+    sameRegionSnapshot.docs.forEach(doc => {
+      const user = { id: doc.id, ...doc.data() } as UserProfile;
+      if (user.id !== userId && !friendUserIds.has(user.id)) {
+        allUsers.push({ ...user, regionDistance: 0 });
+      }
+    });
+
+    // 同じ地域にユーザーがいない場合、近隣地域から検索
+    if (allUsers.length === 0) {
+      const { getNearbyRegions } = await import('./regionMapping');
+      const nearbyRegions = getNearbyRegions(currentUser.playRegion, 3); // 最大距離3まで検索
+
+      for (const nearbyRegion of nearbyRegions) {
+        const nearbyQuery = query(
+          collection(db, 'userProfiles'),
+          where('playRegion', '==', nearbyRegion)
+        );
+        const nearbySnapshot = await getDocs(nearbyQuery);
+        
+        nearbySnapshot.docs.forEach(doc => {
+          const user = { id: doc.id, ...doc.data() } as UserProfile;
+          if (user.id !== userId && !friendUserIds.has(user.id)) {
+            const { getRegionDistance } = require('./regionMapping');
+            const distance = getRegionDistance(currentUser.playRegion, nearbyRegion);
+            allUsers.push({ ...user, regionDistance: distance });
+          }
+        });
+
+        // 十分なユーザーが見つかったら検索を終了
+        if (allUsers.length >= limit * 2) break;
+      }
+    }
+    
+    // おすすめ度によるソート
+    const sortedUsers = allUsers.sort((a, b) => {
+      // まず地域距離で優先順位を決定
+      if (a.regionDistance !== b.regionDistance) {
+        return a.regionDistance - b.regionDistance;
+      }
+      
+      let scoreA = 0;
+      let scoreB = 0;
+      
+      // プロフィール完成度
+      if (a.name) scoreA += 1;
+      if (a.avatar) scoreA += 1;
+      if (a.bio) scoreA += 1;
+      if (a.playStyle) scoreA += 1;
+      if (a.mbtiResult) scoreA += 1;
+      
+      if (b.name) scoreB += 1;
+      if (b.avatar) scoreB += 1;
+      if (b.bio) scoreB += 1;
+      if (b.playStyle) scoreB += 1;
+      if (b.mbtiResult) scoreB += 1;
+      
+      // MBTI類似度
+      if (currentUser.mbtiResult && a.mbtiResult && currentUser.mbtiResult === a.mbtiResult) scoreA += 2;
+      if (currentUser.mbtiResult && b.mbtiResult && currentUser.mbtiResult === b.mbtiResult) scoreB += 2;
+      
+      // プレイスタイル類似度
+      if (currentUser.playStyle && a.playStyle && currentUser.playStyle === a.playStyle) scoreA += 1;
+      if (currentUser.playStyle && b.playStyle && currentUser.playStyle === b.playStyle) scoreB += 1;
+      
+      return scoreB - scoreA;
+    });
+    
+    // regionDistanceフィールドを除去してUserProfile[]として返す
+    return sortedUsers.slice(0, limit).map(({ regionDistance, ...user }) => user);
   },
 
   // 試合リクエスト
@@ -533,19 +687,29 @@ export const firestoreDb = {
   },
 
   async addPractice(practice: Practice): Promise<void> {
-    const cleanedPractice = this.removeUndefinedFields(practice);
+    const cleanedPractice = cleanUndefinedFields(practice);
     await setDoc(doc(db, `users/${practice.userId}/practices`, practice.id), cleanedPractice);
   },
 
-  async updatePractice(practice: Practice): Promise<void> {
-    const cleanedPractice = this.removeUndefinedFields(practice);
-    await setDoc(doc(db, `users/${practice.userId}/practices`, practice.id), cleanedPractice);
+  async updatePractice(practiceId: string, practice: Practice): Promise<void> {
+    const cleanedPractice = cleanUndefinedFields(practice);
+    await setDoc(doc(db, `users/${practice.userId}/practices`, practiceId), cleanedPractice);
   },
 
-  async deletePractice(practiceId: string, userId: string): Promise<void> {
-    if (!userId || !practiceId) {
-      console.warn('deletePractice: userId or practiceId is undefined or empty');
+  async deletePractice(practiceId: string, userId?: string): Promise<void> {
+    if (!practiceId) {
+      console.warn('deletePractice: practiceId is undefined or empty');
       return;
+    }
+    // userIdが提供されない場合は、practiceからuserIdを取得
+    if (!userId) {
+      const practiceDoc = await getDoc(doc(db, 'practices', practiceId));
+      if (practiceDoc.exists()) {
+        userId = practiceDoc.data().userId;
+      } else {
+        console.warn('deletePractice: Practice not found');
+        return;
+      }
     }
     await deleteDoc(doc(db, `users/${userId}/practices`, practiceId));
   },
@@ -572,11 +736,6 @@ export const firestoreDb = {
       return acc;
     }, {} as Record<string, number>);
 
-    // 強度別練習回数
-    const practicesByIntensity = practices.reduce((acc, practice) => {
-      acc[practice.intensity] = (acc[practice.intensity] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
 
     // スキル平均
     const skillAverages = {} as Record<string, number>;
@@ -657,7 +816,6 @@ export const firestoreDb = {
       totalDuration,
       averageDuration,
       practicesByType: practicesByType as Record<string, number>,
-      practicesByIntensity: practicesByIntensity as Record<string, number>,
       skillAverages: skillAverages as Record<string, number>,
       improvementTrends: {} as Record<string, number[]>, // 今回は簡略化
       monthlyStats,
@@ -679,12 +837,12 @@ export const firestoreDb = {
   },
 
   async addPracticeGoal(goal: PracticeGoal): Promise<void> {
-    const cleanedGoal = this.removeUndefinedFields(goal);
+    const cleanedGoal = cleanUndefinedFields(goal);
     await setDoc(doc(db, `users/${goal.userId}/practiceGoals`, goal.id), cleanedGoal);
   },
 
   async updatePracticeGoal(goal: PracticeGoal): Promise<void> {
-    const cleanedGoal = this.removeUndefinedFields(goal);
+    const cleanedGoal = cleanUndefinedFields(goal);
     await setDoc(doc(db, `users/${goal.userId}/practiceGoals`, goal.id), cleanedGoal);
   },
 
@@ -708,20 +866,49 @@ export const firestoreDb = {
   },
 
   async addPracticeCard(card: PracticeCard): Promise<void> {
-    const cleanedCard = this.removeUndefinedFields(card);
+    const cleanedCard = cleanUndefinedFields(card);
     await setDoc(doc(db, `users/${card.userId}/practiceCards`, card.id), cleanedCard);
   },
 
-  async updatePracticeCard(card: PracticeCard): Promise<void> {
-    const cleanedCard = this.removeUndefinedFields(card);
-    await setDoc(doc(db, `users/${card.userId}/practiceCards`, card.id), cleanedCard);
+  async updatePracticeCard(cardId: string, card: PracticeCard): Promise<void> {
+    const cleanedCard = cleanUndefinedFields(card);
+    await setDoc(doc(db, `users/${card.userId}/practiceCards`, cardId), cleanedCard);
   },
 
   async deletePracticeCard(cardId: string, userId: string): Promise<void> {
-    if (!userId || !cardId) {
-      console.warn('deletePracticeCard: userId or cardId is undefined or empty');
+    if (!cardId) {
+      console.warn('deletePracticeCard: cardId is undefined or empty');
       return;
     }
+    if (!userId) {
+      console.warn('deletePracticeCard: userId is undefined or empty');
+      return;
+    }
+    console.log(`Deleting practice card: ${cardId} for user: ${userId}`);
     await deleteDoc(doc(db, `users/${userId}/practiceCards`, cardId));
+    console.log(`Successfully deleted practice card: ${cardId}`);
+  },
+
+  // 利用規約同意記録
+  async recordTermsAgreement(agreement: TermsAgreement): Promise<void> {
+    const cleanedAgreement = cleanUndefinedFields(agreement);
+    await setDoc(doc(db, `users/${agreement.userId}/agreements`, 'terms'), cleanedAgreement);
+  },
+
+  async getTermsAgreement(userId: string): Promise<TermsAgreement | null> {
+    if (!userId) {
+      console.warn('getTermsAgreement: userId is undefined or empty');
+      return null;
+    }
+    const docSnap = await getDoc(doc(db, `users/${userId}/agreements`, 'terms'));
+    if (docSnap.exists()) {
+      return docSnap.data() as TermsAgreement;
+    }
+    return null;
+  },
+
+  async hasAgreedToTerms(userId: string): Promise<boolean> {
+    const agreement = await this.getTermsAgreement(userId);
+    return agreement ? (agreement.termsAgreed && agreement.policyAgreed) : false;
   }
 };

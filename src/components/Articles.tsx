@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArticleMetadata } from '@/types/article';
-import { FiClock, FiUser, FiTag, FiStar } from 'react-icons/fi';
+import { FiClock, FiUser } from 'react-icons/fi';
 
 const Articles: React.FC = () => {
   const [articles, setArticles] = useState<ArticleMetadata[]>([]);
@@ -47,7 +47,7 @@ const Articles: React.FC = () => {
 
   const getCategoryColor = (category: string) => {
     const colorMap: { [key: string]: string } = {
-      'news': 'bg-blue-100 text-blue-800',
+      'news': 'bg-theme-primary-100 text-theme-primary-800',
       'tips': 'bg-green-100 text-green-800',
       'strategy': 'bg-purple-100 text-purple-800',
       'equipment': 'bg-orange-100 text-orange-800',
@@ -89,7 +89,7 @@ const Articles: React.FC = () => {
           <p className="text-red-600 mb-4">{error}</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="px-4 py-2 bg-theme-primary-600 text-white rounded hover:bg-theme-primary-700"
           >
             再試行
           </button>
@@ -99,9 +99,9 @@ const Articles: React.FC = () => {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8">
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="text-3xl font-bold text-gray-800">バドミントン記事</h2>
+    <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-2 sm:gap-0">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">バドミントン記事</h2>
         <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
           {articles.length}件の記事
         </span>
@@ -112,44 +112,34 @@ const Articles: React.FC = () => {
           <p className="text-gray-600">現在表示できる記事がありません。</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
           {articles.map((article) => (
             <Link key={article.id} href={`/articles/${article.id}`}>
-              <article className="bg-white rounded-xl shadow-lg overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300">
+              <article className="bg-white rounded-xl shadow-lg overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300 flex flex-col">
                 {/* アイキャッチ画像 */}
-                <div className="relative">
+                <div className="relative flex-shrink-0">
                   <img 
                     src={article.thumbnail} 
                     alt={article.title}
-                    className="w-full h-48 md:h-56 object-cover group-hover:scale-105 transition-all duration-300"
+                    className="w-full h-40 sm:h-48 md:h-56 object-cover group-hover:scale-105 transition-all duration-300"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                  {article.featured && (
-                    <div className="absolute top-4 left-4">
-                      <span className="flex items-center px-3 py-1 text-sm font-medium rounded-full bg-yellow-400 text-yellow-900 shadow-lg">
-                        <FiStar className="w-4 h-4 mr-1" />
-                        注目記事
-                      </span>
-                    </div>
-                  )}
-                  <div className="absolute bottom-4 left-4">
-                    <span className={`px-3 py-1 text-sm font-medium rounded-full ${getCategoryColor(article.category)} shadow-lg`}>
-                      {getCategoryLabel(article.category)}
-                    </span>
-                  </div>
                 </div>
                 
-                <div className="px-4 pb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                    {article.title}
-                  </h3>
+                {/* コンテンツエリア */}
+                <div className="p-3 sm:p-4 flex-1 flex flex-col">
+                  <div className="flex-1">
+                    <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-theme-primary-600 transition-colors leading-tight">
+                      {article.title}
+                    </h3>
+                    
+                    <p className="text-gray-600 text-sm sm:text-base mb-4 line-clamp-2 sm:line-clamp-3 leading-relaxed">
+                      {article.summary}
+                    </p>
+                  </div>
                   
-                  <p className="text-gray-600 text-base mb-4 line-clamp-3 leading-relaxed">
-                    {article.summary}
-                  </p>
-                  
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <div className="flex items-center space-x-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs sm:text-sm text-gray-500 gap-2 sm:gap-0 pt-3 border-t border-gray-100 mt-auto">
+                    <div className="flex items-center space-x-2 sm:space-x-4">
                       <div className="flex items-center">
                         <FiUser className="w-4 h-4 mr-1" />
                         <span>{article.author}</span>
@@ -163,17 +153,6 @@ const Articles: React.FC = () => {
                       {new Date(article.publishedAt).toLocaleDateString('ja-JP')}
                     </time>
                   </div>
-                  
-                  {article.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {article.tags.slice(0, 4).map((tag, index) => (
-                        <span key={index} className="flex items-center px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 transition-colors">
-                          <FiTag className="w-3 h-3 mr-1" />
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </article>
             </Link>

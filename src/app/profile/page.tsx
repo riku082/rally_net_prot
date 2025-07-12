@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { firestoreDb } from '@/utils/db';
 import { useRouter } from 'next/navigation';
-import { FiUser, FiMail, FiUsers, FiAward, FiCalendar, FiEdit, FiSave, FiXCircle, FiArrowLeft, FiTarget, FiTrendingUp, FiActivity, FiHeart, FiLock, FiCheckCircle, FiPlus, FiMinus, FiPercent, FiMapPin } from 'react-icons/fi';
+import { FiUser, FiUsers, FiAward, FiCalendar, FiEdit, FiSave, FiXCircle, FiArrowLeft, FiTarget, FiTrendingUp, FiActivity, FiHeart, FiLock, FiCheckCircle, FiPlus, FiMinus, FiPercent, FiMapPin } from 'react-icons/fi';
 import { UserProfile } from '@/types/userProfile';
 import PrivacySettings from '@/components/PrivacySettings';
 
@@ -20,13 +20,10 @@ const ProfilePage: React.FC = () => {
     experience: '',
     avatar: '',
     age: '',
-    height: '',
-    weight: '',
     playStyle: '',
     dominantHand: '',
     favoriteShots: '',
     weakShots: '',
-    tacticalRole: '',
     achievements: [] as string[],
     achievementRanks: [] as string[],
     goals: [] as string[],
@@ -65,13 +62,10 @@ const ProfilePage: React.FC = () => {
               experience: migratedProfile?.experience || '',
               avatar: migratedProfile?.avatar || '',
               age: migratedProfile?.age?.toString() || '',
-              height: migratedProfile?.height?.toString() || '',
-              weight: migratedProfile?.weight?.toString() || '',
               playStyle: migratedProfile?.playStyle || '',
               dominantHand: migratedProfile?.dominantHand || '',
               favoriteShots: migratedProfile?.favoriteShots?.join(', ') || '',
               weakShots: migratedProfile?.weakShots?.join(', ') || '',
-              tacticalRole: migratedProfile?.tacticalRole || '',
               achievements: Array.isArray(migratedProfile?.achievements) ? migratedProfile.achievements : [],
               achievementRanks: Array.isArray(migratedProfile?.achievementRanks) ? migratedProfile.achievementRanks : [],
               goals: Array.isArray(migratedProfile?.goals) ? migratedProfile.goals : [],
@@ -88,13 +82,10 @@ const ProfilePage: React.FC = () => {
               experience: existingProfile.experience || '',
               avatar: existingProfile.avatar || '',
               age: existingProfile.age?.toString() || '',
-              height: existingProfile.height?.toString() || '',
-              weight: existingProfile.weight?.toString() || '',
               playStyle: existingProfile.playStyle || '',
               dominantHand: existingProfile.dominantHand || '',
               favoriteShots: existingProfile.favoriteShots?.join(', ') || '',
               weakShots: existingProfile.weakShots?.join(', ') || '',
-              tacticalRole: existingProfile.tacticalRole || '',
               achievements: Array.isArray(existingProfile.achievements) ? existingProfile.achievements : [],
               achievementRanks: Array.isArray(existingProfile.achievementRanks) ? existingProfile.achievementRanks : [],
               goals: Array.isArray(existingProfile.goals) ? existingProfile.goals : [],
@@ -199,14 +190,11 @@ const ProfilePage: React.FC = () => {
       { key: 'name', weight: 10 },
       { key: 'team', weight: 5 },
       { key: 'age', weight: 5 },
-      { key: 'height', weight: 5 },
-      { key: 'weight', weight: 5 },
       { key: 'playStyle', weight: 8 },
       { key: 'dominantHand', weight: 8 },
       { key: 'experience', weight: 8 },
       { key: 'favoriteShots', weight: 7 },
       { key: 'weakShots', weight: 7 },
-      { key: 'tacticalRole', weight: 5 },
       { key: 'preferredGameType', weight: 8 },
       { key: 'playRegion', weight: 6 },
       { key: 'bio', weight: 10 },
@@ -281,18 +269,6 @@ const ProfilePage: React.FC = () => {
           updatedProfile.age = ageNum;
         }
       }
-      if (formData.height && formData.height.trim()) {
-        const heightNum = parseInt(formData.height);
-        if (!isNaN(heightNum)) {
-          updatedProfile.height = heightNum;
-        }
-      }
-      if (formData.weight && formData.weight.trim()) {
-        const weightNum = parseInt(formData.weight);
-        if (!isNaN(weightNum)) {
-          updatedProfile.weight = weightNum;
-        }
-      }
       if (formData.playStyle && formData.playStyle.trim()) {
         updatedProfile.playStyle = formData.playStyle as 'aggressive' | 'defensive' | 'all-round';
       }
@@ -310,9 +286,6 @@ const ProfilePage: React.FC = () => {
         if (shots.length > 0) {
           updatedProfile.weakShots = shots;
         }
-      }
-      if (formData.tacticalRole && formData.tacticalRole.trim()) {
-        updatedProfile.tacticalRole = formData.tacticalRole;
       }
       if (formData.achievements && Array.isArray(formData.achievements) && formData.achievements.length > 0) {
         const filteredAchievements = formData.achievements.filter(a => a && a.trim());
@@ -389,13 +362,10 @@ const ProfilePage: React.FC = () => {
         experience: profile.experience || '',
         avatar: profile.avatar || '',
         age: profile.age?.toString() || '',
-        height: profile.height?.toString() || '',
-        weight: profile.weight?.toString() || '',
         playStyle: profile.playStyle || '',
         dominantHand: profile.dominantHand || '',
         favoriteShots: profile.favoriteShots?.join(', ') || '',
         weakShots: profile.weakShots?.join(', ') || '',
-        tacticalRole: profile.tacticalRole || '',
         achievements: Array.isArray(profile.achievements) ? profile.achievements : [],
         achievementRanks: Array.isArray(profile.achievementRanks) ? profile.achievementRanks : [],
         goals: Array.isArray(profile.goals) ? profile.goals : [],
@@ -416,7 +386,7 @@ const ProfilePage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-theme-primary mx-auto"></div>
           <p className="mt-4 text-lg font-semibold text-gray-700">読み込み中...</p>
         </div>
       </div>
@@ -454,7 +424,9 @@ const ProfilePage: React.FC = () => {
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-gray-800">{profile.name || '未設定'}</h1>
-                  <p className="text-md text-gray-500">{profile.email}</p>
+                  {profile.playRegion && (
+                    <p className="text-md text-gray-500">{profile.playRegion}</p>
+                  )}
                 </div>
               </div>
               {!isEditing && (
@@ -571,20 +543,6 @@ const ProfilePage: React.FC = () => {
                     <div className="relative">
                       <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                       <input type="number" name="age" value={formData.age} onChange={handleInputChange} className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" placeholder="年齢を入力" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">身長 (cm)</label>
-                    <div className="relative">
-                      <FiTrendingUp className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input type="number" name="height" value={formData.height} onChange={handleInputChange} className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" placeholder="身長を入力" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">体重 (kg)</label>
-                    <div className="relative">
-                      <FiActivity className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input type="number" name="weight" value={formData.weight} onChange={handleInputChange} className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" placeholder="体重を入力" />
                     </div>
                   </div>
                 </div>
@@ -709,10 +667,6 @@ const ProfilePage: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">苦手ショット</label>
                     <input type="text" name="weakShots" value={formData.weakShots} onChange={handleInputChange} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" placeholder="例: ネットショット, ハイクリア" />
                     <p className="text-xs text-gray-500 mt-1">カンマ区切りで複数入力可能</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">戦術的役割</label>
-                    <input type="text" name="tacticalRole" value={formData.tacticalRole} onChange={handleInputChange} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" placeholder="例: フォア前, バック後" />
                   </div>
                 </div>
               </div>
@@ -841,12 +795,9 @@ const ProfilePage: React.FC = () => {
                     <h3 className="text-lg font-semibold text-gray-800 mb-4">基本情報</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                       <InfoItem icon={<FiUser />} label="名前" value={profile.name} />
-                      <InfoItem icon={<FiMail />} label="メールアドレス" value={profile.email} />
                       <InfoItem icon={<FiUsers />} label="チーム" value={profile.team} />
                       <InfoItem icon={<FiCalendar />} label="登録日" value={new Date(profile.createdAt).toLocaleDateString('ja-JP')} />
                       {profile.age && <InfoItem icon={<FiUser />} label="年齢" value={`${profile.age}歳`} />}
-                      {profile.height && <InfoItem icon={<FiTrendingUp />} label="身長" value={`${profile.height}cm`} />}
-                      {profile.weight && <InfoItem icon={<FiActivity />} label="体重" value={`${profile.weight}kg`} />}
                     </div>
                   </div>
                   
@@ -870,7 +821,6 @@ const ProfilePage: React.FC = () => {
                       } />
                       <InfoItem icon={<FiMapPin />} label="主なプレイ地域" value={profile.playRegion} />
                       <InfoItem icon={<FiCalendar />} label="経験年数" value={profile.experience} />
-                      <InfoItem icon={<FiTarget />} label="戦術的役割" value={profile.tacticalRole} />
                     </div>
                   </div>
                   

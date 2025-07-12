@@ -6,14 +6,11 @@ import { Player } from '@/types/player';
 import { Shot } from '@/types/shot';
 import { UserProfile } from '@/types/userProfile';
 import { FiUser, FiHome, FiTrash2, FiBarChart2, FiTarget, FiXCircle, FiCheckCircle, FiActivity, FiUserPlus, FiZap, FiEye, FiLock } from 'react-icons/fi';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import { Doughnut } from 'react-chartjs-2';
 import { RallyAnalyzer } from '@/utils/rallyAnalyzer';
 import { PrivacyChecker } from '@/utils/privacyChecker';
 import { firestoreDb } from '@/utils/db';
 import { useAuth } from '@/context/AuthContext';
 
-ChartJS.register(ArcElement, Tooltip, Legend);
 
 interface PlayerListProps {
   players: Player[];
@@ -101,59 +98,6 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, shots, onPlayerDeleted
     };
   };
 
-  const getChartData = (stats: ReturnType<typeof calculatePlayerStats>) => ({
-    labels: ['後衛', '中衛', '前衛'],
-    datasets: [
-      {
-        data: [
-          stats.rearRate,
-          stats.midRate,
-          stats.frontRate
-        ],
-        backgroundColor: [
-          'rgba(59, 130, 246, 0.8)',
-          'rgba(168, 85, 247, 0.8)',
-          'rgba(34, 197, 94, 0.8)'
-        ],
-        borderColor: [
-          'rgba(59, 130, 246, 1)',
-          'rgba(168, 85, 247, 1)',
-          'rgba(34, 197, 94, 1)'
-        ],
-        borderWidth: 1,
-      },
-    ],
-  });
-
-  const chartOptions = {
-    plugins: {
-      legend: {
-        position: 'bottom' as const,
-        labels: {
-          font: {
-            size: 11,
-            weight: 500
-          },
-          color: '#6B7280',
-          usePointStyle: true,
-          pointStyle: 'circle',
-          padding: 15
-        }
-      },
-      tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        titleColor: '#fff',
-        bodyColor: '#fff',
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-        borderWidth: 1,
-        cornerRadius: 8,
-        padding: 12
-      }
-    },
-    cutout: '65%',
-    responsive: true,
-    maintainAspectRatio: false
-  };
 
   // フレンドの統計を計算
   const calculateFriendStats = (profile: UserProfile) => {
@@ -238,27 +182,14 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, shots, onPlayerDeleted
                         <FiHome className="mr-2 w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                         <span className="truncate">{player.affiliation}</span>
                       </p>
-                      {player.email && (
-                        <p className="text-gray-400 text-xs sm:text-sm flex items-center mt-1">
-                          <span className="truncate">{player.email}</span>
-                        </p>
-                      )}
                     </div>
                   </div>
                 
                   {/* 中央: 統計情報 */}
                   {stats.totalShots > 0 ? (
-                    <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-8 flex-grow relative z-10">
-                      {/* 円グラフ */}
-                      <div className="bg-gray-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-inner self-center lg:self-auto">
-                        <h5 className="text-xs font-semibold text-gray-700 mb-2 sm:mb-3 text-center">コートエリア分布</h5>
-                        <div className="h-20 w-20 sm:h-24 sm:w-24 mx-auto">
-                          <Doughnut data={getChartData(stats)} options={chartOptions} />
-                        </div>
-                      </div>
-
+                    <div className="flex items-center justify-center flex-grow relative z-10">
                       {/* 統計情報 */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 flex-grow">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 w-full max-w-4xl">
                         <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-2 sm:p-3 rounded-lg sm:rounded-xl border border-blue-200 hover:shadow-md transition-shadow">
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                             <FiTarget className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 mb-1 sm:mb-0" />
@@ -388,25 +319,14 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, shots, onPlayerDeleted
                               <FiHome className="mr-2 w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                               <span className="truncate">{profile.team || '所属不明'}</span>
                             </p>
-                            <p className="text-gray-400 text-xs sm:text-sm flex items-center mt-1">
-                              <span className="truncate">{profile.email}</span>
-                            </p>
                           </div>
                         </div>
                         
                         {/* 中央: 統計情報またはプライバシーメッセージ */}
                         {canViewStats && canViewAnalysis && friendStats ? (
-                          <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-8 flex-grow relative z-10">
-                            {/* 円グラフ */}
-                            <div className="bg-gray-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-inner self-center lg:self-auto">
-                              <h5 className="text-xs font-semibold text-gray-700 mb-2 sm:mb-3 text-center">コートエリア分布</h5>
-                              <div className="h-20 w-20 sm:h-24 sm:w-24 mx-auto">
-                                <Doughnut data={getChartData(friendStats)} options={chartOptions} />
-                              </div>
-                            </div>
-
+                          <div className="flex items-center justify-center flex-grow relative z-10">
                             {/* 統計情報 */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 flex-grow">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 w-full max-w-4xl">
                               <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-2 sm:p-3 rounded-lg sm:rounded-xl border border-blue-200 hover:shadow-md transition-shadow">
                                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                                   <FiTarget className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 mb-1 sm:mb-0" />

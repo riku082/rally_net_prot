@@ -2,16 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { Practice, PracticeCard } from '@/types/practice';
-import { FaChevronLeft, FaChevronRight, FaPlus, FaCalendarAlt, FaClock, FaEdit } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight, FaCalendarAlt, FaClock, FaEdit } from 'react-icons/fa';
 import { GiShuttlecock } from 'react-icons/gi';
 
 interface PracticeCalendarProps {
   practices: Practice[];
-  practiceCards: PracticeCard[];
   onDateClick: (date: Date, practices: Practice[]) => void;
-  onCreatePractice: (date: Date) => void;
   onEditPractice: (practice: Practice) => void;
-  onUsePracticeCard: (card: PracticeCard, date: Date) => void;
 }
 
 interface CalendarDay {
@@ -23,15 +20,11 @@ interface CalendarDay {
 
 const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
   practices,
-  practiceCards,
   onDateClick,
-  onCreatePractice,
-  onEditPractice,
-  onUsePracticeCard
+  onEditPractice
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([]);
 
   const months = [
@@ -107,20 +100,13 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
     onDateClick(day.date, day.practices);
   };
 
-  const getPracticeIntensityColor = (practices: Practice[]) => {
+  const getPracticeIndicatorColor = (practices: Practice[]) => {
     if (practices.length === 0) return '';
     
-    const totalIntensity = practices.reduce((sum, p) => {
-      const intensityMap = { low: 1, medium: 2, high: 3, very_high: 4 };
-      return sum + intensityMap[p.intensity];
-    }, 0);
-    
-    const avgIntensity = totalIntensity / practices.length;
-    
-    if (avgIntensity <= 1.5) return 'bg-green-100 border-green-300';
-    if (avgIntensity <= 2.5) return 'bg-yellow-100 border-yellow-300';
-    if (avgIntensity <= 3.5) return 'bg-orange-100 border-orange-300';
-    return 'bg-red-100 border-red-300';
+    // Color based on practice count instead of intensity
+    if (practices.length === 1) return 'bg-blue-100 border-blue-300';
+    if (practices.length === 2) return 'bg-purple-100 border-purple-300';
+    return 'bg-indigo-100 border-indigo-300';
   };
 
   const formatDuration = (minutes: number) => {
@@ -189,14 +175,6 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
           >
             今日
           </button>
-          <button
-            onClick={() => setShowQuickAdd(!showQuickAdd)}
-            className="flex items-center justify-center px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm flex-1 lg:flex-none"
-          >
-            <FaPlus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-            <span className="hidden sm:inline">練習追加</span>
-            <span className="sm:hidden">追加</span>
-          </button>
         </div>
       </div>
 
@@ -243,56 +221,6 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
         </div>
       </div>
 
-      {/* クイック追加パネル */}
-      {showQuickAdd && (
-        <div className="bg-gray-50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-          <h4 className="text-sm font-medium text-gray-700 mb-2 sm:mb-3">クイック追加</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <p className="text-xs text-gray-600 mb-2">練習カードから追加</p>
-              <div className="space-y-2 max-h-32 overflow-y-auto">
-                {practiceCards.slice(0, 5).map(card => (
-                  <button
-                    key={card.id}
-                    onClick={() => {
-                      if (selectedDate) {
-                        onUsePracticeCard(card, selectedDate);
-                        setShowQuickAdd(false);
-                      }
-                    }}
-                    className="w-full text-left p-2 bg-white rounded border hover:bg-blue-50 transition-colors"
-                    disabled={!selectedDate}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs sm:text-sm font-medium text-gray-800 truncate">{card.title}</span>
-                      <span className="text-xs text-gray-500 ml-2">30分</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs text-gray-600 mb-2">新規作成</p>
-              <button
-                onClick={() => {
-                  if (selectedDate) {
-                    onCreatePractice(selectedDate);
-                    setShowQuickAdd(false);
-                  }
-                }}
-                className="w-full p-2 sm:p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-xs sm:text-sm"
-                disabled={!selectedDate}
-              >
-                <FaPlus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 inline" />
-                新しい練習記録
-              </button>
-              <p className="text-xs text-gray-500 mt-2">
-                {selectedDate ? `${selectedDate.getMonth() + 1}/${selectedDate.getDate()}に追加` : '日付を選択してください'}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* カレンダーグリッド */}
       <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
@@ -316,7 +244,7 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
                 : selectedDate && isSameDay(day.date, selectedDate)
                 ? 'bg-blue-100 border-blue-400'
                 : day.practices.length > 0
-                ? getPracticeIntensityColor(day.practices)
+                ? getPracticeIndicatorColor(day.practices)
                 : 'bg-white border-gray-200 hover:bg-gray-50'
             }`}
           >
@@ -356,35 +284,11 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
                 </div>
               )}
               
-              {day.practices.length === 0 && day.isCurrentMonth && (
-                <div className="flex-1 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                  <FaPlus className="w-2 h-2 sm:w-3 sm:h-3 text-gray-400" />
-                </div>
-              )}
             </div>
           </div>
         ))}
       </div>
 
-      {/* 凡例 */}
-      <div className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs text-gray-600">
-        <div className="flex items-center space-x-1 sm:space-x-2">
-          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-100 border border-green-300 rounded"></div>
-          <span>軽い練習</span>
-        </div>
-        <div className="flex items-center space-x-1 sm:space-x-2">
-          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-yellow-100 border border-yellow-300 rounded"></div>
-          <span>普通の練習</span>
-        </div>
-        <div className="flex items-center space-x-1 sm:space-x-2">
-          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-orange-100 border border-orange-300 rounded"></div>
-          <span>きつい練習</span>
-        </div>
-        <div className="flex items-center space-x-1 sm:space-x-2">
-          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-red-100 border border-red-300 rounded"></div>
-          <span>非常にきつい練習</span>
-        </div>
-      </div>
     </div>
   );
 };

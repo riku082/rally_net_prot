@@ -13,8 +13,8 @@ const NewsPage: React.FC = () => {
       <MobileNav activePath="/news" />
       <div className="flex-1 flex flex-col">
         <Topbar />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
-          <div className="max-w-4xl mx-auto">
+        <main className="flex-1 p-2 sm:p-4 md:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto">
             <Articles />
           </div>
         </main>

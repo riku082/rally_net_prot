@@ -7,7 +7,56 @@ import {
   signOut,
   onAuthStateChanged,
   User,
+  AuthError,
 } from 'firebase/auth';
+
+// Firebaseエラーコードを日本語メッセージに変換する関数
+const getJapaneseErrorMessage = (error: AuthError): string => {
+  switch (error.code) {
+    // メールアドレス・パスワード認証エラー
+    case 'auth/invalid-email':
+      return 'メールアドレスの形式が正しくありません。';
+    case 'auth/user-disabled':
+      return 'このアカウントは無効になっています。';
+    case 'auth/user-not-found':
+      return 'このメールアドレスは登録されていません。';
+    case 'auth/wrong-password':
+      return 'パスワードが間違っています。';
+    case 'auth/email-already-in-use':
+      return 'このメールアドレスは既に使用されています。';
+    case 'auth/weak-password':
+      return 'パスワードが弱すぎます。6文字以上で設定してください。';
+    case 'auth/operation-not-allowed':
+      return 'この認証方法は現在無効になっています。';
+    case 'auth/too-many-requests':
+      return 'リクエストが多すぎます。しばらく時間をおいてから再試行してください。';
+    case 'auth/network-request-failed':
+      return 'ネットワークエラーが発生しました。インターネット接続を確認してください。';
+    
+    // Google認証エラー
+    case 'auth/popup-closed-by-user':
+      return 'ログインウィンドウが閉じられました。';
+    case 'auth/popup-blocked':
+      return 'ポップアップがブロックされました。ブラウザの設定を確認してください。';
+    case 'auth/cancelled-popup-request':
+      return 'ログインがキャンセルされました。';
+    case 'auth/account-exists-with-different-credential':
+      return 'このメールアドレスは別の認証方法で既に登録されています。';
+    
+    // その他のエラー
+    case 'auth/invalid-credential':
+      return '認証情報が無効です。';
+    case 'auth/requires-recent-login':
+      return 'セキュリティのため、再度ログインしてください。';
+    case 'auth/operation-not-supported-in-this-environment':
+      return 'この環境では操作がサポートされていません。';
+    case 'auth/timeout':
+      return '認証がタイムアウトしました。';
+    
+    default:
+      return '認証に失敗しました。しばらく時間をおいてから再試行してください。';
+  }
+};
 
 // Google認証
 export const signInWithGoogle = async () => {
@@ -16,7 +65,14 @@ export const signInWithGoogle = async () => {
     const userCredential = await signInWithPopup(auth, provider);
     return { user: userCredential.user, error: null };
   } catch (error: unknown) {
-    return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
+    if (error instanceof Error) {
+      // Firebase AuthErrorの場合は日本語メッセージに変換
+      if ('code' in error) {
+        return { user: null, error: getJapaneseErrorMessage(error as AuthError) };
+      }
+      return { user: null, error: error.message };
+    }
+    return { user: null, error: '認証に失敗しました。' };
   }
 };
 
@@ -26,7 +82,14 @@ export const signInWithEmail = async (email: string, password: string) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return { user: userCredential.user, error: null };
   } catch (error: unknown) {
-    return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
+    if (error instanceof Error) {
+      // Firebase AuthErrorの場合は日本語メッセージに変換
+      if ('code' in error) {
+        return { user: null, error: getJapaneseErrorMessage(error as AuthError) };
+      }
+      return { user: null, error: error.message };
+    }
+    return { user: null, error: '認証に失敗しました。' };
   }
 };
 
@@ -36,7 +99,14 @@ export const signUpWithEmail = async (email: string, password: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     return { user: userCredential.user, error: null };
   } catch (error: unknown) {
-    return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
+    if (error instanceof Error) {
+      // Firebase AuthErrorの場合は日本語メッセージに変換
+      if ('code' in error) {
+        return { user: null, error: getJapaneseErrorMessage(error as AuthError) };
+      }
+      return { user: null, error: error.message };
+    }
+    return { user: null, error: '認証に失敗しました。' };
   }
 };
 
@@ -46,7 +116,14 @@ export const signOutUser = async () => {
     await signOut(auth);
     return { error: null };
   } catch (error: unknown) {
-    return { error: error instanceof Error ? error.message : 'Unknown error' };
+    if (error instanceof Error) {
+      // Firebase AuthErrorの場合は日本語メッセージに変換
+      if ('code' in error) {
+        return { error: getJapaneseErrorMessage(error as AuthError) };
+      }
+      return { error: error.message };
+    }
+    return { error: 'ログアウトに失敗しました。' };
   }
 };
 

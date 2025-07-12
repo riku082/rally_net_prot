@@ -8,7 +8,7 @@ import { FiUser, FiUsers, FiAward, FiCalendar, FiSave } from 'react-icons/fi';
 import { UserProfile } from '@/types/userProfile';
 
 const OnboardingProfilePage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, setProfileDirectly } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
@@ -80,7 +80,11 @@ const OnboardingProfilePage: React.FC = () => {
       };
 
       await firestoreDb.saveUserProfile(newProfile);
-      // プロフィール作成後、ダッシュボードへリダイレクト
+      
+      // AuthContextのプロフィールを即座に更新してからリダイレクト
+      setProfileDirectly(newProfile);
+      
+      // プロフィール作成後、ダッシュボードへ直接リダイレクト
       router.push('/dashboard');
 
     } catch (error) {
@@ -96,7 +100,7 @@ const OnboardingProfilePage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-theme-primary mx-auto"></div>
           <p className="mt-4 text-lg font-semibold text-gray-700">読み込み中...</p>
         </div>
       </div>
@@ -139,16 +143,16 @@ const OnboardingProfilePage: React.FC = () => {
                       file:mr-4 file:py-2 file:px-4
                       file:rounded-full file:border-0
                       file:text-sm file:font-semibold
-                      file:bg-blue-50 file:text-blue-700
-                      hover:file:bg-blue-100"
+                      file:bg-theme-primary-50 file:text-theme-primary-700
+                      hover:file:bg-theme-primary-100"
                   />
                   {uploadingAvatar && (
-                    <div className="ml-4 animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                    <div className="ml-4 animate-spin rounded-full h-5 w-5 border-b-2 border-theme-primary-500"></div>
                   )}
                 </div>
                 {avatarFile && <p className="text-xs text-gray-500 mt-1">選択中: {avatarFile.name}</p>}
                 {formData.avatar && !avatarFile && (
-                  <p className="text-xs text-gray-500 mt-1">現在の画像: <a href={formData.avatar} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">表示</a></p>
+                  <p className="text-xs text-gray-500 mt-1">現在の画像: <a href={formData.avatar} target="_blank" rel="noopener noreferrer" className="text-theme-primary-500 hover:underline">表示</a></p>
                 )}
               </div>
             </div>
@@ -182,7 +186,7 @@ const OnboardingProfilePage: React.FC = () => {
             </div>
           </div>
           <div className="flex justify-center mt-8">
-            <button onClick={handleSave} disabled={saving || uploadingAvatar || !formData.name.trim()} className="flex items-center px-8 py-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all">
+            <button onClick={handleSave} disabled={saving || uploadingAvatar || !formData.name.trim()} className="flex items-center px-8 py-3 bg-theme-primary-600 text-white rounded-lg shadow-md hover:bg-theme-primary-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary-500 transition-all">
               <FiSave className="mr-2" />
               {saving || uploadingAvatar ? '保存中...' : 'プロフィールを作成して開始'}
             </button>

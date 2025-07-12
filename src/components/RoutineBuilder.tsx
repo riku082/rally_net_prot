@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { PracticeCard, PracticeCardExecution } from '@/types/practice';
-import { FaPlus, FaTrash, FaClock, FaGripVertical } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaClock, FaGripVertical, FaEye, FaTimes, FaMapMarkerAlt, FaTools, FaTag } from 'react-icons/fa';
 
 interface RoutineBuilderProps {
   availableCards: PracticeCard[];
@@ -17,6 +17,7 @@ const RoutineBuilder: React.FC<RoutineBuilderProps> = ({
 }) => {
   const [showCardSelector, setShowCardSelector] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [selectedCardDetail, setSelectedCardDetail] = useState<PracticeCard | null>(null);
 
   const addCard = (card: PracticeCard) => {
     const newCardExecution: PracticeCardExecution = {
@@ -94,7 +95,7 @@ const RoutineBuilder: React.FC<RoutineBuilderProps> = ({
         <button
           type="button"
           onClick={() => setShowCardSelector(true)}
-          className="flex items-center justify-center px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center justify-center px-3 py-1 text-sm bg-theme-primary-600 text-white rounded-lg hover:bg-theme-primary-700 transition-colors"
         >
           <FaPlus className="w-3 h-3 mr-1" />
           カード追加
@@ -124,7 +125,7 @@ const RoutineBuilder: React.FC<RoutineBuilderProps> = ({
               >
                 <div className="flex items-start sm:items-center space-x-2 sm:space-x-3">
                   <FaGripVertical className="w-4 h-4 text-gray-400 mt-1 sm:mt-0 flex-shrink-0" />
-                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium flex-shrink-0">
+                  <div className="bg-theme-primary-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium flex-shrink-0">
                     {cardExecution.order}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -161,48 +162,24 @@ const RoutineBuilder: React.FC<RoutineBuilderProps> = ({
                         actualDuration: e.target.value ? parseInt(e.target.value) : undefined 
                       })}
                       placeholder={cardExecution.plannedDuration.toString()}
-                      className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-theme-primary-500"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">評価（1-5）</label>
-                    <select
-                      value={cardExecution.rating || ''}
-                      onChange={(e) => updateCard(index, { 
-                        rating: e.target.value ? parseInt(e.target.value) : undefined 
-                      })}
-                      className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (card) {
+                          setSelectedCardDetail(card);
+                        }
+                      }}
+                      className="w-full px-2 py-1 text-xs bg-theme-primary-600 text-white rounded hover:bg-theme-primary-700 transition-colors flex items-center justify-center"
+                      disabled={!card}
                     >
-                      <option value="">未評価</option>
-                      <option value="1">1 - 悪い</option>
-                      <option value="2">2 - 不満</option>
-                      <option value="3">3 - 普通</option>
-                      <option value="4">4 - 良い</option>
-                      <option value="5">5 - 最高</option>
-                    </select>
+                      <FaEye className="w-3 h-3 mr-1" />
+                      詳細を見る
+                    </button>
                   </div>
-                </div>
-
-                <div className="mt-2 ml-6 sm:ml-10">
-                  <textarea
-                    value={cardExecution.notes || ''}
-                    onChange={(e) => updateCard(index, { notes: e.target.value })}
-                    placeholder="このカードに関するメモ"
-                    rows={2}
-                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="mt-2 ml-6 sm:ml-10 flex items-center">
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={cardExecution.completed}
-                      onChange={(e) => updateCard(index, { completed: e.target.checked })}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-xs text-gray-700">完了</span>
-                  </label>
                 </div>
               </div>
             );
@@ -212,16 +189,13 @@ const RoutineBuilder: React.FC<RoutineBuilderProps> = ({
 
       {/* 合計時間 */}
       {selectedCards.length > 0 && (
-        <div className="bg-blue-50 rounded-lg p-3">
+        <div className="bg-theme-primary-50 rounded-lg p-3">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-blue-700 font-medium">合計時間</span>
-            <span className="text-blue-800 font-bold">
+            <span className="text-theme-primary-700 font-medium">合計時間</span>
+            <span className="text-theme-primary-800 font-bold">
               <FaClock className="inline w-3 h-3 mr-1" />
               {totalDuration}分
             </span>
-          </div>
-          <div className="text-xs text-blue-600 mt-1">
-            完了: {selectedCards.filter(c => c.completed).length}/{selectedCards.length}カード
           </div>
         </div>
       )}
@@ -270,6 +244,169 @@ const RoutineBuilder: React.FC<RoutineBuilderProps> = ({
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* カード詳細モーダル */}
+      {selectedCardDetail && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">練習カード詳細</h3>
+                <button
+                  onClick={() => setSelectedCardDetail(null)}
+                  className="text-gray-400 hover:text-gray-600 p-1"
+                >
+                  <FaTimes className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-4 max-h-[70vh] overflow-y-auto">
+              <div className="space-y-4">
+                {/* カード基本情報 */}
+                <div>
+                  <h4 className="text-xl font-bold text-gray-900 mb-2">{selectedCardDetail.title}</h4>
+                  <div className="flex items-center space-x-4 mb-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      selectedCardDetail.difficulty === 'beginner' ? 'bg-green-100 text-green-800' :
+                      selectedCardDetail.difficulty === 'intermediate' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {
+                        selectedCardDetail.difficulty === 'beginner' ? '軽い' :
+                        selectedCardDetail.difficulty === 'intermediate' ? '普通' :
+                        'きつい'
+                      }
+                    </span>
+                    <span className="flex items-center text-sm text-gray-600">
+                      <FaClock className="w-3 h-3 mr-1" />
+                      {selectedCardDetail.drill.duration}分
+                    </span>
+                    {selectedCardDetail.rating && (
+                      <span className="flex items-center text-sm text-yellow-600">
+                        ★ {selectedCardDetail.rating.toFixed(1)}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-gray-700 mb-4">{selectedCardDetail.description}</p>
+                </div>
+
+                {/* 練習詳細 */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h5 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                    <FaClock className="w-4 h-4 mr-2" />
+                    練習詳細
+                  </h5>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-gray-700">{selectedCardDetail.drill.name}</span>
+                      <span className="text-gray-500">{selectedCardDetail.drill.duration}分</span>
+                    </div>
+                    {selectedCardDetail.drill.description && (
+                      <p className="text-gray-600 text-sm">{selectedCardDetail.drill.description}</p>
+                    )}
+                    {selectedCardDetail.drill.sets && (
+                      <p className="text-gray-600 text-sm">セット数: {selectedCardDetail.drill.sets}</p>
+                    )}
+                    {selectedCardDetail.drill.reps && (
+                      <p className="text-gray-600 text-sm">回数: {selectedCardDetail.drill.reps}</p>
+                    )}
+                    {selectedCardDetail.drill.restTime && (
+                      <p className="text-gray-600 text-sm">休憩時間: {selectedCardDetail.drill.restTime}秒</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* コート情報 */}
+                {selectedCardDetail.courtInfo && selectedCardDetail.courtInfo.targetAreas.length > 0 && (
+                  <div>
+                    <h5 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                      <FaMapMarkerAlt className="w-4 h-4 mr-2" />
+                      コート情報
+                    </h5>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-sm text-gray-700 mb-2">
+                        {selectedCardDetail.courtInfo.courtType === 'singles' ? 'シングルス' : 'ダブルス'}コート
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedCardDetail.courtInfo.targetAreas.map((area, index) => (
+                          <span key={index} className="px-2 py-1 bg-theme-primary-100 text-theme-primary-800 rounded text-xs">
+                            {area.replace('_', ' ')}
+                          </span>
+                        ))}
+                      </div>
+                      {selectedCardDetail.courtInfo.notes && (
+                        <p className="text-sm text-gray-600 mt-2">{selectedCardDetail.courtInfo.notes}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 必要な用具 */}
+                {selectedCardDetail.equipment.length > 0 && (
+                  <div>
+                    <h5 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                      <FaTools className="w-4 h-4 mr-2" />
+                      必要な用具
+                    </h5>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedCardDetail.equipment.map((item, index) => (
+                        <span key={index} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* タグ */}
+                {selectedCardDetail.tags.length > 0 && (
+                  <div>
+                    <h5 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                      <FaTag className="w-4 h-4 mr-2" />
+                      タグ
+                    </h5>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedCardDetail.tags.map((tag, index) => (
+                        <span key={index} className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* メモ */}
+                {selectedCardDetail.notes && (
+                  <div>
+                    <h5 className="text-sm font-medium text-gray-700 mb-2">メモ</h5>
+                    <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">{selectedCardDetail.notes}</p>
+                  </div>
+                )}
+
+                {/* 使用統計 */}
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <h5 className="text-sm font-medium text-gray-700 mb-2">使用統計</h5>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">使用回数:</span>
+                      <span className="ml-2 font-medium text-gray-900">{selectedCardDetail.usageCount}回</span>
+                    </div>
+                    {selectedCardDetail.lastUsed && (
+                      <div>
+                        <span className="text-gray-600">最終使用:</span>
+                        <span className="ml-2 font-medium text-gray-900">
+                          {new Date(selectedCardDetail.lastUsed).toLocaleDateString('ja-JP')}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

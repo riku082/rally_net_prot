@@ -9,20 +9,14 @@ import MBTIDiagnostic from '@/components/MBTIDiagnostic';
 import MBTIResult from '@/components/MBTIResult';
 import { MBTIResult as MBTIResultType, MBTIType } from '@/types/mbti';
 import { useAuth } from '@/context/AuthContext';
-import { FaBrain, FaPlay, FaHistory, FaChartBar, FaUsers, FaHandshake } from 'react-icons/fa';
+import { FaBrain, FaPlay, FaHistory, FaChartBar } from 'react-icons/fa';
 import { GiShuttlecock } from 'react-icons/gi';
-import TeamAnalyzer from '@/components/TeamAnalyzer';
-import PartnerMatcher from '@/components/PartnerMatcher';
-import StatisticsPanel from '@/components/StatisticsPanel';
 
 enum DiagnosticState {
   WELCOME = 'welcome',
   DIAGNOSTIC = 'diagnostic',
   RESULT = 'result',
-  HISTORY = 'history',
-  TEAM_ANALYZER = 'team_analyzer',
-  PARTNER_MATCHER = 'partner_matcher',
-  STATISTICS = 'statistics'
+  HISTORY = 'history'
 }
 
 export default function MBTIPage() {
@@ -86,9 +80,6 @@ export default function MBTIPage() {
           onStart={handleStartDiagnostic} 
           onShowHistory={handleShowHistory}
           hasPreviousResults={previousResults.length > 0}
-          onShowTeamAnalyzer={() => setCurrentState(DiagnosticState.TEAM_ANALYZER)}
-          onShowPartnerMatcher={() => setCurrentState(DiagnosticState.PARTNER_MATCHER)}
-          onShowStatistics={() => setCurrentState(DiagnosticState.STATISTICS)}
         />;
       case DiagnosticState.DIAGNOSTIC:
         return <MBTIDiagnostic onComplete={handleDiagnosticComplete} />;
@@ -101,12 +92,6 @@ export default function MBTIPage() {
           onBackToWelcome={() => setCurrentState(DiagnosticState.WELCOME)}
           onNewDiagnostic={handleStartDiagnostic}
         />;
-      case DiagnosticState.TEAM_ANALYZER:
-        return <TeamAnalyzer />;
-      case DiagnosticState.PARTNER_MATCHER:
-        return currentResult ? <PartnerMatcher userMBTIType={currentResult.result as MBTIType} /> : <div>診断を先に受けてください</div>;
-      case DiagnosticState.STATISTICS:
-        return <StatisticsPanel />;
       default:
         return null;
     }
@@ -133,12 +118,9 @@ interface WelcomeScreenProps {
   onStart: () => void;
   onShowHistory: () => void;
   hasPreviousResults: boolean;
-  onShowTeamAnalyzer: () => void;
-  onShowPartnerMatcher: () => void;
-  onShowStatistics: () => void;
 }
 
-const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart, onShowHistory, hasPreviousResults, onShowTeamAnalyzer, onShowPartnerMatcher, onShowStatistics }) => {
+const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart, onShowHistory, hasPreviousResults }) => {
   return (
     <div className="max-w-4xl mx-auto">
       {/* ヘッダー */}
@@ -158,8 +140,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart, onShowHistory, h
       {/* 特徴説明 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         <div className="bg-white rounded-2xl shadow-lg p-6 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-4">
-            <FaBrain className="w-6 h-6 text-blue-600" />
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-theme-primary-100 rounded-full mb-4">
+            <FaBrain className="w-6 h-6 text-theme-primary-600" />
           </div>
           <h3 className="text-lg font-bold text-gray-800 mb-2">科学的分析</h3>
           <p className="text-gray-600">心理学理論をベースにしたバドミントン特化の診断</p>
@@ -185,21 +167,21 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart, onShowHistory, h
         <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">診断の流れ</h2>
         <div className="flex items-center justify-between">
           <div className="flex-1 text-center">
-            <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-500 rounded-full mb-2">
+            <div className="inline-flex items-center justify-center w-10 h-10 bg-theme-primary-500 rounded-full mb-2">
               <span className="text-white font-bold">1</span>
             </div>
             <p className="text-sm text-gray-600">16の質問に回答</p>
           </div>
           <div className="w-12 h-0.5 bg-gray-300 mx-4"></div>
           <div className="flex-1 text-center">
-            <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-500 rounded-full mb-2">
+            <div className="inline-flex items-center justify-center w-10 h-10 bg-theme-primary-500 rounded-full mb-2">
               <span className="text-white font-bold">2</span>
             </div>
             <p className="text-sm text-gray-600">自動分析・診断</p>
           </div>
           <div className="w-12 h-0.5 bg-gray-300 mx-4"></div>
           <div className="flex-1 text-center">
-            <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-500 rounded-full mb-2">
+            <div className="inline-flex items-center justify-center w-10 h-10 bg-theme-primary-500 rounded-full mb-2">
               <span className="text-white font-bold">3</span>
             </div>
             <p className="text-sm text-gray-600">結果確認・共有</p>
@@ -229,30 +211,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart, onShowHistory, h
           )}
         </div>
 
-        {/* 追加機能 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button
-            onClick={onShowTeamAnalyzer}
-            className="flex items-center justify-center px-6 py-3 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
-          >
-            <FaUsers className="w-4 h-4 mr-2" />
-            チーム分析
-          </button>
-          <button
-            onClick={onShowPartnerMatcher}
-            className="flex items-center justify-center px-6 py-3 bg-pink-100 text-pink-700 rounded-lg hover:bg-pink-200 transition-colors"
-          >
-            <FaHandshake className="w-4 h-4 mr-2" />
-            パートナー探し
-          </button>
-          <button
-            onClick={onShowStatistics}
-            className="flex items-center justify-center px-6 py-3 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors"
-          >
-            <FaChartBar className="w-4 h-4 mr-2" />
-            統計情報
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -281,7 +239,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({
           <p className="text-gray-600 mb-6">まずは診断を受けてみましょう。</p>
           <button
             onClick={onNewDiagnostic}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+            className="px-6 py-3 bg-theme-primary-600 text-white rounded-xl hover:bg-theme-primary-700 transition-colors"
           >
             診断を開始する
           </button>
@@ -303,7 +261,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({
           </button>
           <button
             onClick={onNewDiagnostic}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 bg-theme-primary-600 text-white rounded-lg hover:bg-theme-primary-700 transition-colors"
           >
             新しい診断
           </button>
@@ -335,7 +293,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({
                   </p>
                 </div>
               </div>
-              <div className="text-blue-600 hover:text-blue-800">
+              <div className="text-theme-primary-600 hover:text-theme-primary-800">
                 詳細を見る →
               </div>
             </div>

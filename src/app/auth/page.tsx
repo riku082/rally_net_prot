@@ -16,6 +16,14 @@ const AuthPage: React.FC = () => {
 
   const checkProfileAndRedirect = async (userId: string) => {
     try {
+      // 利用規約同意確認
+      const hasAgreed = await firestoreDb.hasAgreedToTerms(userId);
+      if (!hasAgreed) {
+        router.push('/terms-agreement');
+        return;
+      }
+
+      // プロフィール確認
       const profile = await firestoreDb.getUserProfile(userId);
       if (profile) {
         router.push('/');
@@ -24,7 +32,7 @@ const AuthPage: React.FC = () => {
       }
     } catch (error) {
       console.error('プロフィールチェックエラー:', error);
-      router.push('/onboarding/profile');
+      router.push('/terms-agreement');
     }
   };
 
@@ -84,7 +92,7 @@ const AuthPage: React.FC = () => {
               className="mr-4"
             />
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-theme-primary-600 to-theme-primary-400 bg-clip-text text-transparent">
                 Rally Net
               </h1>
               <p className="text-sm text-gray-600 mt-1">
@@ -101,7 +109,7 @@ const AuthPage: React.FC = () => {
               {isSignUp ? '既にアカウントをお持ちですか？' : 'アカウントをお持ちでないですか？'}
               <button
                 onClick={() => setIsSignUp(!isSignUp)}
-                className="font-medium text-blue-600 hover:text-blue-500 ml-1 transition-colors"
+                className="font-medium text-theme-primary-600 hover:text-theme-primary-500 ml-1 transition-colors"
               >
                 {isSignUp ? 'ログイン' : 'アカウント作成'}
               </button>
@@ -127,7 +135,7 @@ const AuthPage: React.FC = () => {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-theme-primary-500 focus:border-theme-primary-500 transition-colors"
                     placeholder="メールアドレスを入力"
                   />
                 </div>
@@ -143,7 +151,7 @@ const AuthPage: React.FC = () => {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-theme-primary-500 focus:border-theme-primary-500 transition-colors"
                     placeholder="パスワードを入力"
                   />
                 </div>
@@ -159,7 +167,7 @@ const AuthPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
+                  className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-theme-primary-600 to-theme-primary-400 hover:from-theme-primary-700 hover:to-theme-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   {loading ? '処理中...' : (isSignUp ? 'アカウント作成' : 'ログイン')}
                 </button>
@@ -180,7 +188,7 @@ const AuthPage: React.FC = () => {
                     type="button"
                     onClick={handleGoogleAuth}
                     disabled={loading}
-                    className="w-full inline-flex justify-center items-center py-3 px-4 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200"
+                    className="w-full inline-flex justify-center items-center py-3 px-4 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200"
                   >
                     <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                       <path

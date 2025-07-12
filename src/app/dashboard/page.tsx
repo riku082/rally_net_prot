@@ -7,6 +7,7 @@ import Topbar from '@/components/Topbar';
 import TopNewsPanel from '@/components/TopNewsPanel';
 import AuthGuard from '@/components/AuthGuard';
 import PerformanceMonitor from '@/components/PerformanceMonitor';
+import BPSIIntroCard from '@/components/BPSIIntroCard';
 
 import { Match } from '@/types/match';
 import { Practice, PracticeCard } from '@/types/practice';
@@ -87,17 +88,10 @@ const DashboardMobileCalendar: React.FC<DashboardMobileCalendarProps> = ({ pract
   const getPracticeIndicatorColor = (practices: Practice[]) => {
     if (practices.length === 0) return '';
     
-    const totalIntensity = practices.reduce((sum, p) => {
-      const intensityMap = { low: 1, medium: 2, high: 3, very_high: 4 };
-      return sum + intensityMap[p.intensity];
-    }, 0);
-    
-    const avgIntensity = totalIntensity / practices.length;
-    
-    if (avgIntensity <= 1.5) return 'bg-green-400';
-    if (avgIntensity <= 2.5) return 'bg-yellow-400';
-    if (avgIntensity <= 3.5) return 'bg-orange-400';
-    return 'bg-red-400';
+    // Show indicator based on practice count
+    if (practices.length === 1) return 'bg-theme-primary-400';
+    if (practices.length === 2) return 'bg-purple-400';
+    return 'bg-indigo-400';
   };
 
   const weekDays = generateWeekDays();
@@ -151,7 +145,7 @@ const DashboardMobileCalendar: React.FC<DashboardMobileCalendarProps> = ({ pract
               !day.isCurrentMonth 
                 ? 'bg-gray-50 text-gray-400' 
                 : day.isToday
-                ? 'bg-blue-50 border-blue-300'
+                ? 'bg-theme-primary-50 border-theme-primary-300'
                 : 'bg-white border-gray-200 hover:bg-gray-50'
             }`}
           >
@@ -176,51 +170,7 @@ const DashboardMobileCalendar: React.FC<DashboardMobileCalendarProps> = ({ pract
         ))}
       </div>
 
-      {/* 簡易統計 */}
-      <div className="bg-gray-50 rounded-lg p-3">
-        <div className="grid grid-cols-3 gap-3 text-center">
-          <div>
-            <div className="text-xs text-gray-600">今週</div>
-            <div className="text-sm font-bold text-gray-800">
-              {weekDays.reduce((sum, day) => sum + day.practices.length, 0)}回
-            </div>
-          </div>
-          <div>
-            <div className="text-xs text-gray-600">今月</div>
-            <div className="text-sm font-bold text-gray-800">
-              {practices.filter(p => {
-                const practiceDate = new Date(p.date);
-                return practiceDate.getMonth() === currentDate.getMonth() && 
-                       practiceDate.getFullYear() === currentDate.getFullYear();
-              }).length}回
-            </div>
-          </div>
-          <div>
-            <div className="text-xs text-gray-600">総計</div>
-            <div className="text-sm font-bold text-gray-800">{practices.length}回</div>
-          </div>
-        </div>
-      </div>
 
-      {/* 凡例 */}
-      <div className="flex items-center justify-center space-x-3 text-xs text-gray-600">
-        <div className="flex items-center space-x-1">
-          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-          <span>軽</span>
-        </div>
-        <div className="flex items-center space-x-1">
-          <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-          <span>普通</span>
-        </div>
-        <div className="flex items-center space-x-1">
-          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-          <span>きつい</span>
-        </div>
-        <div className="flex items-center space-x-1">
-          <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-          <span>激</span>
-        </div>
-      </div>
     </div>
   );
 };
@@ -230,6 +180,256 @@ interface DashboardDesktopCalendarProps {
   practices: Practice[];
   onCalendarClick: () => void;
 }
+
+// PC版横長カレンダーコンポーネント
+interface DashboardDesktopWideCalendarProps {
+  practices: Practice[];
+  onCalendarClick: () => void;
+}
+
+const DashboardDesktopWideCalendar: React.FC<DashboardDesktopWideCalendarProps> = ({ practices, onCalendarClick }) => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+  const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+
+  const generateCalendarDays = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    
+    const startDate = new Date(firstDay);
+    startDate.setDate(firstDay.getDate() - firstDay.getDay());
+    
+    const endDate = new Date(lastDay);
+    endDate.setDate(lastDay.getDate() + (6 - lastDay.getDay()));
+    
+    const days = [];
+    const currentCalendarDate = new Date(startDate);
+    
+    while (currentCalendarDate <= endDate) {
+      const dateStr = currentCalendarDate.toISOString().split('T')[0];
+      const dayPractices = practices.filter(p => p.date === dateStr);
+      
+      days.push({
+        date: new Date(currentCalendarDate),
+        isCurrentMonth: currentCalendarDate.getMonth() === month,
+        isToday: isSameDay(currentCalendarDate, new Date()),
+        practices: dayPractices
+      });
+      
+      currentCalendarDate.setDate(currentCalendarDate.getDate() + 1);
+    }
+    
+    return days;
+  };
+
+  const isSameDay = (date1: Date, date2: Date) => {
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate();
+  };
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    const newDate = new Date(currentDate);
+    if (direction === 'prev') {
+      newDate.setMonth(currentDate.getMonth() - 1);
+    } else {
+      newDate.setMonth(currentDate.getMonth() + 1);
+    }
+    setCurrentDate(newDate);
+  };
+
+  const goToToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  const getPracticeIndicatorColor = (practices: Practice[]) => {
+    if (practices.length === 0) return '';
+    
+    // Show indicator based on practice count
+    if (practices.length === 1) return 'bg-theme-primary-100 border-theme-primary-300';
+    if (practices.length === 2) return 'bg-purple-100 border-purple-300';
+    return 'bg-indigo-100 border-indigo-300';
+  };
+
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0) {
+      return `${hours}h${mins}m`;
+    }
+    return `${mins}m`;
+  };
+
+  const getMonthlyStats = () => {
+    const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    
+    const monthPractices = practices.filter(p => {
+      const practiceDate = new Date(p.date);
+      return practiceDate >= monthStart && practiceDate <= monthEnd;
+    });
+    
+    const totalDuration = monthPractices.reduce((sum, p) => sum + p.duration, 0);
+    const practiceDays = new Set(monthPractices.map(p => p.date)).size;
+    
+    return {
+      totalPractices: monthPractices.length,
+      totalDuration,
+      practiceDays,
+      avgDuration: monthPractices.length > 0 ? totalDuration / monthPractices.length : 0
+    };
+  };
+
+  const calendarDays = generateCalendarDays();
+  const monthlyStats = getMonthlyStats();
+
+  return (
+    <div 
+      className="cursor-pointer hover:shadow-lg transition-all duration-300"
+      onClick={onCalendarClick}
+    >
+      <div className="flex flex-col lg:flex-row lg:items-start lg:space-x-8 space-y-6 lg:space-y-0">
+        {/* 左側：月次統計 */}
+        <div className="lg:w-80 space-y-4">
+          {/* ヘッダー */}
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigateMonth('prev');
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <FaChevronLeft className="w-4 h-4 text-gray-600" />
+              </button>
+              <h3 className="text-xl font-bold text-gray-800 min-w-[140px] text-center">
+                {currentDate.getFullYear()}年 {months[currentDate.getMonth()]}
+              </h3>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigateMonth('next');
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <FaChevronRight className="w-4 h-4 text-gray-600" />
+              </button>
+            </div>
+            
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                goToToday();
+              }}
+              className="px-4 py-2 text-sm bg-theme-primary-100 text-theme-primary-700 rounded-lg hover:bg-theme-primary-200 transition-colors font-medium"
+            >
+              今日
+            </button>
+          </div>
+
+          {/* 月次統計 */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-theme-primary-50 rounded-lg p-4 text-center">
+              <div className="flex items-center justify-center mb-1">
+                <GiShuttlecock className="w-5 h-5 text-theme-primary-600 mr-1" />
+              </div>
+              <p className="text-sm text-theme-primary-600 font-medium">練習回数</p>
+              <p className="text-xl font-bold text-theme-primary-800">{monthlyStats.totalPractices}</p>
+            </div>
+            
+            <div className="bg-green-50 rounded-lg p-4 text-center">
+              <div className="flex items-center justify-center mb-1">
+                <FiCalendar className="w-5 h-5 text-green-600 mr-1" />
+              </div>
+              <p className="text-sm text-green-600 font-medium">総時間</p>
+              <p className="text-xl font-bold text-green-800">{formatDuration(monthlyStats.totalDuration)}</p>
+            </div>
+            
+            <div className="bg-purple-50 rounded-lg p-4 text-center">
+              <div className="flex items-center justify-center mb-1">
+                <FiCalendar className="w-5 h-5 text-purple-600 mr-1" />
+              </div>
+              <p className="text-sm text-purple-600 font-medium">練習日数</p>
+              <p className="text-xl font-bold text-purple-800">{monthlyStats.practiceDays}</p>
+            </div>
+            
+            <div className="bg-orange-50 rounded-lg p-4 text-center">
+              <div className="flex items-center justify-center mb-1">
+                <FiCalendar className="w-5 h-5 text-orange-600 mr-1" />
+              </div>
+              <p className="text-sm text-orange-600 font-medium">平均時間</p>
+              <p className="text-xl font-bold text-orange-800">{formatDuration(monthlyStats.avgDuration)}</p>
+            </div>
+          </div>
+
+          {/* 操作案内 */}
+          <div className="bg-theme-primary-50 rounded-lg p-3 text-center">
+            <p className="text-sm text-theme-primary-700 font-medium">クリックで詳細管理</p>
+          </div>
+        </div>
+
+        {/* 右側：カレンダーグリッド */}
+        <div className="flex-1">
+          <div className="grid grid-cols-7 gap-2">
+            {/* 曜日ヘッダー */}
+            {weekdays.map(day => (
+              <div key={day} className="p-3 text-center font-semibold text-gray-700 text-base">
+                {day}
+              </div>
+            ))}
+            
+            {/* 日付セル */}
+            {calendarDays.map((day, index) => (
+              <div
+                key={index}
+                className={`min-h-[90px] p-2 border rounded-lg transition-all duration-200 hover:shadow-md cursor-pointer ${
+                  !day.isCurrentMonth 
+                    ? 'bg-gray-50 text-gray-400' 
+                    : day.isToday
+                    ? 'bg-theme-primary-50 border-theme-primary-300 ring-2 ring-theme-primary-200'
+                    : day.practices.length > 0
+                    ? getPracticeIndicatorColor(day.practices)
+                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex flex-col h-full">
+                  <div className="text-base font-semibold mb-2 text-center">
+                    {day.date.getDate()}
+                  </div>
+                  
+                  {day.practices.length > 0 && (
+                    <div className="flex-1 space-y-1">
+                      {day.practices.slice(0, 2).map(practice => (
+                        <div
+                          key={practice.id}
+                          className="bg-white bg-opacity-90 rounded-md px-2 py-1 text-xs shadow-sm border"
+                          title={`${practice.title} (${formatDuration(practice.duration)})`}
+                        >
+                          <span className="truncate font-medium text-gray-700">{practice.title}</span>
+                        </div>
+                      ))}
+                      
+                      {day.practices.length > 2 && (
+                        <div className="text-xs text-gray-500 px-2 font-medium">
+                          +{day.practices.length - 2} 件
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const DashboardDesktopCalendar: React.FC<DashboardDesktopCalendarProps> = ({ practices, onCalendarClick }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -293,17 +493,10 @@ const DashboardDesktopCalendar: React.FC<DashboardDesktopCalendarProps> = ({ pra
   const getPracticeIndicatorColor = (practices: Practice[]) => {
     if (practices.length === 0) return '';
     
-    const totalIntensity = practices.reduce((sum, p) => {
-      const intensityMap = { low: 1, medium: 2, high: 3, very_high: 4 };
-      return sum + intensityMap[p.intensity];
-    }, 0);
-    
-    const avgIntensity = totalIntensity / practices.length;
-    
-    if (avgIntensity <= 1.5) return 'bg-green-100 border-green-300';
-    if (avgIntensity <= 2.5) return 'bg-yellow-100 border-yellow-300';
-    if (avgIntensity <= 3.5) return 'bg-orange-100 border-orange-300';
-    return 'bg-red-100 border-red-300';
+    // Show indicator based on practice count
+    if (practices.length === 1) return 'bg-theme-primary-100 border-theme-primary-300';
+    if (practices.length === 2) return 'bg-purple-100 border-purple-300';
+    return 'bg-indigo-100 border-indigo-300';
   };
 
   const formatDuration = (minutes: number) => {
@@ -340,11 +533,11 @@ const DashboardDesktopCalendar: React.FC<DashboardDesktopCalendarProps> = ({ pra
 
   return (
     <div 
-      className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 cursor-pointer hover:shadow-xl transition-all duration-300"
+      className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 cursor-pointer hover:shadow-xl transition-all duration-300"
       onClick={onCalendarClick}
     >
       {/* ヘッダー */}
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-6">
         <div className="flex items-center space-x-3">
           <button
             onClick={(e) => {
@@ -355,7 +548,7 @@ const DashboardDesktopCalendar: React.FC<DashboardDesktopCalendarProps> = ({ pra
           >
             <FaChevronLeft className="w-4 h-4 text-gray-600" />
           </button>
-          <h3 className="text-lg font-semibold text-gray-800 min-w-[120px] text-center">
+          <h3 className="text-xl font-bold text-gray-800 min-w-[140px] text-center">
             {currentDate.getFullYear()}年 {months[currentDate.getMonth()]}
           </h3>
           <button
@@ -374,52 +567,52 @@ const DashboardDesktopCalendar: React.FC<DashboardDesktopCalendarProps> = ({ pra
             e.stopPropagation();
             goToToday();
           }}
-          className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+          className="px-4 py-2 text-sm bg-theme-primary-100 text-theme-primary-700 rounded-lg hover:bg-theme-primary-200 transition-colors font-medium"
         >
           今日
         </button>
       </div>
 
       {/* 月次統計 */}
-      <div className="grid grid-cols-4 gap-3 mb-4">
-        <div className="bg-blue-50 rounded-lg p-3 text-center">
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="bg-theme-primary-50 rounded-lg p-4 text-center">
           <div className="flex items-center justify-center mb-1">
-            <GiShuttlecock className="w-4 h-4 text-blue-600 mr-1" />
+            <GiShuttlecock className="w-5 h-5 text-theme-primary-600 mr-1" />
           </div>
-          <p className="text-xs text-blue-600 font-medium">練習回数</p>
-          <p className="text-lg font-bold text-blue-800">{monthlyStats.totalPractices}</p>
+          <p className="text-sm text-theme-primary-600 font-medium">練習回数</p>
+          <p className="text-xl font-bold text-theme-primary-800">{monthlyStats.totalPractices}</p>
         </div>
         
-        <div className="bg-green-50 rounded-lg p-3 text-center">
+        <div className="bg-green-50 rounded-lg p-4 text-center">
           <div className="flex items-center justify-center mb-1">
-            <FiCalendar className="w-4 h-4 text-green-600 mr-1" />
+            <FiCalendar className="w-5 h-5 text-green-600 mr-1" />
           </div>
-          <p className="text-xs text-green-600 font-medium">総時間</p>
-          <p className="text-lg font-bold text-green-800">{formatDuration(monthlyStats.totalDuration)}</p>
+          <p className="text-sm text-green-600 font-medium">総時間</p>
+          <p className="text-xl font-bold text-green-800">{formatDuration(monthlyStats.totalDuration)}</p>
         </div>
         
-        <div className="bg-purple-50 rounded-lg p-3 text-center">
+        <div className="bg-purple-50 rounded-lg p-4 text-center">
           <div className="flex items-center justify-center mb-1">
-            <FiCalendar className="w-4 h-4 text-purple-600 mr-1" />
+            <FiCalendar className="w-5 h-5 text-purple-600 mr-1" />
           </div>
-          <p className="text-xs text-purple-600 font-medium">練習日数</p>
-          <p className="text-lg font-bold text-purple-800">{monthlyStats.practiceDays}</p>
+          <p className="text-sm text-purple-600 font-medium">練習日数</p>
+          <p className="text-xl font-bold text-purple-800">{monthlyStats.practiceDays}</p>
         </div>
         
-        <div className="bg-orange-50 rounded-lg p-3 text-center">
+        <div className="bg-orange-50 rounded-lg p-4 text-center">
           <div className="flex items-center justify-center mb-1">
-            <FiCalendar className="w-4 h-4 text-orange-600 mr-1" />
+            <FiCalendar className="w-5 h-5 text-orange-600 mr-1" />
           </div>
-          <p className="text-xs text-orange-600 font-medium">平均時間</p>
-          <p className="text-lg font-bold text-orange-800">{formatDuration(monthlyStats.avgDuration)}</p>
+          <p className="text-sm text-orange-600 font-medium">平均時間</p>
+          <p className="text-xl font-bold text-orange-800">{formatDuration(monthlyStats.avgDuration)}</p>
         </div>
       </div>
 
       {/* カレンダーグリッド */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-2">
         {/* 曜日ヘッダー */}
         {weekdays.map(day => (
-          <div key={day} className="p-2 text-center font-medium text-gray-600 text-sm">
+          <div key={day} className="p-3 text-center font-medium text-gray-700 text-base">
             {day}
           </div>
         ))}
@@ -428,18 +621,18 @@ const DashboardDesktopCalendar: React.FC<DashboardDesktopCalendarProps> = ({ pra
         {calendarDays.map((day, index) => (
           <div
             key={index}
-            className={`min-h-[60px] p-1 border rounded transition-all duration-200 ${
+            className={`min-h-[80px] p-2 border rounded-lg transition-all duration-200 hover:shadow-md cursor-pointer ${
               !day.isCurrentMonth 
                 ? 'bg-gray-50 text-gray-400' 
                 : day.isToday
-                ? 'bg-blue-50 border-blue-300'
+                ? 'bg-theme-primary-50 border-theme-primary-300'
                 : day.practices.length > 0
                 ? getPracticeIndicatorColor(day.practices)
-                : 'bg-white border-gray-200'
+                : 'bg-white border-gray-200 hover:bg-gray-50'
             }`}
           >
             <div className="flex flex-col h-full">
-              <div className="text-sm font-medium mb-1 text-center">
+              <div className="text-base font-semibold mb-2 text-center">
                 {day.date.getDate()}
               </div>
               
@@ -448,15 +641,15 @@ const DashboardDesktopCalendar: React.FC<DashboardDesktopCalendarProps> = ({ pra
                   {day.practices.slice(0, 2).map(practice => (
                     <div
                       key={practice.id}
-                      className="bg-white bg-opacity-80 rounded px-1 py-0.5 text-xs truncate"
+                      className="bg-white bg-opacity-90 rounded-md px-2 py-1 text-xs shadow-sm border"
                       title={`${practice.title} (${formatDuration(practice.duration)})`}
                     >
-                      <span className="truncate">{practice.title}</span>
+                      <span className="truncate font-medium text-gray-700">{practice.title}</span>
                     </div>
                   ))}
                   
                   {day.practices.length > 2 && (
-                    <div className="text-xs text-gray-600 px-1">
+                    <div className="text-xs text-gray-500 px-2 font-medium">
                       +{day.practices.length - 2} 件
                     </div>
                   )}
@@ -467,25 +660,6 @@ const DashboardDesktopCalendar: React.FC<DashboardDesktopCalendarProps> = ({ pra
         ))}
       </div>
 
-      {/* 凡例 */}
-      <div className="mt-4 flex items-center justify-center space-x-4 text-xs text-gray-600">
-        <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
-          <span>軽い練習</span>
-        </div>
-        <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 bg-yellow-100 border border-yellow-300 rounded"></div>
-          <span>普通の練習</span>
-        </div>
-        <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 bg-orange-100 border border-orange-300 rounded"></div>
-          <span>きつい練習</span>
-        </div>
-        <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 bg-red-100 border border-red-300 rounded"></div>
-          <span>非常にきつい練習</span>
-        </div>
-      </div>
       
       {/* クリックで詳細表示の案内 */}
       <div className="mt-3 text-center">
@@ -496,11 +670,13 @@ const DashboardDesktopCalendar: React.FC<DashboardDesktopCalendarProps> = ({ pra
 };
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [matches, setMatches] = useState<Match[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [mbtiResult, setMbtiResult] = useState<MbtiAnalysisResult | null>(null);
   const [practices, setPractices] = useState<Practice[]>([]);
+  const [showBPSIIntro, setShowBPSIIntro] = useState(false);
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
 
 
   useEffect(() => {
@@ -519,13 +695,25 @@ export default function DashboardPage() {
         const friendProfiles = await firestoreDb.getUserProfilesByIds(friendUserIds);
         setFriends(friendProfiles.slice(0, 5) as Friend[]); // 最大5人まで表示
 
+        // 練習データを取得
+        const loadedPractices = await firestoreDb.getPractices(user.uid);
+        setPractices(loadedPractices);
+
         // MBTI診断結果を取得
         const mbtiData = await firestoreDb.getMBTIResult(user.uid);
         setMbtiResult(mbtiData as MbtiAnalysisResult);
 
-        // 練習データを取得
-        const loadedPractices = await firestoreDb.getPractices(user.uid);
-        setPractices(loadedPractices);
+        // 初回ユーザーかどうかとBPSI診断の表示判定
+        const hasNoBPSIResult = !mbtiData;
+        const hasNoMatches = loadedMatches.length === 0;
+        const hasNoPractices = loadedPractices.length === 0;
+        const isFirstTime = hasNoBPSIResult && hasNoMatches && hasNoPractices;
+        
+        setIsFirstTimeUser(isFirstTime);
+        
+        // BPSI診断カードの表示判定（初回 or 診断結果なし）
+        const bpsiIntroSkipped = localStorage.getItem(`bpsi_intro_skipped_${user.uid}`);
+        setShowBPSIIntro(hasNoBPSIResult && !bpsiIntroSkipped);
 
         // 練習カードを取得
               // const loadedPracticeCards = await firestoreDb.getPracticeCards(user.uid);
@@ -545,6 +733,17 @@ export default function DashboardPage() {
   const handleCalendarInteraction = () => {
     // カレンダーの任意の操作で練習管理ページに移動
     window.location.href = '/practice-management';
+  };
+
+  // BPSI診断カード用のハンドラー
+  const handleBPSISkip = () => {
+    if (user?.uid) {
+      localStorage.setItem(`bpsi_intro_skipped_${user.uid}`, 'true');
+    }
+  };
+
+  const handleBPSIDismiss = () => {
+    setShowBPSIIntro(false);
   };
 
   return (
@@ -568,55 +767,115 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* メインコンテンツグリッド - 3列レイアウト */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
-                {/* 左側：プロフィールとBPSI診断 */}
-                <div className="space-y-4 sm:space-y-6 order-1 lg:order-1">
-                  <ModernProfileCard />
-                  <BPSIResultCard mbtiResult={mbtiResult} />
+              {/* BPSI診断誘導カード（初回ユーザーまたは未診断の場合） */}
+              {showBPSIIntro && (
+                <BPSIIntroCard 
+                  onSkip={handleBPSISkip}
+                  onDismiss={handleBPSIDismiss}
+                />
+              )}
+
+              {/* PC版：練習カレンダーを最上部に横長ウィジェットで表示 */}
+              <div className="hidden lg:block">
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300 mb-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-bold text-gray-800 flex items-center">
+                      <FiCalendar className="w-5 h-5 mr-2 text-theme-primary-600" />
+                      練習カレンダー
+                    </h3>
+                    <Link href="/practice-management" className="text-theme-primary-600 hover:text-theme-primary-800 transition-colors text-sm font-medium">
+                      詳細管理 →
+                    </Link>
+                  </div>
+                  <DashboardDesktopWideCalendar
+                    practices={practices}
+                    onCalendarClick={handleCalendarInteraction}
+                  />
                 </div>
 
-                {/* 中央：カレンダー */}
-                <div className="order-3 lg:order-2">
-                  <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
-                    <div className="flex items-center justify-between mb-4 sm:mb-6">
-                      <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center">
-                        <FiCalendar className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-green-600" />
-                        練習カレンダー
-                      </h3>
-                      <Link href="/practice-management" className="text-green-600 hover:text-green-800 transition-colors text-xs sm:text-sm font-medium">
-                        詳細表示 →
-                      </Link>
+                {/* PC版：下部ウィジェットグリッド */}
+                <div className="grid grid-cols-3 gap-8">
+                  {/* プロフィールとBPSI診断 */}
+                  <div className="space-y-6">
+                    <ModernProfileCard />
+                    <BPSIResultCard mbtiResult={mbtiResult} />
+                  </div>
+
+                  {/* 最近の試合 */}
+                  <div>
+                    <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300">
+                      <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-xl font-bold text-gray-800 flex items-center">
+                          <GiShuttlecock className="w-5 h-5 mr-2 text-theme-primary-600" />
+                          最近の試合
+                        </h3>
+                        <Link href="/matches" className="text-theme-primary-600 hover:text-theme-primary-800 transition-colors text-sm font-medium">
+                          すべて表示 →
+                        </Link>
+                      </div>
+                      {recentMatches.length > 0 ? (
+                        <div className="space-y-4">
+                          {recentMatches.map(match => (
+                            <MatchCard key={match.id} match={match} />
+                          ))}
+                        </div>
+                      ) : (
+                        <EmptyState 
+                          icon={<GiShuttlecock className="w-6 h-6 sm:w-8 sm:h-8" />}
+                          title="試合データなし"
+                          description="まだ試合が登録されていません"
+                          actionText="試合を登録"
+                          actionHref="/matches"
+                        />
+                      )}
                     </div>
-                    
-                    {/* デスクトップ版：表示専用カレンダー */}
-                    <div className="hidden lg:block">
-                      <DashboardDesktopCalendar
-                        practices={practices}
-                        onCalendarClick={handleCalendarInteraction}
-                      />
-                    </div>
-                    
-                    {/* モバイル版：表示専用カレンダー */}
-                    <div className="lg:hidden">
-                      <DashboardMobileCalendar 
-                        practices={practices}
-                        onCalendarClick={handleCalendarInteraction}
-                      />
+                  </div>
+
+                  {/* フレンドと最新記事 */}
+                  <div className="space-y-6">
+                    <FriendsListCard friends={friends} />
+                    {/* 最新記事 */}
+                    <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300">
+                      <TopNewsPanel />
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* 右側：最近の試合とフレンド */}
-                <div className="space-y-4 sm:space-y-6 order-2 lg:order-3">
+              {/* モバイル版：従来のレイアウト */}
+              <div className="lg:hidden">
+                <div className="space-y-6">
+                  {/* カレンダー */}
+                  <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
+                    <div className="flex items-center justify-between mb-4 sm:mb-6">
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center">
+                        <FiCalendar className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-theme-primary-600" />
+                        練習カレンダー
+                      </h3>
+                      <Link href="/practice-management" className="text-theme-primary-600 hover:text-theme-primary-800 transition-colors text-xs sm:text-sm font-medium">
+                        詳細表示 →
+                      </Link>
+                    </div>
+                    <DashboardMobileCalendar 
+                      practices={practices}
+                      onCalendarClick={handleCalendarInteraction}
+                    />
+                  </div>
+
+                  {/* プロフィール */}
+                  <ModernProfileCard />
+
+                  {/* BPSI診断 */}
+                  <BPSIResultCard mbtiResult={mbtiResult} />
+
                   {/* 最近の試合 */}
                   <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
                     <div className="flex items-center justify-between mb-4 sm:mb-6">
                       <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center">
-                        <GiShuttlecock className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                        <GiShuttlecock className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-theme-primary-600" />
                         最近の試合
                       </h3>
-                      <Link href="/matches" className="text-blue-600 hover:text-blue-800 transition-colors text-xs sm:text-sm font-medium">
+                      <Link href="/matches" className="text-theme-primary-600 hover:text-theme-primary-800 transition-colors text-xs sm:text-sm font-medium">
                         すべて表示 →
                       </Link>
                     </div>
@@ -639,12 +898,12 @@ export default function DashboardPage() {
 
                   {/* フレンド */}
                   <FriendsListCard friends={friends} />
-                </div>
-              </div>
 
-              {/* ニュースセクション - 全幅 */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
-                <TopNewsPanel />
+                  {/* モバイル版のみ：最新記事 */}
+                  <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
+                    <TopNewsPanel />
+                  </div>
+                </div>
               </div>
             </div>
           </main>
@@ -667,14 +926,14 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
     <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-gray-200 hover:shadow-lg transition-all duration-200 group">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-          <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+          <div className="w-2 h-2 bg-theme-primary-500 rounded-full flex-shrink-0"></div>
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors text-sm sm:text-base truncate">
+            <p className="font-semibold text-gray-800 group-hover:text-theme-primary-600 transition-colors text-sm sm:text-base truncate">
               {new Date(match.date).toLocaleDateString('ja-JP')}
             </p>
             <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm text-gray-600">
               <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${
-                match.type === 'singles' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                match.type === 'singles' ? 'bg-theme-primary-100 text-theme-primary-700' : 'bg-purple-100 text-purple-700'
               }`}>
                 {match.type === 'singles' ? 'シングルス' : 'ダブルス'}
               </span>
@@ -694,7 +953,7 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
         </div>
         <Link 
           href={`/analysis?matchId=${match.id}`} 
-          className="px-2 sm:px-3 py-1 bg-blue-600 text-white rounded-md sm:rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+          className="px-2 sm:px-3 py-1 bg-theme-primary-600 text-white rounded-md sm:rounded-lg hover:bg-theme-primary-700 transition-colors text-xs sm:text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
         >
           詳細
         </Link>
@@ -719,7 +978,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, description, actio
       <h4 className="text-base sm:text-lg font-medium text-gray-600 mb-2">{title}</h4>
       <p className="text-sm sm:text-base text-gray-500 mb-3 sm:mb-4">{description}</p>
       {actionText && actionHref && (
-        <Link href={actionHref} className="inline-flex items-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm font-medium">
+        <Link href={actionHref} className="inline-flex items-center px-3 sm:px-4 py-2 bg-theme-primary-600 text-white rounded-lg hover:bg-theme-primary-700 transition-colors text-xs sm:text-sm font-medium">
           {actionText}
         </Link>
       )}
@@ -761,15 +1020,17 @@ const ModernProfileCard: React.FC = () => {
           <h4 className="text-lg sm:text-xl font-bold text-gray-800 mb-1">
             {profile?.name || 'ユーザー名未設定'}
           </h4>
-          <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 truncate">
-            {user?.email || 'メール未設定'}
-          </p>
+          {profile?.playRegion && (
+            <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 truncate">
+              {profile.playRegion}
+            </p>
+          )}
           
           {/* 統計情報 */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg sm:rounded-xl p-2 sm:p-3">
-              <p className="text-xs text-blue-600 font-medium">レベル</p>
-              <p className="text-xs sm:text-sm font-bold text-blue-800">
+              <p className="text-xs text-theme-primary-600 font-medium">レベル</p>
+              <p className="text-xs sm:text-sm font-bold text-theme-primary-800">
                 {profile?.skillLevel === 'beginner' ? '初心者' :
                  profile?.skillLevel === 'intermediate' ? '中級者' :
                  profile?.skillLevel === 'advanced' ? '上級者' : 'プロ'}
@@ -802,10 +1063,10 @@ const FriendsListCard: React.FC<{ friends: Friend[] }> = ({ friends }) => {
     <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center">
-          <FaUsers className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+          <FaUsers className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-theme-primary-600" />
           フレンド
         </h3>
-        <Link href="/friends" className="text-blue-600 hover:text-blue-800 transition-colors text-xs sm:text-sm font-medium">
+        <Link href="/friends" className="text-theme-primary-600 hover:text-theme-primary-800 transition-colors text-xs sm:text-sm font-medium">
           すべて表示 →
         </Link>
       </div>
@@ -829,7 +1090,7 @@ const FriendsListCard: React.FC<{ friends: Friend[] }> = ({ friends }) => {
         <div className="text-center py-4">
           <FaUsers className="w-6 h-6 sm:w-8 sm:h-8 text-gray-300 mx-auto mb-2" />
           <p className="text-gray-500 text-xs sm:text-sm">まだフレンドがいません</p>
-          <Link href="/friends" className="text-blue-600 hover:text-blue-800 transition-colors text-xs sm:text-sm font-medium">
+          <Link href="/friends" className="text-theme-primary-600 hover:text-theme-primary-800 transition-colors text-xs sm:text-sm font-medium">
             フレンドを追加
           </Link>
         </div>
@@ -906,7 +1167,7 @@ const BPSIResultCard: React.FC<{ mbtiResult: MbtiAnalysisResult | null }> = ({ m
           )}
         </div>
         
-        <Link href="/analysis" className="w-full mt-3 sm:mt-4 inline-block">
+        <Link href="/mbti" className="w-full mt-3 sm:mt-4 inline-block">
           <button className="w-full px-3 sm:px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 font-medium text-xs sm:text-sm">
             詳細を見る
           </button>

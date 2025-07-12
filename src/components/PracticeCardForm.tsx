@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { PracticeCard, PracticeDrill, PracticeDifficulty, SkillCategory, PracticeIntensity, PracticeCourtInfo } from '@/types/practice';
+import { PracticeCard, PracticeDrill, PracticeDifficulty, SkillCategory, PracticeCourtInfo } from '@/types/practice';
 import { FaClock, FaPlus, FaTrash, FaTag, FaTools, FaBullseye } from 'react-icons/fa';
 import { FiSave, FiX } from 'react-icons/fi';
 import CourtSelector from './CourtSelectorSimple';
@@ -27,11 +27,9 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
       name: '',
       description: '',
       duration: 10,
-      intensity: 'medium' as PracticeIntensity,
       skillCategory: 'serve' as SkillCategory,
     } as PracticeDrill,
     difficulty: card?.difficulty || 'beginner' as PracticeDifficulty,
-    skillCategories: card?.skillCategories || [] as SkillCategory[],
     equipment: card?.equipment || [''],
     courtInfo: card?.courtInfo || undefined,
     notes: card?.notes || '',
@@ -41,9 +39,9 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
   });
 
   const difficultyOptions = [
-    { value: 'beginner', label: '初級', color: 'bg-green-100 text-green-800' },
-    { value: 'intermediate', label: '中級', color: 'bg-yellow-100 text-yellow-800' },
-    { value: 'advanced', label: '上級', color: 'bg-red-100 text-red-800' },
+    { value: 'beginner', label: '軽い', color: 'bg-green-100 text-green-800' },
+    { value: 'intermediate', label: '普通', color: 'bg-yellow-100 text-yellow-800' },
+    { value: 'advanced', label: 'きつい', color: 'bg-red-100 text-red-800' },
   ];
 
   const skillCategories = [
@@ -61,12 +59,6 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
     { value: 'mental', label: 'メンタル' },
   ];
 
-  const intensityLevels = [
-    { value: 'low', label: '軽い' },
-    { value: 'medium', label: '普通' },
-    { value: 'high', label: 'きつい' },
-    { value: 'very_high', label: '非常にきつい' },
-  ];
 
   const updateDrill = (updates: Partial<PracticeDrill>) => {
     setFormData(prev => ({
@@ -118,14 +110,6 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
   };
 
 
-  const handleSkillCategoryChange = (category: SkillCategory, checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      skillCategories: checked 
-        ? [...prev.skillCategories, category]
-        : prev.skillCategories.filter(cat => cat !== category)
-    }));
-  };
 
   const handleCourtInfoChange = (courtInfo: PracticeCourtInfo) => {
     setFormData(prev => ({
@@ -166,26 +150,29 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              カードタイトル *
+              練習名 *
             </label>
             <input
               type="text"
               value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              onChange={(e) => {
+                setFormData(prev => ({ ...prev, title: e.target.value }));
+                updateDrill({ name: e.target.value });
+              }}
               placeholder="例: 基礎サーブ練習"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-theme-primary-500"
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              難易度
+              練習強度
             </label>
             <select
               value={formData.difficulty}
               onChange={(e) => setFormData(prev => ({ ...prev, difficulty: e.target.value as PracticeDifficulty }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-theme-primary-500"
             >
               {difficultyOptions.map(option => (
                 <option key={option.value} value={option.value}>
@@ -196,105 +183,43 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
           </div>
         </div>
 
-        {/* 説明 */}
+        {/* 練習時間 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            練習時間
+          </label>
+          <div className="flex items-center space-x-2 max-w-xs">
+            <FaClock className="w-4 h-4 text-gray-400" />
+            <input
+              type="number"
+              value={formData.drill.duration}
+              onChange={(e) => updateDrill({ duration: parseInt(e.target.value) || 0 })}
+              placeholder="時間"
+              min="1"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-theme-primary-500"
+            />
+            <span className="text-sm text-gray-500">分</span>
+          </div>
+        </div>
+
+        {/* 練習内容の説明 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             練習内容の説明 *
           </label>
           <textarea
             value={formData.description}
-            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-            placeholder="この練習カードの概要を説明してください"
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => {
+              setFormData(prev => ({ ...prev, description: e.target.value }));
+              updateDrill({ description: e.target.value });
+            }}
+            placeholder="この練習の内容や手順を詳しく説明してください"
+            rows={4}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-theme-primary-500"
             required
           />
         </div>
 
-        {/* 練習内容詳細 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            <FaBullseye className="inline w-4 h-4 mr-1" />
-            練習内容
-          </label>
-          <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                type="text"
-                value={formData.drill.name}
-                onChange={(e) => updateDrill({ name: e.target.value })}
-                placeholder="練習名（例: 基礎うち、クリア練習）"
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <div className="flex items-center space-x-2">
-                <FaClock className="w-4 h-4 text-gray-400" />
-                <input
-                  type="number"
-                  value={formData.drill.duration}
-                  onChange={(e) => updateDrill({ duration: parseInt(e.target.value) || 0 })}
-                  placeholder="時間"
-                  min="1"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-500">分</span>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <select
-                value={formData.drill.skillCategory}
-                onChange={(e) => updateDrill({ skillCategory: e.target.value as SkillCategory })}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {skillCategories.map(skill => (
-                  <option key={skill.value} value={skill.value}>
-                    {skill.label}
-                  </option>
-                ))}
-              </select>
-              
-              <select
-                value={formData.drill.intensity}
-                onChange={(e) => updateDrill({ intensity: e.target.value as PracticeIntensity })}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {intensityLevels.map(level => (
-                  <option key={level.value} value={level.value}>
-                    {level.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <textarea
-              value={formData.drill.description}
-              onChange={(e) => updateDrill({ description: e.target.value })}
-              placeholder="練習の詳細な説明"
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-
-        {/* 対象スキル */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            対象スキルカテゴリ
-          </label>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {skillCategories.map(skill => (
-              <label key={skill.value} className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.skillCategories.includes(skill.value as SkillCategory)}
-                  onChange={(e) => handleSkillCategoryChange(skill.value as SkillCategory, e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">{skill.label}</span>
-              </label>
-            ))}
-          </div>
-        </div>
 
 
         {/* コート情報 */}
@@ -315,7 +240,7 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
             <button
               type="button"
               onClick={addEquipment}
-              className="flex items-center px-3 py-1 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              className="flex items-center px-3 py-1 text-sm bg-theme-primary-600 text-white rounded-lg hover:bg-theme-primary-700 transition-colors"
             >
               <FaPlus className="w-3 h-3 mr-1" />
               用具追加
@@ -329,7 +254,7 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
                   value={item}
                   onChange={(e) => updateEquipment(index, e.target.value)}
                   placeholder="必要な用具を入力"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-theme-primary-500"
                 />
                 <button
                   type="button"
@@ -367,7 +292,7 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
                   value={tag}
                   onChange={(e) => updateTag(index, e.target.value)}
                   placeholder="タグを入力"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-theme-primary-500"
                 />
                 <button
                   type="button"
@@ -391,7 +316,7 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
             onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
             placeholder="補足事項や注意点があれば記入してください"
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-theme-primary-500"
           />
         </div>
 
@@ -407,7 +332,7 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
           <button
             type="submit"
             disabled={isLoading}
-            className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="flex items-center px-6 py-2 bg-theme-primary-600 text-white rounded-lg hover:bg-theme-primary-700 transition-colors disabled:opacity-50"
           >
             <FiSave className="w-4 h-4 mr-2" />
             {isLoading ? '保存中...' : '保存'}

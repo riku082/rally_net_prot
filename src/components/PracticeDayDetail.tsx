@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Practice, PracticeCard } from '@/types/practice';
-import { FaClock, FaEdit, FaTrash, FaPlus, FaTimes, FaPlay, FaCalendarAlt } from 'react-icons/fa';
+import { FaClock, FaEdit, FaTrash, FaPlus, FaTimes, FaCalendarAlt } from 'react-icons/fa';
 import { GiShuttlecock } from 'react-icons/gi';
 
 interface PracticeDayDetailProps {
@@ -13,7 +13,6 @@ interface PracticeDayDetailProps {
   onCreatePractice: (date: Date) => void;
   onEditPractice: (practice: Practice) => void;
   onDeletePractice: (practiceId: string) => void;
-  onUsePracticeCard: (card: PracticeCard, date: Date) => void;
 }
 
 const PracticeDayDetail: React.FC<PracticeDayDetailProps> = ({
@@ -23,10 +22,8 @@ const PracticeDayDetail: React.FC<PracticeDayDetailProps> = ({
   onClose,
   onCreatePractice,
   onEditPractice,
-  onDeletePractice,
-  onUsePracticeCard
+  onDeletePractice
 }) => {
-  const [showCardSelector, setShowCardSelector] = useState(false);
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('ja-JP', {
@@ -50,36 +47,11 @@ const PracticeDayDetail: React.FC<PracticeDayDetailProps> = ({
     return `${mins}分`;
   };
 
-  const getIntensityColor = (intensity: string) => {
-    const colors = {
-      low: 'bg-green-100 text-green-800',
-      medium: 'bg-yellow-100 text-yellow-800',
-      high: 'bg-orange-100 text-orange-800',
-      very_high: 'bg-red-100 text-red-800'
-    };
-    return colors[intensity as keyof typeof colors] || 'bg-gray-100 text-gray-800';
-  };
-
-  const getIntensityLabel = (intensity: string) => {
-    const labels = {
-      low: '軽い',
-      medium: '普通',
-      high: 'きつい',
-      very_high: '非常にきつい'
-    };
-    return labels[intensity as keyof typeof labels] || intensity;
-  };
 
   const getTotalDuration = () => {
     return practices.reduce((total, practice) => total + practice.duration, 0);
   };
 
-  const getAverageIntensity = () => {
-    if (practices.length === 0) return 0;
-    const intensityMap = { low: 1, medium: 2, high: 3, very_high: 4 };
-    const total = practices.reduce((sum, p) => sum + intensityMap[p.intensity as keyof typeof intensityMap], 0);
-    return total / practices.length;
-  };
 
   const sortedPractices = practices.sort((a, b) => a.startTime.localeCompare(b.startTime));
 
@@ -121,22 +93,15 @@ const PracticeDayDetail: React.FC<PracticeDayDetailProps> = ({
             <div className="text-center py-12">
               <GiShuttlecock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-600 mb-2">この日は練習記録がありません</h3>
-              <p className="text-gray-500 mb-6">新しい練習記録を追加するか、練習カードから選択してください</p>
+              <p className="text-gray-500 mb-6">新しい練習記録を追加しましょう</p>
               
-              <div className="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
+              <div className="flex justify-center">
                 <button
                   onClick={() => onCreatePractice(selectedDate)}
                   className="flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   <FaPlus className="w-4 h-4 mr-2" />
                   新しい練習記録
-                </button>
-                <button
-                  onClick={() => setShowCardSelector(true)}
-                  className="flex items-center justify-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  <FaPlay className="w-4 h-4 mr-2" />
-                  練習カードから選択
                 </button>
               </div>
             </div>
@@ -155,10 +120,6 @@ const PracticeDayDetail: React.FC<PracticeDayDetailProps> = ({
                     <p className="text-2xl font-bold text-green-600">{formatDuration(getTotalDuration())}</p>
                     <p className="text-sm text-gray-600">合計時間</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-orange-600">{getAverageIntensity().toFixed(1)}</p>
-                    <p className="text-sm text-gray-600">平均強度</p>
-                  </div>
                 </div>
               </div>
 
@@ -174,13 +135,6 @@ const PracticeDayDetail: React.FC<PracticeDayDetailProps> = ({
                       <FaPlus className="w-3 h-3 mr-1" />
                       追加
                     </button>
-                    <button
-                      onClick={() => setShowCardSelector(true)}
-                      className="flex items-center px-3 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      <FaPlay className="w-3 h-3 mr-1" />
-                      カード
-                    </button>
                   </div>
                 </div>
 
@@ -191,9 +145,6 @@ const PracticeDayDetail: React.FC<PracticeDayDetailProps> = ({
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-2">
                             <h5 className="text-lg font-semibold text-gray-900">{practice.title}</h5>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getIntensityColor(practice.intensity)}`}>
-                              {getIntensityLabel(practice.intensity)}
-                            </span>
                           </div>
                           
                           <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
@@ -208,18 +159,6 @@ const PracticeDayDetail: React.FC<PracticeDayDetailProps> = ({
                             <p className="text-gray-700 text-sm mb-3">{practice.description}</p>
                           )}
 
-                          {practice.skills.length > 0 && (
-                            <div className="mb-3">
-                              <p className="text-xs font-medium text-gray-600 mb-1">スキル評価</p>
-                              <div className="flex flex-wrap gap-2">
-                                {practice.skills.map(skill => (
-                                  <span key={skill.id} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                                    {skill.name} ({skill.rating}/5)
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
 
                           {practice.notes && (
                             <div className="bg-gray-50 rounded p-2 text-sm">
@@ -255,57 +194,6 @@ const PracticeDayDetail: React.FC<PracticeDayDetailProps> = ({
           )}
         </div>
 
-        {/* 練習カード選択モーダル */}
-        {showCardSelector && (
-          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden">
-              <div className="flex items-center justify-between p-4 border-b">
-                <h3 className="text-lg font-semibold text-gray-900">練習カードを選択</h3>
-                <button
-                  onClick={() => setShowCardSelector(false)}
-                  className="p-1 text-gray-400 hover:text-gray-600"
-                >
-                  <FaTimes className="w-5 h-5" />
-                </button>
-              </div>
-              
-              <div className="p-4 max-h-96 overflow-y-auto">
-                {practiceCards.length === 0 ? (
-                  <p className="text-center text-gray-500 py-8">練習カードがありません</p>
-                ) : (
-                  <div className="space-y-3">
-                    {practiceCards.map(card => (
-                      <button
-                        key={card.id}
-                        onClick={() => {
-                          onUsePracticeCard(card, selectedDate);
-                          setShowCardSelector(false);
-                        }}
-                        className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="font-semibold text-gray-900">{card.title}</h4>
-                            <p className="text-sm text-gray-600 mt-1">{card.description}</p>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
-                                {card.difficulty === 'beginner' ? '初級' : card.difficulty === 'intermediate' ? '中級' : '上級'}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                30分
-                              </span>
-                            </div>
-                          </div>
-                          <FaPlay className="w-5 h-5 text-green-600" />
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

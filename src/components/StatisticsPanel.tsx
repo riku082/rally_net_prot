@@ -262,7 +262,7 @@ const StatisticsPanel: React.FC = () => {
     return (
       <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
         <div className="text-center py-12">
-          <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <div className="animate-spin w-8 h-8 border-4 border-theme-primary border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-gray-600">統計データを読み込み中...</p>
         </div>
       </div>
@@ -301,39 +301,39 @@ const StatisticsPanel: React.FC = () => {
       </div>
 
       {/* ビュー切り替え */}
-      <div className="flex space-x-2 mb-6">
+      <div className="flex space-x-1 sm:space-x-2 mb-6 overflow-x-auto">
         <button
           onClick={() => setSelectedView('types')}
-          className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`flex items-center px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
             selectedView === 'types'
               ? 'bg-blue-500 text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          <FaChartPie className="w-4 h-4 mr-2" />
-          タイプ分布
+          <FaChartPie className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+          <span className="hidden xs:inline">タイプ</span>分布
         </button>
         <button
           onClick={() => setSelectedView('trends')}
-          className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`flex items-center px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
             selectedView === 'trends'
               ? 'bg-blue-500 text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          <FaArrowUp className="w-4 h-4 mr-2" />
+          <FaArrowUp className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
           トレンド
         </button>
         <button
           onClick={() => setSelectedView('demographics')}
-          className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`flex items-center px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
             selectedView === 'demographics'
               ? 'bg-blue-500 text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          <FaGlobe className="w-4 h-4 mr-2" />
-          デモグラフィック
+          <FaGlobe className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+          <span className="hidden xs:inline">デモグラ</span>フィック
         </button>
       </div>
 

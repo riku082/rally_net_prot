@@ -4,15 +4,18 @@ import React, { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import Topbar from '@/components/Topbar';
-import { FiMail, FiSend, FiAlertCircle, FiCheck } from 'react-icons/fi';
+import { FiMail, FiSend, FiAlertCircle, FiCheck, FiTool } from 'react-icons/fi';
+import { FaBrain, FaBug } from 'react-icons/fa';
 
 const FeedbackPage: React.FC = () => {
   const [formData, setFormData] = useState({
     appearanceRating: 5,
     contentRating: 5,
     usabilityRating: 5,
+    mbtiAccuracyRating: 5,
     overallRating: 5,
-    comment: ''
+    comment: '',
+    bugReport: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -39,8 +42,10 @@ const FeedbackPage: React.FC = () => {
           appearanceRating: 5,
           contentRating: 5,
           usabilityRating: 5,
+          mbtiAccuracyRating: 5,
           overallRating: 5,
-          comment: ''
+          comment: '',
+          bugReport: ''
         });
       } else {
         alert('送信に失敗しました: ' + data.error);
@@ -109,7 +114,7 @@ const FeedbackPage: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setSubmitted(false)}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-6 py-2 bg-theme-primary-600 text-white rounded-lg hover:bg-theme-primary-700 transition-colors"
                 >
                   他のご意見を送る
                 </button>
@@ -132,8 +137,8 @@ const FeedbackPage: React.FC = () => {
             {/* ヘッダー */}
             <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8 mb-8">
               <div className="flex items-center mb-6">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-                  <FiMail className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 bg-theme-primary-100 rounded-lg flex items-center justify-center mr-4">
+                  <FiMail className="w-6 h-6 text-theme-primary-600" />
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-gray-800">目安箱</h1>
@@ -141,10 +146,10 @@ const FeedbackPage: React.FC = () => {
                 </div>
               </div>
               
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-theme-primary-50 border border-theme-primary-200 rounded-lg p-4">
                 <div className="flex items-start">
-                  <FiAlertCircle className="w-5 h-5 text-blue-600 mr-3 mt-0.5" />
-                  <div className="text-sm text-blue-800">
+                  <FiAlertCircle className="w-5 h-5 text-theme-primary-600 mr-3 mt-0.5" />
+                  <div className="text-sm text-theme-primary-800">
                     <p className="font-medium mb-1">限定公開について</p>
                     <p>この目安箱は現在限定公開中です。</p>
                   </div>
@@ -214,8 +219,28 @@ const FeedbackPage: React.FC = () => {
                   </p>
                 </div>
 
+                {/* BPSI診断の精度 */}
+                <div className="bg-purple-50 rounded-lg p-6 border border-purple-200">
+                  <label className="block text-lg font-medium text-gray-700 mb-4 flex items-center">
+                    <FaBrain className="w-5 h-5 mr-2 text-purple-600" />
+                    BPSI診断の精度
+                  </label>
+                  <div className="flex items-center justify-between">
+                    <StarRating 
+                      rating={formData.mbtiAccuracyRating} 
+                      onRatingChange={(rating) => setFormData({ ...formData, mbtiAccuracyRating: rating })} 
+                    />
+                    <span className="text-sm text-gray-600 min-w-[80px] text-right">
+                      {getRatingText(formData.mbtiAccuracyRating)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2">
+                    診断結果の正確性、自分の実際のプレースタイルとの一致度など
+                  </p>
+                </div>
+
                 {/* 総合評価 */}
-                <div className="bg-blue-50 rounded-lg p-6 border-2 border-blue-200">
+                <div className="bg-theme-primary-50 rounded-lg p-6 border-2 border-theme-primary-200">
                   <label className="block text-lg font-medium text-gray-700 mb-4">
                     ⭐ 総合評価
                   </label>
@@ -237,7 +262,7 @@ const FeedbackPage: React.FC = () => {
                 {/* コメント */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    一言コメント（任意）
+                    💬 一言コメント（任意）
                   </label>
                   <textarea
                     value={formData.comment}
@@ -248,6 +273,26 @@ const FeedbackPage: React.FC = () => {
                     maxLength={200}
                   />
                   <p className="text-xs text-gray-500 mt-1">{formData.comment.length}/200文字</p>
+                </div>
+
+                {/* 不具合・バグ報告 */}
+                <div className="bg-red-50 rounded-lg p-6 border border-red-200">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                    <FaBug className="w-4 h-4 mr-2 text-red-600" />
+                    🐛 不具合・バグ報告（任意）
+                  </label>
+                  <textarea
+                    value={formData.bugReport}
+                    onChange={(e) => setFormData({ ...formData, bugReport: e.target.value })}
+                    rows={4}
+                    className="w-full p-3 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white"
+                    placeholder="発見した不具合やバグについて詳しくお教えください（任意）&#10;例：&#10;- どのページで発生したか&#10;- 何をしたときに起こったか&#10;- どのような症状か&#10;- 使用しているデバイス・ブラウザ"
+                    maxLength={500}
+                  />
+                  <p className="text-xs text-red-600 mt-1">{formData.bugReport.length}/500文字</p>
+                  <p className="text-xs text-red-600 mt-2">
+                    ※ 緊急性の高い不具合の場合は、できるだけ詳細な情報をお知らせください
+                  </p>
                 </div>
 
                 {/* 匿名投稿の説明 */}
@@ -266,7 +311,7 @@ const FeedbackPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full sm:w-auto flex items-center justify-center px-8 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                    className="w-full sm:w-auto flex items-center justify-center px-8 py-3 bg-theme-primary-600 text-white font-medium rounded-lg hover:bg-theme-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                   >
                     {isSubmitting ? (
                       <>
@@ -286,10 +331,12 @@ const FeedbackPage: React.FC = () => {
 
             {/* フッター情報 */}
             <div className="bg-gray-50 rounded-xl p-6 mt-8">
-              <h3 className="font-medium text-gray-800 mb-3">評価について</h3>
+              <h3 className="font-medium text-gray-800 mb-3">評価・報告について</h3>
               <ul className="text-sm text-gray-600 space-y-2">
                 <li>• いただいた評価は、サービス改善の参考とさせていただきます</li>
                 <li>• 評価は統計的に処理され、品質向上に活用されます</li>
+                <li>• BPSI診断の精度評価は、診断アルゴリズムの改善に活用されます</li>
+                <li>• 不具合報告は優先的に対応いたします</li>
               </ul>
             </div>
           </div>

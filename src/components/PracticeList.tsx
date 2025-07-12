@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Practice, PracticeType, PracticeIntensity } from '@/types/practice';
+import { Practice, PracticeType } from '@/types/practice';
 import { FaClock, FaCalendarAlt, FaEdit, FaTrash, FaStar, FaFilter, FaLayerGroup, FaCheckCircle } from 'react-icons/fa';
 import { FiTrendingUp, FiTarget } from 'react-icons/fi';
 import { GiShuttlecock } from 'react-icons/gi';
@@ -21,7 +21,6 @@ const PracticeList: React.FC<PracticeListProps> = ({
 }) => {
   const [filter, setFilter] = useState<{
     type?: PracticeType;
-    intensity?: PracticeIntensity;
     dateRange?: 'week' | 'month' | 'all';
   }>({
     dateRange: 'all'
@@ -38,23 +37,9 @@ const PracticeList: React.FC<PracticeListProps> = ({
     'group_practice': 'グループ練習',
   };
 
-  const intensityLabels = {
-    'low': '軽い',
-    'medium': '普通',
-    'high': 'きつい',
-    'very_high': '非常にきつい',
-  };
-
-  const intensityColors = {
-    'low': 'bg-green-100 text-green-800',
-    'medium': 'bg-yellow-100 text-yellow-800',
-    'high': 'bg-orange-100 text-orange-800',
-    'very_high': 'bg-red-100 text-red-800',
-  };
 
   const filteredPractices = practices.filter(practice => {
     if (filter.type && practice.type !== filter.type) return false;
-    if (filter.intensity && practice.intensity !== filter.intensity) return false;
     
     if (filter.dateRange && filter.dateRange !== 'all') {
       const practiceDate = new Date(practice.date);
@@ -215,8 +200,6 @@ const PracticeList: React.FC<PracticeListProps> = ({
               onEdit={() => onEdit(practice)}
               onDelete={() => onDelete(practice.id)}
               typeLabel={practiceTypeLabels[practice.type]}
-              intensityLabel={intensityLabels[practice.intensity]}
-              intensityColor={intensityColors[practice.intensity]}
               formatDate={formatDate}
               formatDuration={formatDuration}
               calculateAverageRating={calculateAverageRating}
@@ -233,8 +216,6 @@ interface PracticeCardProps {
   onEdit: () => void;
   onDelete: () => void;
   typeLabel: string;
-  intensityLabel: string;
-  intensityColor: string;
   formatDate: (date: string) => string;
   formatDuration: (minutes: number) => string;
   calculateAverageRating: (practice: Practice) => number;
@@ -245,8 +226,6 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
   onEdit,
   onDelete,
   typeLabel,
-  intensityLabel,
-  intensityColor,
   formatDate,
   formatDuration,
   calculateAverageRating
@@ -269,9 +248,6 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
                 )}
               </h3>
               <div className="flex items-center space-x-2 flex-wrap">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${intensityColor}`}>
-                  {intensityLabel}
-                </span>
                 <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
                   {typeLabel}
                 </span>

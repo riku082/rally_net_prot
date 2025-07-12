@@ -6,7 +6,6 @@ export interface Practice {
   endTime: string; // HH:mm format
   duration: number; // minutes
   type: PracticeType;
-  intensity: PracticeIntensity;
   title: string;
   description?: string;
   notes?: string;
@@ -49,11 +48,6 @@ export type PracticeType =
   | 'individual_practice' // 個人練習
   | 'group_practice';   // グループ練習
 
-export type PracticeIntensity = 
-  | 'low'      // 軽い
-  | 'medium'   // 普通
-  | 'high'     // きつい
-  | 'very_high'; // 非常にきつい
 
 export interface PracticeSkill {
   id: string;
@@ -99,7 +93,6 @@ export interface PracticeStats {
   totalDuration: number; // minutes
   averageDuration: number; // minutes
   practicesByType: Record<PracticeType, number>;
-  practicesByIntensity: Record<PracticeIntensity, number>;
   skillAverages: Record<SkillCategory, number>;
   improvementTrends: Record<SkillCategory, number[]>; // last 10 practices
   monthlyStats: {
@@ -120,7 +113,6 @@ export interface PracticeCard {
   description: string;
   drill: PracticeDrill; // 単一の練習メニュー
   difficulty: 'beginner' | 'intermediate' | 'advanced';
-  skillCategories: SkillCategory[]; // 対象スキル
   equipment: string[]; // 必要な用具
   courtInfo?: PracticeCourtInfo; // コート情報
   notes?: string;
@@ -171,7 +163,6 @@ export interface PracticeDrill {
   sets?: number; // セット数
   reps?: number; // 回数
   restTime?: number; // 休憩時間（秒）
-  intensity: PracticeIntensity;
   skillCategory: SkillCategory;
   notes?: string;
   videoUrl?: string; // 参考動画URL
@@ -241,7 +232,6 @@ export interface PracticeCourtInfo {
 // 練習カードのフィルタリング用
 export interface PracticeCardFilter {
   difficulty?: PracticeDifficulty;
-  skillCategories?: SkillCategory[];
   maxDuration?: number; // 最大時間
   minDuration?: number; // 最小時間
   tags?: string[];

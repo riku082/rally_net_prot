@@ -11,13 +11,14 @@ import PracticeList from '@/components/PracticeList';
 import PracticeForm from '@/components/PracticeForm';
 import PracticeCardList from '@/components/PracticeCardList';
 import PracticeCardForm from '@/components/PracticeCardForm';
+import PracticeAnalyticsCharts from '@/components/PracticeAnalyticsCharts';
 import { Practice, PracticeCard } from '@/types/practice';
+import { firestoreDb } from '@/utils/db';
 import { useAuth } from '@/context/AuthContext';
 import { useSearchParams } from 'next/navigation';
-import { FaCalendarAlt, FaBook, FaLayerGroup, FaPlus, FaChartLine, FaTrophy } from 'react-icons/fa';
-import { GiShuttlecock } from 'react-icons/gi';
+import { FaCalendarAlt, FaBook, FaLayerGroup, FaPlus, FaChartLine } from 'react-icons/fa';
 
-type ViewMode = 'calendar' | 'records' | 'cards';
+type ViewMode = 'calendar' | 'records' | 'cards' | 'analytics';
 
 function PracticeManagementContent() {
   const { user } = useAuth();
@@ -33,7 +34,7 @@ function PracticeManagementContent() {
   // UI状態  
   const [activeView, setActiveView] = useState<ViewMode>(() => {
     const tab = searchParams.get('tab');
-    if (tab === 'cards' || tab === 'records' || tab === 'calendar') {
+    if (tab === 'cards' || tab === 'records' || tab === 'calendar' || tab === 'analytics') {
       return tab as ViewMode;
     }
     return 'calendar';
@@ -69,8 +70,7 @@ function PracticeManagementContent() {
           endTime: '12:00',
           duration: 120,
           type: 'basic_practice',
-          intensity: 'medium',
-          title: '基礎練習',
+                    title: '基礎練習',
           description: 'クリア、ドロップ、スマッシュの基礎練習',
           notes: '今日は調子が良かった。フットワークが改善した。',
           skills: [
@@ -96,8 +96,7 @@ function PracticeManagementContent() {
           endTime: '21:00',
           duration: 120,
           type: 'game_practice',
-          intensity: 'high',
-          title: '試合練習',
+                    title: '試合練習',
           description: 'ダブルスの試合形式練習',
           notes: 'パートナーとの連携がうまくいった',
           skills: [],
@@ -114,8 +113,7 @@ function PracticeManagementContent() {
           endTime: '09:30',
           duration: 90,
           type: 'physical_training',
-          intensity: 'very_high',
-          title: 'フィジカル強化',
+                    title: 'フィジカル強化',
           description: '体力向上のための集中トレーニング',
           notes: 'きつかったが、達成感があった',
           skills: [],
@@ -137,8 +135,7 @@ function PracticeManagementContent() {
             name: 'ハイサーブ練習',
             description: '後ろのコーナーを狙ったハイサーブの練習。フォームと精度を重視する。',
             duration: 15,
-            intensity: 'medium',
-            skillCategory: 'serve',
+                        skillCategory: 'serve',
             sets: 3,
             reps: 20
           },
@@ -170,8 +167,7 @@ function PracticeManagementContent() {
             name: 'クリア練習',
             description: '高いクリアでシャトルを相手コート後方に送る練習。飛距離と精度を向上させる。',
             duration: 20,
-            intensity: 'medium',
-            skillCategory: 'clear',
+                        skillCategory: 'clear',
             sets: 3,
             reps: 15
           },
@@ -184,8 +180,8 @@ function PracticeManagementContent() {
             courtType: 'singles',
             notes: 'クリアの到達地点を後衛エリアに正確に送る'
           },
-          notes: '中級者向けのクリア練習です。',
-          tags: ['中級', 'クリア'],
+          notes: '普通強度のクリア練習です。',
+          tags: ['普通', 'クリア'],
           isPublic: false,
           usageCount: 3,
           lastUsed: '2024-07-08',
@@ -203,8 +199,7 @@ function PracticeManagementContent() {
             name: 'ネット前ドロップ',
             description: 'ネット際にソフトタッチでシャトルを落とす練習。角度とタイミングが重要。',
             duration: 10,
-            intensity: 'low',
-            skillCategory: 'drop',
+                        skillCategory: 'drop',
             sets: 4,
             reps: 10
           },
@@ -217,8 +212,8 @@ function PracticeManagementContent() {
             courtType: 'singles',
             notes: 'ネット際の前衛エリアを狙う精密なドロップ'
           },
-          notes: '上級者向けの繊細なタッチが必要な練習です。',
-          tags: ['上級', 'ドロップ', 'ネット'],
+          notes: 'きつい強度の繊細なタッチが必要な練習です。',
+          tags: ['きつい', 'ドロップ', 'ネット'],
           isPublic: false,
           usageCount: 8,
           lastUsed: '2024-07-11',
@@ -228,8 +223,13 @@ function PracticeManagementContent() {
         }
       ];
 
-      setPractices(samplePractices);
-      setPracticeCards(sampleCards);
+      // 実際のデータベースから練習記録を取得
+      const practicesData = await firestoreDb.getPractices(user.uid);
+      setPractices(practicesData);
+
+      // 実際のデータベースから練習カードを取得
+      const cardsData = await firestoreDb.getPracticeCards(user.uid);
+      setPracticeCards(cardsData);
     } catch (error) {
       console.error('データの読み込みに失敗しました:', error);
     } finally {
@@ -237,29 +237,6 @@ function PracticeManagementContent() {
     }
   };
 
-  // 統計情報の計算
-  const calculateStats = () => {
-    const thisMonth = new Date();
-    const monthStart = new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 1);
-    const monthEnd = new Date(thisMonth.getFullYear(), thisMonth.getMonth() + 1, 0);
-    
-    const monthPractices = practices.filter(p => {
-      const practiceDate = new Date(p.date);
-      return practiceDate >= monthStart && practiceDate <= monthEnd;
-    });
-    
-    const totalDuration = practices.reduce((sum, p) => sum + p.duration, 0);
-    const practiceDays = new Set(practices.map(p => p.date)).size;
-    
-    return {
-      totalPractices: practices.length,
-      monthPractices: monthPractices.length,
-      totalHours: Math.round(totalDuration / 60),
-      practiceDays,
-      totalCards: practiceCards.length,
-      cardUsage: practiceCards.reduce((sum, c) => sum + c.usageCount, 0),
-    };
-  };
 
   // 練習記録関連のハンドラー
   const handleSavePractice = async (practiceData: Omit<Practice, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
@@ -269,11 +246,14 @@ function PracticeManagementContent() {
       setIsSaving(true);
       
       if (editingPractice) {
+        // 既存の練習記録を更新
         const updatedPractice: Practice = {
           ...editingPractice,
           ...practiceData,
           updatedAt: Date.now(),
         };
+        
+        await firestoreDb.updatePractice(editingPractice.id, updatedPractice);
         
         setPractices(prev => 
           prev.map(p => p.id === editingPractice.id ? updatedPractice : p)
@@ -285,6 +265,7 @@ function PracticeManagementContent() {
           );
         }
       } else {
+        // 新しい練習記録を作成
         const newPractice: Practice = {
           id: Date.now().toString(),
           userId: user.uid,
@@ -292,6 +273,8 @@ function PracticeManagementContent() {
           createdAt: Date.now(),
           updatedAt: Date.now(),
         };
+        
+        await firestoreDb.addPractice(newPractice);
         
         setPractices(prev => [...prev, newPractice]);
         
@@ -319,6 +302,7 @@ function PracticeManagementContent() {
 
   const handleDeletePractice = async (practiceId: string) => {
     try {
+      await firestoreDb.deletePractice(practiceId);
       setPractices(prev => prev.filter(p => p.id !== practiceId));
       setSelectedDatePractices(prev => prev.filter(p => p.id !== practiceId));
     } catch (error) {
@@ -341,16 +325,20 @@ function PracticeManagementContent() {
       setIsSaving(true);
       
       if (editingCard) {
+        // 既存の練習カードを更新
         const updatedCard: PracticeCard = {
           ...editingCard,
           ...cardData,
           updatedAt: Date.now(),
         };
         
+        await firestoreDb.updatePracticeCard(editingCard.id, updatedCard);
+        
         setPracticeCards(prev => 
           prev.map(c => c.id === editingCard.id ? updatedCard : c)
         );
       } else {
+        // 新しい練習カードを作成
         const newCard: PracticeCard = {
           id: Date.now().toString(),
           userId: user.uid,
@@ -359,6 +347,8 @@ function PracticeManagementContent() {
           createdAt: Date.now(),
           updatedAt: Date.now(),
         };
+        
+        await firestoreDb.addPracticeCard(newCard);
         
         setPracticeCards(prev => [newCard, ...prev]);
       }
@@ -378,53 +368,44 @@ function PracticeManagementContent() {
   };
 
   const handleDeletePracticeCard = async (cardId: string) => {
+    if (!user?.uid) {
+      console.error('ユーザーIDが取得できません');
+      return;
+    }
+    
+    console.log('削除開始 - CardID:', cardId, 'UserID:', user.uid);
+    console.log('削除前のカード数:', practiceCards.length);
+    
     try {
-      setPracticeCards(prev => prev.filter(c => c.id !== cardId));
+      await firestoreDb.deletePracticeCard(cardId, user.uid);
+      
+      // ローカル状態を更新
+      const updatedCards = practiceCards.filter(c => c.id !== cardId);
+      setPracticeCards(updatedCards);
+      
+      console.log('削除成功 - CardID:', cardId);
+      console.log('削除後のカード数:', updatedCards.length);
+      
+      // 削除が成功したことをユーザーに通知
+      // alert('練習カードを削除しました');
+      
+      // データを再読み込みして最新状態を確保
+      setTimeout(async () => {
+        try {
+          const refreshedCards = await firestoreDb.getPracticeCards(user.uid);
+          setPracticeCards(refreshedCards);
+          console.log('データ再読み込み完了。カード数:', refreshedCards.length);
+        } catch (refreshError) {
+          console.error('データ再読み込みに失敗:', refreshError);
+        }
+      }, 1000);
+      
     } catch (error) {
       console.error('練習カードの削除に失敗しました:', error);
+      alert('練習カードの削除に失敗しました。もう一度お試しください。');
     }
   };
 
-  const handleUsePracticeCard = async (card: PracticeCard, date?: Date) => {
-    try {
-      const targetDate = date || new Date();
-      const newPractice: Practice = {
-        id: Date.now().toString(),
-        userId: user?.uid || '',
-        date: targetDate.toISOString().split('T')[0],
-        startTime: '10:00',
-        endTime: `${Math.floor((10 * 60 + card.drill.duration) / 60)}:${(10 * 60 + card.drill.duration) % 60 < 10 ? '0' : ''}${(10 * 60 + card.drill.duration) % 60}`,
-        duration: card.drill.duration,
-        type: 'basic_practice',
-        intensity: 'medium',
-        title: card.title,
-        description: card.description,
-        notes: `練習カード「${card.title}」から作成`,
-        skills: [],
-        goals: [card.drill.name],
-        achievements: [],
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      };
-
-      setPractices(prev => [...prev, newPractice]);
-      
-      const updatedCard = {
-        ...card,
-        usageCount: card.usageCount + 1,
-        lastUsed: targetDate.toISOString().split('T')[0],
-        updatedAt: Date.now(),
-      };
-      
-      setPracticeCards(prev => prev.map(c => c.id === card.id ? updatedCard : c));
-      
-      if (selectedDate && selectedDate.toISOString().split('T')[0] === targetDate.toISOString().split('T')[0]) {
-        setSelectedDatePractices(prev => [...prev, newPractice]);
-      }
-    } catch (error) {
-      console.error('練習カードの使用に失敗しました:', error);
-    }
-  };
 
   // カレンダー関連のハンドラー
   const handleDateClick = (date: Date, dayPractices: Practice[]) => {
@@ -433,12 +414,12 @@ function PracticeManagementContent() {
     setShowDayDetail(true);
   };
 
-  const stats = calculateStats();
 
   const tabs = [
     { id: 'calendar', label: 'カレンダー', icon: <FaCalendarAlt className="w-4 h-4" /> },
     { id: 'records', label: '記録一覧', icon: <FaBook className="w-4 h-4" /> },
     { id: 'cards', label: 'カード管理', icon: <FaLayerGroup className="w-4 h-4" /> },
+    { id: 'analytics', label: '練習分析', icon: <FaChartLine className="w-4 h-4" /> },
   ];
 
   if (isLoading) {
@@ -490,19 +471,19 @@ function PracticeManagementContent() {
                       {activeView === 'records' && (
                         <button
                           onClick={() => handleCreatePractice()}
-                          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                          className="flex items-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
                         >
-                          <FaPlus className="w-4 h-4 mr-2" />
-                          練習記録
+                          <FaPlus className="w-4 h-4 mr-1 sm:mr-2" />
+                          <span className="hidden xs:inline">練習</span>記録
                         </button>
                       )}
                       {activeView === 'cards' && (
                         <button
                           onClick={() => setShowCardForm(true)}
-                          className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                          className="flex items-center px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base font-medium shadow-lg"
                         >
-                          <FaPlus className="w-4 h-4 mr-2" />
-                          練習カード
+                          <FaPlus className="w-4 h-4 mr-1 sm:mr-2" />
+                          <span className="hidden xs:inline">練習</span>カード
                         </button>
                       )}
                     </div>
@@ -510,97 +491,23 @@ function PracticeManagementContent() {
                 </div>
               </div>
 
-              {/* 統計カード */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 sm:gap-6">
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6">
-                  <div className="flex items-center">
-                    <div className="p-2 bg-purple-100 rounded-lg">
-                      <GiShuttlecock className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm text-gray-600">総練習回数</p>
-                      <p className="text-2xl font-bold text-gray-900">{stats.totalPractices}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6">
-                  <div className="flex items-center">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <FaCalendarAlt className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm text-gray-600">今月の練習</p>
-                      <p className="text-2xl font-bold text-gray-900">{stats.monthPractices}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6">
-                  <div className="flex items-center">
-                    <div className="p-2 bg-green-100 rounded-lg">
-                      <FaChartLine className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm text-gray-600">総練習時間</p>
-                      <p className="text-2xl font-bold text-gray-900">{stats.totalHours}h</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6">
-                  <div className="flex items-center">
-                    <div className="p-2 bg-orange-100 rounded-lg">
-                      <FaTrophy className="w-6 h-6 text-orange-600" />
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm text-gray-600">練習日数</p>
-                      <p className="text-2xl font-bold text-gray-900">{stats.practiceDays}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6">
-                  <div className="flex items-center">
-                    <div className="p-2 bg-indigo-100 rounded-lg">
-                      <FaLayerGroup className="w-6 h-6 text-indigo-600" />
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm text-gray-600">練習カード</p>
-                      <p className="text-2xl font-bold text-gray-900">{stats.totalCards}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6">
-                  <div className="flex items-center">
-                    <div className="p-2 bg-pink-100 rounded-lg">
-                      <FaBook className="w-6 h-6 text-pink-600" />
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm text-gray-600">カード使用</p>
-                      <p className="text-2xl font-bold text-gray-900">{stats.cardUsage}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               {/* タブナビゲーション */}
               <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20">
                 <div className="border-b border-gray-200">
-                  <div className="flex space-x-8 px-6">
+                  <div className="flex space-x-2 sm:space-x-4 md:space-x-8 px-3 sm:px-6 overflow-x-auto">
                     {tabs.map(tab => (
                       <button
                         key={tab.id}
                         onClick={() => setActiveView(tab.id as ViewMode)}
-                        className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                        className={`flex items-center space-x-1 sm:space-x-2 py-3 sm:py-4 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
                           activeView === tab.id
                             ? 'border-blue-500 text-blue-600'
                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                         }`}
                       >
-                        {tab.icon}
-                        <span>{tab.label}</span>
+                        <span className="w-3 h-3 sm:w-4 sm:h-4">{tab.icon}</span>
+                        <span className="text-xs sm:text-sm">{tab.label}</span>
                       </button>
                     ))}
                   </div>
@@ -611,31 +518,57 @@ function PracticeManagementContent() {
                   {activeView === 'calendar' && (
                     <PracticeCalendar
                       practices={practices}
-                      practiceCards={practiceCards}
                       onDateClick={handleDateClick}
-                      onCreatePractice={handleCreatePractice}
                       onEditPractice={handleEditPractice}
-                      onUsePracticeCard={handleUsePracticeCard}
                     />
                   )}
 
                   {activeView === 'records' && (
-                    <PracticeList
-                      practices={practices}
-                      onEdit={handleEditPractice}
-                      onDelete={handleDeletePractice}
-                      isLoading={false}
-                    />
+                    <div className="relative">
+                      <PracticeList
+                        practices={practices}
+                        onEdit={handleEditPractice}
+                        onDelete={handleDeletePractice}
+                        isLoading={false}
+                      />
+                      
+                      {/* モバイル用フローティングアクションボタン */}
+                      <div className="fixed bottom-6 right-6 sm:hidden z-40">
+                        <button
+                          onClick={() => handleCreatePractice()}
+                          className="flex items-center justify-center w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200 hover:scale-105"
+                          aria-label="練習記録を追加"
+                        >
+                          <FaPlus className="w-6 h-6" />
+                        </button>
+                      </div>
+                    </div>
                   )}
 
                   {activeView === 'cards' && (
-                    <PracticeCardList
-                      cards={practiceCards}
-                      onEdit={handleEditPracticeCard}
-                      onDelete={handleDeletePracticeCard}
-                      onUse={handleUsePracticeCard}
-                      isLoading={false}
-                    />
+                    <div className="relative">
+                      <PracticeCardList
+                        cards={practiceCards}
+                        onEdit={handleEditPracticeCard}
+                        onDelete={handleDeletePracticeCard}
+                        isLoading={false}
+                      />
+                      
+                      {/* モバイル用フローティングアクションボタン */}
+                      <div className="fixed bottom-6 right-6 sm:hidden z-40">
+                        <button
+                          onClick={() => setShowCardForm(true)}
+                          className="flex items-center justify-center w-14 h-14 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 transition-all duration-200 hover:scale-105"
+                          aria-label="練習カードを追加"
+                        >
+                          <FaPlus className="w-6 h-6" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeView === 'analytics' && (
+                    <PracticeAnalyticsCharts practices={practices} />
                   )}
                 </div>
               </div>
@@ -654,7 +587,6 @@ function PracticeManagementContent() {
           onCreatePractice={handleCreatePractice}
           onEditPractice={handleEditPractice}
           onDeletePractice={handleDeletePractice}
-          onUsePracticeCard={handleUsePracticeCard}
         />
       )}
 

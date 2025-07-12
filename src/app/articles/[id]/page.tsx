@@ -5,7 +5,7 @@ import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import Topbar from '@/components/Topbar';
 import { Article } from '@/types/article';
-import { FiArrowLeft, FiClock, FiUser, FiCalendar, FiEye, FiTag, FiStar } from 'react-icons/fi';
+import { FiArrowLeft, FiClock, FiUser, FiCalendar, FiTag, FiStar } from 'react-icons/fi';
 import Link from 'next/link';
 
 interface ArticlePageProps {
@@ -65,7 +65,7 @@ const ArticlePage: React.FC<ArticlePageProps> = ({ params }) => {
 
   const getCategoryColor = (category: string) => {
     const colorMap: { [key: string]: string } = {
-      'news': 'bg-blue-100 text-blue-800',
+      'news': 'bg-theme-primary-100 text-theme-primary-800',
       'tips': 'bg-green-100 text-green-800',
       'strategy': 'bg-purple-100 text-purple-800',
       'equipment': 'bg-orange-100 text-orange-800',
@@ -175,11 +175,11 @@ const ArticlePage: React.FC<ArticlePageProps> = ({ params }) => {
       <Sidebar activePath="/news" />
       <div className="flex-1 flex flex-col">
         <Topbar />
-        <main className="flex-1 p-6 lg:p-8">
-          <div className="max-w-4xl mx-auto">
+        <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8">
+          <div className="max-w-4xl mx-auto px-2 sm:px-0">
             {/* ナビゲーション */}
             <div className="mb-6">
-              <Link href="/news" className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+              <Link href="/news" className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-theme-primary-600 transition-colors">
                 <FiArrowLeft className="mr-2 h-4 w-4" />
                 記事一覧に戻る
               </Link>
@@ -211,9 +211,9 @@ const ArticlePage: React.FC<ArticlePageProps> = ({ params }) => {
               </div>
 
               {/* 記事内容 */}
-              <div className="p-8">
+              <div className="p-4 sm:p-6 md:p-8">
                 {/* タイトル */}
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
+                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4 leading-tight">
                   {article.title}
                 </h1>
 
@@ -238,12 +238,6 @@ const ArticlePage: React.FC<ArticlePageProps> = ({ params }) => {
                     <FiClock className="w-4 h-4 mr-2" />
                     <span>{article.readTime}分で読める</span>
                   </div>
-                  {article.viewCount && (
-                    <div className="flex items-center text-gray-600">
-                      <FiEye className="w-4 h-4 mr-2" />
-                      <span>{article.viewCount.toLocaleString()}回閲覧</span>
-                    </div>
-                  )}
                 </div>
 
                 {/* 記事本文 */}

@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FaBell, FaCog, FaUserCircle, FaSignOutAlt } from 'react-icons/fa';
+import { FaBell, FaCog, FaUserCircle, FaSignOutAlt, FaFile, FaInfoCircle } from 'react-icons/fa';
 import { useAuth } from '@/context/AuthContext';
 import { signOutUser } from '@/utils/auth';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const Topbar: React.FC = () => {
   const { user, profile } = useAuth();
@@ -40,10 +41,10 @@ const Topbar: React.FC = () => {
         <div className="text-lg font-bold text-gray-800">Rally Net</div>
       </div>
       <div className="flex items-center space-x-6">
-        <button className="text-gray-500 hover:text-blue-600 text-xl focus:outline-none">
+        <button className="text-gray-500 hover:text-theme-primary-600 text-xl focus:outline-none">
           <FaBell />
         </button>
-        <button className="text-gray-500 hover:text-blue-600 text-xl focus:outline-none">
+        <button className="text-gray-500 hover:text-theme-primary-600 text-xl focus:outline-none">
           <FaCog />
         </button>
         
@@ -51,7 +52,7 @@ const Topbar: React.FC = () => {
         <div className="relative">
           <button 
             onClick={() => setShowDropdown(!showDropdown)}
-            className="flex items-center space-x-2 text-gray-500 hover:text-blue-600 focus:outline-none"
+            className="flex items-center space-x-2 text-gray-500 hover:text-theme-primary-600 focus:outline-none"
           >
             <FaUserCircle className="text-2xl" />
             <span className="text-sm font-medium">
@@ -70,6 +71,23 @@ const Topbar: React.FC = () => {
                   {profile.position && <div>ポジション: {profile.position}</div>}
                 </div>
               )}
+              <Link
+                href="/terms"
+                onClick={() => setShowDropdown(false)}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+              >
+                <FaFile className="mr-2" />
+                利用規約
+              </Link>
+              <Link
+                href="/admission-policy"
+                onClick={() => setShowDropdown(false)}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+              >
+                <FaInfoCircle className="mr-2" />
+                アドミッションポリシー
+              </Link>
+              <div className="border-t my-1"></div>
               <button
                 onClick={handleLogout}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
