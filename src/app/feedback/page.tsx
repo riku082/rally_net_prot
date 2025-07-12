@@ -146,7 +146,7 @@ const FeedbackPage: React.FC = () => {
                   <FiAlertCircle className="w-5 h-5 text-blue-600 mr-3 mt-0.5" />
                   <div className="text-sm text-blue-800">
                     <p className="font-medium mb-1">限定公開について</p>
-                    <p>この目安箱は現在限定公開中です。いただいたご意見は開発チームが確認し、サービス改善に活用させていただきます。</p>
+                    <p>この目安箱は現在限定公開中です。</p>
                   </div>
                 </div>
               </div>
@@ -289,7 +289,6 @@ const FeedbackPage: React.FC = () => {
               <h3 className="font-medium text-gray-800 mb-3">評価について</h3>
               <ul className="text-sm text-gray-600 space-y-2">
                 <li>• いただいた評価は、サービス改善の参考とさせていただきます</li>
-                <li>• 匿名での投稿も可能です</li>
                 <li>• 評価は統計的に処理され、品質向上に活用されます</li>
               </ul>
             </div>

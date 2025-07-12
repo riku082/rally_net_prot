@@ -2,7 +2,6 @@ import { auth } from './firebase';
 import {
   signInWithPopup,
   GoogleAuthProvider,
-  OAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
@@ -14,20 +13,6 @@ import {
 export const signInWithGoogle = async () => {
   try {
     const provider = new GoogleAuthProvider();
-    const userCredential = await signInWithPopup(auth, provider);
-    return { user: userCredential.user, error: null };
-  } catch (error: unknown) {
-    return { user: null, error: error instanceof Error ? error.message : 'Unknown error' };
-  }
-};
-
-// Apple認証
-export const signInWithApple = async () => {
-  try {
-    const provider = new OAuthProvider('apple.com');
-    provider.addScope('email');
-    provider.addScope('name');
-    
     const userCredential = await signInWithPopup(auth, provider);
     return { user: userCredential.user, error: null };
   } catch (error: unknown) {
