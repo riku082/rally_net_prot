@@ -253,10 +253,11 @@ service cloud.firestore {
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow create: if isAuthenticated() && 
                    request.resource.data.userId == request.auth.uid &&
-                   request.resource.data.keys().hasAll(['userId', 'result', 'createdAt']) &&
+                   request.resource.data.keys().hasAll(['userId', 'result', 'createdAt', 'id']) &&
                    request.resource.data.result is string &&
                    request.resource.data.result.size() == 4 &&
-                   (request.resource.data.createdAt is timestamp || request.resource.data.createdAt is number);
+                   (request.resource.data.createdAt is timestamp || request.resource.data.createdAt is number) &&
+                   request.resource.data.id is string;
       allow update: if false; // MBTI結果は変更不可
       allow delete: if false; // MBTI結果は削除不可
     }

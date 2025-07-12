@@ -652,7 +652,15 @@ export const firestoreDb = {
 
   // MBTI診断関連
   async saveMBTIResult(result: MBTIResult): Promise<void> {
-    await setDoc(doc(db, 'mbtiResults', result.id), result);
+    console.log('Saving MBTI result to Firestore:', result.id, result.userId);
+    try {
+      const cleanedResult = cleanUndefinedFields(result);
+      await setDoc(doc(db, 'mbtiResults', result.id), cleanedResult);
+      console.log('MBTI result saved successfully:', result.id);
+    } catch (error) {
+      console.error('Failed to save MBTI result:', error);
+      throw error;
+    }
   },
 
   async getMBTIResult(userId: string): Promise<MBTIResult | null> {
@@ -680,11 +688,18 @@ export const firestoreDb = {
   },
 
   async updateUserProfileMBTI(userId: string, mbtiResult: string): Promise<void> {
-    const userRef = doc(db, 'userProfiles', userId);
-    await updateDoc(userRef, {
-      mbtiResult,
-      mbtiCompletedAt: Date.now()
-    });
+    console.log('Updating user profile with MBTI result:', userId, mbtiResult);
+    try {
+      const userRef = doc(db, 'userProfiles', userId);
+      await updateDoc(userRef, {
+        mbtiResult,
+        mbtiCompletedAt: Date.now()
+      });
+      console.log('User profile MBTI updated successfully:', userId);
+    } catch (error) {
+      console.error('Failed to update user profile MBTI:', error);
+      throw error;
+    }
   },
 
   // 練習記録関連

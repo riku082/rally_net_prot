@@ -107,11 +107,21 @@ const MBTIDiagnostic: React.FC<MBTIDiagnosticProps> = ({ onComplete }) => {
       };
 
       // API経由で保存
-      await fetch('/api/mbti', {
+      console.log('MBTI結果を保存中...', result);
+      const response = await fetch('/api/mbti', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ result, userId: user.uid })
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('MBTI結果の保存に失敗:', errorData);
+        throw new Error(`保存に失敗しました: ${errorData.error || response.statusText}`);
+      }
+
+      const responseData = await response.json();
+      console.log('MBTI結果保存成功:', responseData);
 
       onComplete(result);
     } catch (error) {
