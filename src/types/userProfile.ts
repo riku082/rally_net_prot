@@ -5,7 +5,7 @@ export interface UserProfile {
   team?: string;
   position?: string;
   experience?: string;
-  createdAt: string;
+  createdAt: number;
   avatar?: string;
   
   // バドミントン特化項目

@@ -75,7 +75,7 @@ const OnboardingProfilePage: React.FC = () => {
         team: formData.team,
         position: formData.position,
         experience: formData.experience,
-        createdAt: new Date().toISOString(), // 新規作成時は現在時刻
+        createdAt: Date.now(), // 新規作成時は現在時刻（number型）
         avatar: avatarUrlToSave
       };
 
