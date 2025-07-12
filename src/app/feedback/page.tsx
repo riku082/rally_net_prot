@@ -271,6 +271,7 @@ const FeedbackPage: React.FC = () => {
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="サービスについて一言お聞かせください（任意）"
                     maxLength={200}
+                    style={{ color: '#000000' }}
                   />
                   <p className="text-xs text-gray-500 mt-1">{formData.comment.length}/200文字</p>
                 </div>
@@ -288,6 +289,7 @@ const FeedbackPage: React.FC = () => {
                     className="w-full p-3 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white"
                     placeholder="発見した不具合やバグについて詳しくお教えください（任意）&#10;例：&#10;- どのページで発生したか&#10;- 何をしたときに起こったか&#10;- どのような症状か&#10;- 使用しているデバイス・ブラウザ"
                     maxLength={500}
+                    style={{ color: '#000000' }}
                   />
                   <p className="text-xs text-red-600 mt-1">{formData.bugReport.length}/500文字</p>
                   <p className="text-xs text-red-600 mt-2">

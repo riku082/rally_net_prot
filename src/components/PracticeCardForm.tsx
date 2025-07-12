@@ -162,6 +162,7 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
               placeholder="例: 基礎サーブ練習"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-theme-primary-500"
               required
+              style={{ color: '#000000' }}
             />
           </div>
 
@@ -197,6 +198,7 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
               placeholder="時間"
               min="1"
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-theme-primary-500"
+              style={{ color: '#000000' }}
             />
             <span className="text-sm text-gray-500">分</span>
           </div>
@@ -217,6 +219,7 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
             rows={4}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-theme-primary-500"
             required
+            style={{ color: '#000000' }}
           />
         </div>
 
@@ -255,6 +258,7 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
                   onChange={(e) => updateEquipment(index, e.target.value)}
                   placeholder="必要な用具を入力"
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-theme-primary-500"
+                  style={{ color: '#000000' }}
                 />
                 <button
                   type="button"
@@ -293,6 +297,7 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
                   onChange={(e) => updateTag(index, e.target.value)}
                   placeholder="タグを入力"
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-theme-primary-500"
+                  style={{ color: '#000000' }}
                 />
                 <button
                   type="button"
@@ -317,6 +322,7 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
             placeholder="補足事項や注意点があれば記入してください"
             rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-theme-primary-500"
+            style={{ color: '#000000' }}
           />
         </div>
 

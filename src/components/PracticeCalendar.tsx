@@ -154,16 +154,16 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
               onClick={() => navigateMonth('prev')}
               className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <FaChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
+              <FaChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" style={{ color: '#000000' }} />
             </button>
-            <h3 className="text-base sm:text-lg font-semibold text-gray-800 min-w-[100px] sm:min-w-[120px] text-center">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800 min-w-[100px] sm:min-w-[120px] text-center" style={{ color: '#000000' }}>
               {currentDate.getFullYear()}年 {months[currentDate.getMonth()]}
             </h3>
             <button
               onClick={() => navigateMonth('next')}
               className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <FaChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
+              <FaChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" style={{ color: '#000000' }} />
             </button>
           </div>
         </div>
@@ -172,6 +172,7 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
           <button
             onClick={goToToday}
             className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex-1 lg:flex-none"
+            style={{ color: '#000000' }}
           >
             今日
           </button>
@@ -226,7 +227,7 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
       <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
         {/* 曜日ヘッダー */}
         {weekdays.map(day => (
-          <div key={day} className="p-2 sm:p-3 text-center font-medium text-gray-600 text-xs sm:text-sm">
+          <div key={day} className="p-2 sm:p-3 text-center font-medium text-gray-600 text-xs sm:text-sm" style={{ color: '#000000' }}>
             {day}
           </div>
         ))}
@@ -249,7 +250,7 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
             }`}
           >
             <div className="flex flex-col h-full">
-              <div className="text-xs sm:text-sm font-medium mb-0.5 sm:mb-1 text-center sm:text-left">
+              <div className="text-xs sm:text-sm font-medium mb-0.5 sm:mb-1 text-center sm:text-left" style={{ color: '#000000' }}>
                 {day.date.getDate()}
               </div>
               
@@ -277,7 +278,7 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
                   ))}
                   
                   {day.practices.length > (window.innerWidth < 640 ? 1 : 2) && (
-                    <div className="text-xs text-gray-600 px-0.5 sm:px-1">
+                    <div className="text-xs text-gray-600 px-0.5 sm:px-1" style={{ color: '#000000' }}>
                       +{day.practices.length - (window.innerWidth < 640 ? 1 : 2)} 件
                     </div>
                   )}

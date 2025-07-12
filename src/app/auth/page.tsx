@@ -137,6 +137,7 @@ const AuthPage: React.FC = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-theme-primary-500 focus:border-theme-primary-500 transition-colors"
                     placeholder="メールアドレスを入力"
+                    style={{ color: '#000000' }}
                   />
                 </div>
                 <div>
@@ -153,6 +154,7 @@ const AuthPage: React.FC = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-theme-primary-500 focus:border-theme-primary-500 transition-colors"
                     placeholder="パスワードを入力"
+                    style={{ color: '#000000' }}
                   />
                 </div>
               </div>

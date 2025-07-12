@@ -297,6 +297,7 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
             placeholder="配球パターンや立ち位置について記録してください"
             rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-theme-primary-500"
+            style={{ color: '#000000' }}
           />
         </div>
       </div>

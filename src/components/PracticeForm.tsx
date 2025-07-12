@@ -158,6 +158,7 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
               placeholder="例: 午前練習、個人練習"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-theme-primary-500"
               required
+              style={{ color: '#000000' }}
             />
           </div>
         </div>
@@ -230,6 +231,7 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
             placeholder="練習メニューや内容を記録してください"
             rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-theme-primary-500"
+            style={{ color: '#000000' }}
           />
         </div>
 
@@ -280,6 +282,7 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
             placeholder="練習の反省点や気づいたことを記録してください"
             rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-theme-primary-500"
+            style={{ color: '#000000' }}
           />
         </div>
 

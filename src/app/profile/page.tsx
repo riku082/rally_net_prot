@@ -542,7 +542,7 @@ const ProfilePage: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">年齢</label>
                     <div className="relative">
                       <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input type="number" name="age" value={formData.age} onChange={handleInputChange} className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" placeholder="年齢を入力" />
+                      <input type="number" name="age" value={formData.age} onChange={handleInputChange} className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" placeholder="年齢を入力" style={{ color: '#000000' }} />
                     </div>
                   </div>
                 </div>
@@ -660,12 +660,12 @@ const ProfilePage: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">得意ショット</label>
-                    <input type="text" name="favoriteShots" value={formData.favoriteShots} onChange={handleInputChange} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" placeholder="例: スマッシュ, クリア, ドロップ" />
+                    <input type="text" name="favoriteShots" value={formData.favoriteShots} onChange={handleInputChange} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" placeholder="例: スマッシュ, クリア, ドロップ" style={{ color: '#000000' }} />
                     <p className="text-xs text-gray-500 mt-1">カンマ区切りで複数入力可能</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">苦手ショット</label>
-                    <input type="text" name="weakShots" value={formData.weakShots} onChange={handleInputChange} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" placeholder="例: ネットショット, ハイクリア" />
+                    <input type="text" name="weakShots" value={formData.weakShots} onChange={handleInputChange} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" placeholder="例: ネットショット, ハイクリア" style={{ color: '#000000' }} />
                     <p className="text-xs text-gray-500 mt-1">カンマ区切りで複数入力可能</p>
                   </div>
                 </div>
@@ -693,6 +693,7 @@ const ProfilePage: React.FC = () => {
                           onChange={(e) => handleAchievementChange(index, e.target.value)}
                           placeholder="大会名を入力（例：全日本選手権、県大会など）"
                           className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          style={{ color: '#000000' }}
                         />
                         <select
                           value={formData.achievementRanks[index] || ''}
@@ -750,6 +751,7 @@ const ProfilePage: React.FC = () => {
                           onChange={(e) => handleGoalChange(index, e.target.value)}
                           placeholder="目標を入力（例：全国大会出場、技術向上など）"
                           className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          style={{ color: '#000000' }}
                         />
                         <button
                           type="button"
@@ -771,7 +773,7 @@ const ProfilePage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">自己紹介</label>
-                  <textarea name="bio" value={formData.bio} onChange={handleInputChange} rows={4} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow resize-none" placeholder="自己紹介やバドミントンへの思いを入力してください"></textarea>
+                  <textarea name="bio" value={formData.bio} onChange={handleInputChange} rows={4} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow resize-none" placeholder="自己紹介やバドミントンへの思いを入力してください" style={{ color: '#000000' }}></textarea>
                 </div>
               </div>
               <div className="flex justify-end space-x-4 mt-8">

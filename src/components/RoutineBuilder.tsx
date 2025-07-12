@@ -163,6 +163,7 @@ const RoutineBuilder: React.FC<RoutineBuilderProps> = ({
                       })}
                       placeholder={cardExecution.plannedDuration.toString()}
                       className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-theme-primary-500"
+                      style={{ color: '#000000' }}
                     />
                   </div>
                   <div className="flex items-end">

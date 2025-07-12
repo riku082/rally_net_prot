@@ -105,10 +105,10 @@ const DashboardMobileCalendar: React.FC<DashboardMobileCalendarProps> = ({ pract
             onClick={() => navigateWeek('prev')}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <FaChevronLeft className="w-3 h-3 text-gray-600" />
+            <FaChevronLeft className="w-3 h-3 text-gray-600" style={{ color: '#000000' }} />
           </button>
           <div className="text-center min-w-[120px]">
-            <h4 className="text-sm font-semibold text-gray-800">
+            <h4 className="text-sm font-semibold text-gray-800" style={{ color: '#000000' }}>
               {currentDate.getFullYear()}年 {months[currentDate.getMonth()]}
             </h4>
           </div>
@@ -116,12 +116,13 @@ const DashboardMobileCalendar: React.FC<DashboardMobileCalendarProps> = ({ pract
             onClick={() => navigateWeek('next')}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <FaChevronRight className="w-3 h-3 text-gray-600" />
+            <FaChevronRight className="w-3 h-3 text-gray-600" style={{ color: '#000000' }} />
           </button>
         </div>
         <button
           onClick={goToToday}
           className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+          style={{ color: '#000000' }}
         >
           今日
         </button>
@@ -131,7 +132,7 @@ const DashboardMobileCalendar: React.FC<DashboardMobileCalendarProps> = ({ pract
       <div className="grid grid-cols-7 gap-1">
         {/* 曜日ヘッダー */}
         {weekdays.map(day => (
-          <div key={day} className="text-center text-xs font-medium text-gray-600 py-2">
+          <div key={day} className="text-center text-xs font-medium text-gray-600 py-2" style={{ color: '#000000' }}>
             {day}
           </div>
         ))}
@@ -150,7 +151,7 @@ const DashboardMobileCalendar: React.FC<DashboardMobileCalendarProps> = ({ pract
             }`}
           >
             <div className="flex flex-col h-full items-center">
-              <div className="text-xs font-medium mb-1">
+              <div className="text-xs font-medium mb-1" style={{ color: '#000000' }}>
                 {day.date.getDate()}
               </div>
               
@@ -160,7 +161,7 @@ const DashboardMobileCalendar: React.FC<DashboardMobileCalendarProps> = ({ pract
                     className={`w-2 h-2 rounded-full ${getPracticeIndicatorColor(day.practices)}`}
                     title={`${day.practices.length}件の練習`}
                   />
-                  <div className="text-xs text-gray-600">
+                  <div className="text-xs text-gray-600" style={{ color: '#000000' }}>
                     {day.practices.length}
                   </div>
                 </div>
@@ -305,9 +306,9 @@ const DashboardDesktopWideCalendar: React.FC<DashboardDesktopWideCalendarProps> 
                 }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <FaChevronLeft className="w-4 h-4 text-gray-600" />
+                <FaChevronLeft className="w-4 h-4 text-gray-600" style={{ color: '#000000' }} />
               </button>
-              <h3 className="text-xl font-bold text-gray-800 min-w-[140px] text-center">
+              <h3 className="text-xl font-bold text-gray-800 min-w-[140px] text-center" style={{ color: '#000000' }}>
                 {currentDate.getFullYear()}年 {months[currentDate.getMonth()]}
               </h3>
               <button
@@ -317,7 +318,7 @@ const DashboardDesktopWideCalendar: React.FC<DashboardDesktopWideCalendarProps> 
                 }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <FaChevronRight className="w-4 h-4 text-gray-600" />
+                <FaChevronRight className="w-4 h-4 text-gray-600" style={{ color: '#000000' }} />
               </button>
             </div>
             
@@ -327,6 +328,7 @@ const DashboardDesktopWideCalendar: React.FC<DashboardDesktopWideCalendarProps> 
                 goToToday();
               }}
               className="px-4 py-2 text-sm bg-theme-primary-100 text-theme-primary-700 rounded-lg hover:bg-theme-primary-200 transition-colors font-medium"
+              style={{ color: '#000000' }}
             >
               今日
             </button>
@@ -378,7 +380,7 @@ const DashboardDesktopWideCalendar: React.FC<DashboardDesktopWideCalendarProps> 
           <div className="grid grid-cols-7 gap-2">
             {/* 曜日ヘッダー */}
             {weekdays.map(day => (
-              <div key={day} className="p-3 text-center font-semibold text-gray-700 text-base">
+              <div key={day} className="p-3 text-center font-semibold text-gray-700 text-base" style={{ color: '#000000' }}>
                 {day}
               </div>
             ))}
@@ -398,7 +400,7 @@ const DashboardDesktopWideCalendar: React.FC<DashboardDesktopWideCalendarProps> 
                 }`}
               >
                 <div className="flex flex-col h-full">
-                  <div className="text-base font-semibold mb-2 text-center">
+                  <div className="text-base font-semibold mb-2 text-center" style={{ color: '#000000' }}>
                     {day.date.getDate()}
                   </div>
                   
@@ -415,7 +417,7 @@ const DashboardDesktopWideCalendar: React.FC<DashboardDesktopWideCalendarProps> 
                       ))}
                       
                       {day.practices.length > 2 && (
-                        <div className="text-xs text-gray-500 px-2 font-medium">
+                        <div className="text-xs text-gray-500 px-2 font-medium" style={{ color: '#000000' }}>
                           +{day.practices.length - 2} 件
                         </div>
                       )}
@@ -548,7 +550,7 @@ const DashboardDesktopCalendar: React.FC<DashboardDesktopCalendarProps> = ({ pra
           >
             <FaChevronLeft className="w-4 h-4 text-gray-600" />
           </button>
-          <h3 className="text-xl font-bold text-gray-800 min-w-[140px] text-center">
+          <h3 className="text-xl font-bold text-gray-800 min-w-[140px] text-center" style={{ color: '#000000' }}>
             {currentDate.getFullYear()}年 {months[currentDate.getMonth()]}
           </h3>
           <button
@@ -568,6 +570,7 @@ const DashboardDesktopCalendar: React.FC<DashboardDesktopCalendarProps> = ({ pra
             goToToday();
           }}
           className="px-4 py-2 text-sm bg-theme-primary-100 text-theme-primary-700 rounded-lg hover:bg-theme-primary-200 transition-colors font-medium"
+          style={{ color: '#000000' }}
         >
           今日
         </button>
@@ -612,7 +615,7 @@ const DashboardDesktopCalendar: React.FC<DashboardDesktopCalendarProps> = ({ pra
       <div className="grid grid-cols-7 gap-2">
         {/* 曜日ヘッダー */}
         {weekdays.map(day => (
-          <div key={day} className="p-3 text-center font-medium text-gray-700 text-base">
+          <div key={day} className="p-3 text-center font-medium text-gray-700 text-base" style={{ color: '#000000' }}>
             {day}
           </div>
         ))}
@@ -632,7 +635,7 @@ const DashboardDesktopCalendar: React.FC<DashboardDesktopCalendarProps> = ({ pra
             }`}
           >
             <div className="flex flex-col h-full">
-              <div className="text-base font-semibold mb-2 text-center">
+              <div className="text-base font-semibold mb-2 text-center" style={{ color: '#000000' }}>
                 {day.date.getDate()}
               </div>
               
@@ -649,7 +652,7 @@ const DashboardDesktopCalendar: React.FC<DashboardDesktopCalendarProps> = ({ pra
                   ))}
                   
                   {day.practices.length > 2 && (
-                    <div className="text-xs text-gray-500 px-2 font-medium">
+                    <div className="text-xs text-gray-500 px-2 font-medium" style={{ color: '#000000' }}>
                       +{day.practices.length - 2} 件
                     </div>
                   )}
@@ -801,33 +804,30 @@ export default function DashboardPage() {
                     <BPSIResultCard mbtiResult={mbtiResult} />
                   </div>
 
-                  {/* 最近の試合 */}
+                  {/* 最近の試合 - Coming Soon */}
                   <div>
-                    <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300 opacity-75">
                       <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-xl font-bold text-gray-800 flex items-center">
-                          <GiShuttlecock className="w-5 h-5 mr-2 text-theme-primary-600" />
+                        <h3 className="text-xl font-bold text-gray-400 flex items-center">
+                          <GiShuttlecock className="w-5 h-5 mr-2 text-gray-400" />
                           最近の試合
                         </h3>
-                        <Link href="/matches" className="text-theme-primary-600 hover:text-theme-primary-800 transition-colors text-sm font-medium">
-                          すべて表示 →
-                        </Link>
-                      </div>
-                      {recentMatches.length > 0 ? (
-                        <div className="space-y-4">
-                          {recentMatches.map(match => (
-                            <MatchCard key={match.id} match={match} />
-                          ))}
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded font-medium">
+                            Coming Soon
+                          </span>
+                          <span className="text-gray-400 text-sm font-medium cursor-not-allowed">
+                            すべて表示 →
+                          </span>
                         </div>
-                      ) : (
+                      </div>
+                      <div className="space-y-4">
                         <EmptyState 
                           icon={<GiShuttlecock className="w-6 h-6 sm:w-8 sm:h-8" />}
-                          title="試合データなし"
-                          description="まだ試合が登録されていません"
-                          actionText="試合を登録"
-                          actionHref="/matches"
+                          title="試合記録機能（Coming Soon）"
+                          description="試合記録・分析機能は現在開発中です"
                         />
-                      )}
+                      </div>
                     </div>
                   </div>
 
@@ -868,32 +868,29 @@ export default function DashboardPage() {
                   {/* BPSI診断 */}
                   <BPSIResultCard mbtiResult={mbtiResult} />
 
-                  {/* 最近の試合 */}
-                  <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
+                  {/* 最近の試合 - Coming Soon */}
+                  <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300 opacity-75">
                     <div className="flex items-center justify-between mb-4 sm:mb-6">
-                      <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center">
-                        <GiShuttlecock className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-theme-primary-600" />
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-400 flex items-center">
+                        <GiShuttlecock className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-gray-400" />
                         最近の試合
                       </h3>
-                      <Link href="/matches" className="text-theme-primary-600 hover:text-theme-primary-800 transition-colors text-xs sm:text-sm font-medium">
-                        すべて表示 →
-                      </Link>
-                    </div>
-                    {recentMatches.length > 0 ? (
-                      <div className="space-y-3 sm:space-y-4">
-                        {recentMatches.map(match => (
-                          <MatchCard key={match.id} match={match} />
-                        ))}
+                      <div className="flex items-center space-x-1 sm:space-x-2">
+                        <span className="text-xs bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-medium">
+                          Coming Soon
+                        </span>
+                        <span className="text-gray-400 text-xs sm:text-sm font-medium cursor-not-allowed">
+                          すべて表示 →
+                        </span>
                       </div>
-                    ) : (
+                    </div>
+                    <div className="space-y-3 sm:space-y-4">
                       <EmptyState 
                         icon={<GiShuttlecock className="w-6 h-6 sm:w-8 sm:h-8" />}
-                        title="試合データなし"
-                        description="まだ試合が登録されていません"
-                        actionText="試合を登録"
-                        actionHref="/matches"
+                        title="試合記録機能（Coming Soon）"
+                        description="試合記録・分析機能は現在開発中です"
                       />
-                    )}
+                    </div>
                   </div>
 
                   {/* フレンド */}
@@ -923,22 +920,22 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   const hasVideo = match.youtubeVideoId;
   
   return (
-    <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-gray-200 hover:shadow-lg transition-all duration-200 group">
+    <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-gray-200 transition-all duration-200 opacity-60 cursor-not-allowed">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-          <div className="w-2 h-2 bg-theme-primary-500 rounded-full flex-shrink-0"></div>
+          <div className="w-2 h-2 bg-gray-400 rounded-full flex-shrink-0"></div>
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-gray-800 group-hover:text-theme-primary-600 transition-colors text-sm sm:text-base truncate">
+            <p className="font-semibold text-gray-500 text-sm sm:text-base truncate">
               {new Date(match.date).toLocaleDateString('ja-JP')}
             </p>
-            <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm text-gray-600">
+            <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm text-gray-500">
               <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${
-                match.type === 'singles' ? 'bg-theme-primary-100 text-theme-primary-700' : 'bg-purple-100 text-purple-700'
+                match.type === 'singles' ? 'bg-gray-100 text-gray-500' : 'bg-gray-100 text-gray-500'
               }`}>
                 {match.type === 'singles' ? 'シングルス' : 'ダブルス'}
               </span>
               {hasVideo && (
-                <div className="flex items-center text-green-600">
+                <div className="flex items-center text-gray-500">
                   <FiPlay className="w-3 h-3 mr-0.5 sm:mr-1" />
                   <span className="text-xs">動画あり</span>
                 </div>
@@ -951,12 +948,9 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
             </div>
           </div>
         </div>
-        <Link 
-          href={`/analysis?matchId=${match.id}`} 
-          className="px-2 sm:px-3 py-1 bg-theme-primary-600 text-white rounded-md sm:rounded-lg hover:bg-theme-primary-700 transition-colors text-xs sm:text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-        >
+        <div className="px-2 sm:px-3 py-1 bg-gray-300 text-gray-500 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium cursor-not-allowed flex-shrink-0">
           詳細
-        </Link>
+        </div>
       </div>
     </div>
   );
