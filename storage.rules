@@ -1,0 +1,53 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // ユーザーが認証されているかチェック
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // ユーザーが自分のファイルにアクセスしているかチェック
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // ファイルサイズの制限（5MB）
+    function isValidFileSize() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+    
+    // 許可されたファイル形式
+    function isValidImageType() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    // アバター画像
+    match /avatars/{userId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) && 
+                   isValidFileSize() && 
+                   isValidImageType();
+    }
+    
+    // 試合関連の画像
+    match /matches/{userId}/{matchId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) && 
+                   isValidFileSize() && 
+                   isValidImageType();
+    }
+    
+    // 練習記録関連の画像
+    match /practices/{userId}/{practiceId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) && 
+                   isValidFileSize() && 
+                   isValidImageType();
+    }
+    
+    // その他のファイルはデフォルトで拒否
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+} 
