@@ -22,13 +22,14 @@ export interface UserProfile {
   tacticalRole?: string; // 戦術的役割
   
   // 競技情報
-  skillLevel?: 'beginner' | 'intermediate' | 'advanced' | 'professional'; // 競技レベル
-  achievements?: string[]; // 主な戦績
-  goals?: string; // 目標・モチベーション
+  achievements?: string[]; // 主な戦績（大会名）
+  achievementRanks?: string[]; // 戦績の順位
+  goals?: string[]; // 目標・モチベーション（複数選択）
   
   // 追加情報
   bio?: string; // 自己紹介
   preferredGameType?: 'singles' | 'doubles' | 'both'; // 好きな試合形式
+  playRegion?: string; // 主なプレイ地域
   
   // MBTI診断結果
   mbtiResult?: string; // "ESTJ", "INFP" など

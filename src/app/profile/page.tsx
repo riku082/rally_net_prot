@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { firestoreDb } from '@/utils/db';
 import { useRouter } from 'next/navigation';
-import { FiUser, FiMail, FiUsers, FiAward, FiCalendar, FiEdit, FiSave, FiXCircle, FiArrowLeft, FiTarget, FiTrendingUp, FiActivity, FiHeart, FiLock } from 'react-icons/fi';
+import { FiUser, FiMail, FiUsers, FiAward, FiCalendar, FiEdit, FiSave, FiXCircle, FiArrowLeft, FiTarget, FiTrendingUp, FiActivity, FiHeart, FiLock, FiCheckCircle, FiPlus, FiMinus, FiPercent, FiMapPin } from 'react-icons/fi';
 import { UserProfile } from '@/types/userProfile';
 import PrivacySettings from '@/components/PrivacySettings';
 
@@ -27,11 +27,12 @@ const ProfilePage: React.FC = () => {
     favoriteShots: '',
     weakShots: '',
     tacticalRole: '',
-    skillLevel: '',
-    achievements: '',
-    goals: '',
+    achievements: [] as string[],
+    achievementRanks: [] as string[],
+    goals: [] as string[],
     bio: '',
-    preferredGameType: ''
+    preferredGameType: '',
+    playRegion: ''
   });
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -71,11 +72,12 @@ const ProfilePage: React.FC = () => {
               favoriteShots: migratedProfile?.favoriteShots?.join(', ') || '',
               weakShots: migratedProfile?.weakShots?.join(', ') || '',
               tacticalRole: migratedProfile?.tacticalRole || '',
-              skillLevel: migratedProfile?.skillLevel || '',
-              achievements: migratedProfile?.achievements?.join(', ') || '',
-              goals: migratedProfile?.goals || '',
+              achievements: Array.isArray(migratedProfile?.achievements) ? migratedProfile.achievements : [],
+              achievementRanks: Array.isArray(migratedProfile?.achievementRanks) ? migratedProfile.achievementRanks : [],
+              goals: Array.isArray(migratedProfile?.goals) ? migratedProfile.goals : [],
               bio: migratedProfile?.bio || '',
-              preferredGameType: migratedProfile?.preferredGameType || ''
+              preferredGameType: migratedProfile?.preferredGameType || '',
+              playRegion: migratedProfile?.playRegion || ''
             });
           } else {
             setProfile(existingProfile);
@@ -93,11 +95,12 @@ const ProfilePage: React.FC = () => {
               favoriteShots: existingProfile.favoriteShots?.join(', ') || '',
               weakShots: existingProfile.weakShots?.join(', ') || '',
               tacticalRole: existingProfile.tacticalRole || '',
-              skillLevel: existingProfile.skillLevel || '',
-              achievements: existingProfile.achievements?.join(', ') || '',
-              goals: existingProfile.goals || '',
+              achievements: Array.isArray(existingProfile.achievements) ? existingProfile.achievements : [],
+              achievementRanks: Array.isArray(existingProfile.achievementRanks) ? existingProfile.achievementRanks : [],
+              goals: Array.isArray(existingProfile.goals) ? existingProfile.goals : [],
               bio: existingProfile.bio || '',
-              preferredGameType: existingProfile.preferredGameType || ''
+              preferredGameType: existingProfile.preferredGameType || '',
+              playRegion: existingProfile.playRegion || ''
             });
           }
         } else {
@@ -127,6 +130,111 @@ const ProfilePage: React.FC = () => {
     }));
   };
 
+  const handleAddAchievement = () => {
+    setFormData(prev => ({
+      ...prev,
+      achievements: [...prev.achievements, ''],
+      achievementRanks: [...prev.achievementRanks, '']
+    }));
+  };
+
+  const handleRemoveAchievement = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      achievements: prev.achievements.filter((_, i) => i !== index),
+      achievementRanks: prev.achievementRanks.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleAchievementChange = (index: number, value: string) => {
+    setFormData(prev => {
+      const newAchievements = [...prev.achievements];
+      newAchievements[index] = value;
+      return {
+        ...prev,
+        achievements: newAchievements
+      };
+    });
+  };
+
+  const handleRankingChange = (index: number, rank: string) => {
+    setFormData(prev => {
+      const newRanks = [...prev.achievementRanks];
+      newRanks[index] = rank;
+      return {
+        ...prev,
+        achievementRanks: newRanks
+      };
+    });
+  };
+
+  const handleAddGoal = () => {
+    setFormData(prev => ({
+      ...prev,
+      goals: [...prev.goals, '']
+    }));
+  };
+
+  const handleRemoveGoal = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      goals: prev.goals.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleGoalChange = (index: number, value: string) => {
+    setFormData(prev => {
+      const newGoals = [...prev.goals];
+      newGoals[index] = value;
+      return {
+        ...prev,
+        goals: newGoals
+      };
+    });
+  };
+
+  // プロフィール入力完了率を計算
+  const calculateCompletionRate = (data: typeof formData) => {
+    const fields = [
+      { key: 'name', weight: 10 },
+      { key: 'team', weight: 5 },
+      { key: 'age', weight: 5 },
+      { key: 'height', weight: 5 },
+      { key: 'weight', weight: 5 },
+      { key: 'playStyle', weight: 8 },
+      { key: 'dominantHand', weight: 8 },
+      { key: 'experience', weight: 8 },
+      { key: 'favoriteShots', weight: 7 },
+      { key: 'weakShots', weight: 7 },
+      { key: 'tacticalRole', weight: 5 },
+      { key: 'preferredGameType', weight: 8 },
+      { key: 'playRegion', weight: 6 },
+      { key: 'bio', weight: 10 },
+      { key: 'achievements', weight: 9, isArray: true },
+      { key: 'goals', weight: 10, isArray: true }
+    ];
+
+    let totalWeight = 0;
+    let completedWeight = 0;
+
+    fields.forEach(field => {
+      totalWeight += field.weight;
+      const value = data[field.key as keyof typeof data];
+      
+      if (field.isArray) {
+        if (Array.isArray(value) && value.length > 0 && value.some(item => item && item.trim())) {
+          completedWeight += field.weight;
+        }
+      } else {
+        if (value && String(value).trim()) {
+          completedWeight += field.weight;
+        }
+      }
+    });
+
+    return Math.round((completedWeight / totalWeight) * 100);
+  };
+
   const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setAvatarFile(e.target.files[0]);
@@ -146,6 +254,7 @@ const ProfilePage: React.FC = () => {
         setUploadingAvatar(false);
       }
 
+      // undefined値を除外してプロフィールを構築
       const updatedProfile: Partial<UserProfile> = {
         id: user.uid,
         email: user.email || '',
@@ -167,13 +276,22 @@ const ProfilePage: React.FC = () => {
 
       // 新しいフィールドは値がある場合のみ追加
       if (formData.age && formData.age.trim()) {
-        updatedProfile.age = parseInt(formData.age);
+        const ageNum = parseInt(formData.age);
+        if (!isNaN(ageNum)) {
+          updatedProfile.age = ageNum;
+        }
       }
       if (formData.height && formData.height.trim()) {
-        updatedProfile.height = parseInt(formData.height);
+        const heightNum = parseInt(formData.height);
+        if (!isNaN(heightNum)) {
+          updatedProfile.height = heightNum;
+        }
       }
       if (formData.weight && formData.weight.trim()) {
-        updatedProfile.weight = parseInt(formData.weight);
+        const weightNum = parseInt(formData.weight);
+        if (!isNaN(weightNum)) {
+          updatedProfile.weight = weightNum;
+        }
       }
       if (formData.playStyle && formData.playStyle.trim()) {
         updatedProfile.playStyle = formData.playStyle as 'aggressive' | 'defensive' | 'all-round';
@@ -196,17 +314,22 @@ const ProfilePage: React.FC = () => {
       if (formData.tacticalRole && formData.tacticalRole.trim()) {
         updatedProfile.tacticalRole = formData.tacticalRole;
       }
-      if (formData.skillLevel && formData.skillLevel.trim()) {
-        updatedProfile.skillLevel = formData.skillLevel as 'beginner' | 'intermediate' | 'advanced' | 'professional';
-      }
-      if (formData.achievements && formData.achievements.trim()) {
-        const achievements = formData.achievements.split(', ').filter(s => s.trim());
-        if (achievements.length > 0) {
-          updatedProfile.achievements = achievements;
+      if (formData.achievements && Array.isArray(formData.achievements) && formData.achievements.length > 0) {
+        const filteredAchievements = formData.achievements.filter(a => a && a.trim());
+        updatedProfile.achievements = filteredAchievements;
+        
+        // achievementRanksをachievementsの長さに合わせて調整
+        if (formData.achievementRanks && Array.isArray(formData.achievementRanks)) {
+          const adjustedRanks = filteredAchievements.map((_, index) => 
+            formData.achievementRanks[index] || ''
+          ).filter(r => r && r.trim());
+          if (adjustedRanks.length > 0) {
+            updatedProfile.achievementRanks = adjustedRanks;
+          }
         }
       }
-      if (formData.goals && formData.goals.trim()) {
-        updatedProfile.goals = formData.goals;
+      if (formData.goals && Array.isArray(formData.goals) && formData.goals.length > 0) {
+        updatedProfile.goals = formData.goals.filter(g => g && g.trim());
       }
       if (formData.bio && formData.bio.trim()) {
         updatedProfile.bio = formData.bio;
@@ -214,9 +337,37 @@ const ProfilePage: React.FC = () => {
       if (formData.preferredGameType && formData.preferredGameType.trim()) {
         updatedProfile.preferredGameType = formData.preferredGameType as 'singles' | 'doubles' | 'both';
       }
+      if (formData.playRegion && formData.playRegion.trim()) {
+        updatedProfile.playRegion = formData.playRegion;
+      }
 
-      await firestoreDb.saveUserProfile(updatedProfile as UserProfile);
-      setProfile(updatedProfile as UserProfile);
+      // undefined値を完全に除去するヘルパー関数
+      const cleanProfile = (obj: any): any => {
+        const cleaned: any = {};
+        Object.keys(obj).forEach(key => {
+          if (obj[key] !== undefined && obj[key] !== null) {
+            if (Array.isArray(obj[key])) {
+              const filteredArray = obj[key].filter((item: any) => item !== undefined && item !== null && item !== '');
+              if (filteredArray.length > 0) {
+                cleaned[key] = filteredArray;
+              }
+            } else if (typeof obj[key] === 'object') {
+              const cleanedObj = cleanProfile(obj[key]);
+              if (Object.keys(cleanedObj).length > 0) {
+                cleaned[key] = cleanedObj;
+              }
+            } else {
+              cleaned[key] = obj[key];
+            }
+          }
+        });
+        return cleaned;
+      };
+
+      const finalProfile = cleanProfile(updatedProfile);
+
+      await firestoreDb.saveUserProfile(finalProfile as UserProfile);
+      setProfile(finalProfile as UserProfile);
       setIsEditing(false);
       setAvatarFile(null); // アップロード後ファイルをクリア
 
@@ -245,11 +396,12 @@ const ProfilePage: React.FC = () => {
         favoriteShots: profile.favoriteShots?.join(', ') || '',
         weakShots: profile.weakShots?.join(', ') || '',
         tacticalRole: profile.tacticalRole || '',
-        skillLevel: profile.skillLevel || '',
-        achievements: profile.achievements?.join(', ') || '',
-        goals: profile.goals || '',
+        achievements: Array.isArray(profile.achievements) ? profile.achievements : [],
+        achievementRanks: Array.isArray(profile.achievementRanks) ? profile.achievementRanks : [],
+        goals: Array.isArray(profile.goals) ? profile.goals : [],
         bio: profile.bio || '',
-        preferredGameType: profile.preferredGameType || ''
+        preferredGameType: profile.preferredGameType || '',
+        playRegion: profile.playRegion || ''
       });
     }
     setIsEditing(false);
@@ -345,6 +497,32 @@ const ProfilePage: React.FC = () => {
 
           {isEditing ? (
             <div className="p-6 sm:p-8 bg-gray-50">
+              {/* プロフィール入力完了率 */}
+              <div className="mb-8 p-4 bg-white rounded-xl border border-gray-200">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                    <FiPercent className="w-5 h-5 mr-2" />
+                    プロフィール入力完了率
+                  </h3>
+                  <span className="text-2xl font-bold text-blue-600">{calculateCompletionRate(formData)}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div 
+                    className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${calculateCompletionRate(formData)}%` }}
+                  ></div>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">
+                  {calculateCompletionRate(formData) < 50 
+                    ? "もう少し詳細を入力して、より充実したプロフィールを作りましょう！" 
+                    : calculateCompletionRate(formData) < 80 
+                    ? "良いペースです！あと少しで完璧なプロフィールになります。" 
+                    : calculateCompletionRate(formData) < 100
+                    ? "素晴らしい！ほぼ完成です。最後の仕上げをしましょう。"
+                    : "完璧なプロフィールが完成しました！🎉"
+                  }
+                </p>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Form fields */}
                 <div className="space-y-6">
@@ -415,19 +593,6 @@ const ProfilePage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">競技レベル</label>
-                    <div className="relative">
-                      <FiAward className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <select name="skillLevel" value={formData.skillLevel} onChange={handleInputChange} className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white">
-                        <option value="">選択してください</option>
-                        <option value="beginner">初心者</option>
-                        <option value="intermediate">中級者</option>
-                        <option value="advanced">上級者</option>
-                        <option value="professional">プロ</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">プレイスタイル</label>
                     <div className="relative">
                       <FiTarget className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -459,6 +624,63 @@ const ProfilePage: React.FC = () => {
                         <option value="singles">シングルス</option>
                         <option value="doubles">ダブルス</option>
                         <option value="both">両方</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">主なプレイ地域</label>
+                    <div className="relative">
+                      <FiMapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <select name="playRegion" value={formData.playRegion} onChange={handleInputChange} className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white">
+                        <option value="">選択してください</option>
+                        <option value="北海道">北海道</option>
+                        <option value="青森県">青森県</option>
+                        <option value="岩手県">岩手県</option>
+                        <option value="宮城県">宮城県</option>
+                        <option value="秋田県">秋田県</option>
+                        <option value="山形県">山形県</option>
+                        <option value="福島県">福島県</option>
+                        <option value="茨城県">茨城県</option>
+                        <option value="栃木県">栃木県</option>
+                        <option value="群馬県">群馬県</option>
+                        <option value="埼玉県">埼玉県</option>
+                        <option value="千葉県">千葉県</option>
+                        <option value="東京都">東京都</option>
+                        <option value="神奈川県">神奈川県</option>
+                        <option value="新潟県">新潟県</option>
+                        <option value="富山県">富山県</option>
+                        <option value="石川県">石川県</option>
+                        <option value="福井県">福井県</option>
+                        <option value="山梨県">山梨県</option>
+                        <option value="長野県">長野県</option>
+                        <option value="岐阜県">岐阜県</option>
+                        <option value="静岡県">静岡県</option>
+                        <option value="愛知県">愛知県</option>
+                        <option value="三重県">三重県</option>
+                        <option value="滋賀県">滋賀県</option>
+                        <option value="京都府">京都府</option>
+                        <option value="大阪府">大阪府</option>
+                        <option value="兵庫県">兵庫県</option>
+                        <option value="奈良県">奈良県</option>
+                        <option value="和歌山県">和歌山県</option>
+                        <option value="鳥取県">鳥取県</option>
+                        <option value="島根県">島根県</option>
+                        <option value="岡山県">岡山県</option>
+                        <option value="広島県">広島県</option>
+                        <option value="山口県">山口県</option>
+                        <option value="徳島県">徳島県</option>
+                        <option value="香川県">香川県</option>
+                        <option value="愛媛県">愛媛県</option>
+                        <option value="高知県">高知県</option>
+                        <option value="福岡県">福岡県</option>
+                        <option value="佐賀県">佐賀県</option>
+                        <option value="長崎県">長崎県</option>
+                        <option value="熊本県">熊本県</option>
+                        <option value="大分県">大分県</option>
+                        <option value="宮崎県">宮崎県</option>
+                        <option value="鹿児島県">鹿児島県</option>
+                        <option value="沖縄県">沖縄県</option>
+                        <option value="海外">海外</option>
                       </select>
                     </div>
                   </div>
@@ -497,13 +719,101 @@ const ProfilePage: React.FC = () => {
               
               <div className="grid grid-cols-1 gap-6 mt-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">主な戦績</label>
-                  <input type="text" name="achievements" value={formData.achievements} onChange={handleInputChange} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" placeholder="例: 県大会ベスト8, 市民大会優勝" />
-                  <p className="text-xs text-gray-500 mt-1">カンマ区切りで複数入力可能</p>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-sm font-medium text-gray-700">大会戦績</label>
+                    <button
+                      type="button"
+                      onClick={handleAddAchievement}
+                      className="flex items-center px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                    >
+                      <FiPlus className="w-4 h-4 mr-1" />
+                      戦績追加
+                    </button>
+                  </div>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {formData.achievements.map((achievement, index) => (
+                      <div key={index} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
+                        <input
+                          type="text"
+                          value={achievement}
+                          onChange={(e) => handleAchievementChange(index, e.target.value)}
+                          placeholder="大会名を入力（例：全日本選手権、県大会など）"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <select
+                          value={formData.achievementRanks[index] || ''}
+                          onChange={(e) => handleRankingChange(index, e.target.value)}
+                          className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">順位選択</option>
+                          {RANKS.map((rank) => (
+                            <option key={rank.value} value={rank.value}>
+                              {rank.label}
+                            </option>
+                          ))}
+                        </select>
+                        {formData.achievementRanks[index] && (
+                          <div className="flex items-center">
+                            {getRankBadge(formData.achievementRanks[index])}
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveAchievement(index)}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <FiMinus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    {formData.achievements.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <FiAward className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p>まだ戦績が追加されていません</p>
+                        <p className="text-sm">「戦績追加」ボタンから追加してください</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">目標・モチベーション</label>
-                  <textarea name="goals" value={formData.goals} onChange={handleInputChange} rows={3} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow resize-none" placeholder="バドミントンに対する目標や意気込みを入力してください"></textarea>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-sm font-medium text-gray-700">目標・モチベーション</label>
+                    <button
+                      type="button"
+                      onClick={handleAddGoal}
+                      className="flex items-center px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                    >
+                      <FiPlus className="w-4 h-4 mr-1" />
+                      目標追加
+                    </button>
+                  </div>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {formData.goals.map((goal, index) => (
+                      <div key={index} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
+                        <input
+                          type="text"
+                          value={goal}
+                          onChange={(e) => handleGoalChange(index, e.target.value)}
+                          placeholder="目標を入力（例：全国大会出場、技術向上など）"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveGoal(index)}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <FiMinus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    {formData.goals.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <FiTarget className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p>まだ目標が追加されていません</p>
+                        <p className="text-sm">「目標追加」ボタンから追加してください</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">自己紹介</label>
@@ -544,12 +854,6 @@ const ProfilePage: React.FC = () => {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-800 mb-4">バドミントン情報</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                      <InfoItem icon={<FiAward />} label="競技レベル" value={
-                        profile.skillLevel === 'beginner' ? '初心者' :
-                        profile.skillLevel === 'intermediate' ? '中級者' :
-                        profile.skillLevel === 'advanced' ? '上級者' :
-                        profile.skillLevel === 'professional' ? 'プロ' : undefined
-                      } />
                       <InfoItem icon={<FiTarget />} label="プレイスタイル" value={
                         profile.playStyle === 'aggressive' ? '攻撃型' :
                         profile.playStyle === 'defensive' ? '守備型' :
@@ -564,6 +868,7 @@ const ProfilePage: React.FC = () => {
                         profile.preferredGameType === 'doubles' ? 'ダブルス' :
                         profile.preferredGameType === 'both' ? '両方' : undefined
                       } />
+                      <InfoItem icon={<FiMapPin />} label="主なプレイ地域" value={profile.playRegion} />
                       <InfoItem icon={<FiCalendar />} label="経験年数" value={profile.experience} />
                       <InfoItem icon={<FiTarget />} label="戦術的役割" value={profile.tacticalRole} />
                     </div>
@@ -585,15 +890,37 @@ const ProfilePage: React.FC = () => {
                   )}
                   
                   {/* 戦績・目標 */}
-                  {(profile.achievements || profile.goals) && (
+                  {(profile.achievements?.length || profile.goals?.length) && (
                     <div>
                       <h3 className="text-lg font-semibold text-gray-800 mb-4">戦績・目標</h3>
                       <div className="space-y-6">
-                        {profile.achievements && (
-                          <InfoItem icon={<FiAward />} label="主な戦績" value={profile.achievements.join(', ')} />
+                        {profile.achievements?.length > 0 && (
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-medium text-gray-500">大会戦績</h4>
+                            {profile.achievements.map((achievement, index) => (
+                              <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                                <span className="font-semibold text-gray-800">{achievement}</span>
+                                {profile.achievementRanks?.[index] && (
+                                  <div className="flex items-center">
+                                    {getRankBadge(profile.achievementRanks[index])}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         )}
-                        {profile.goals && (
-                          <InfoItem icon={<FiTarget />} label="目標・モチベーション" value={profile.goals} />
+                        {profile.goals?.length > 0 && (
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-medium text-gray-500">目標・モチベーション</h4>
+                            <div className="space-y-2">
+                              {profile.goals.map((goal, index) => (
+                                <div key={index} className="flex items-center p-3 bg-blue-50 rounded-lg">
+                                  <FiTarget className="w-4 h-4 text-blue-600 mr-3 flex-shrink-0" />
+                                  <span className="text-gray-800">{goal}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -639,5 +966,49 @@ const InfoItem: React.FC<InfoItemProps> = ({ icon, label, value }) => (
     </div>
   </div>
 );
+
+// 順位一覧
+const RANKS = [
+  { value: '1', label: '優勝', color: 'bg-yellow-100 text-yellow-800' },
+  { value: '2', label: '準優勝', color: 'bg-gray-100 text-gray-800' },
+  { value: '3', label: '3位', color: 'bg-orange-100 text-orange-800' },
+  { value: '4', label: 'ベスト4', color: 'bg-blue-100 text-blue-800' },
+  { value: '8', label: 'ベスト8', color: 'bg-green-100 text-green-800' },
+  { value: '16', label: 'ベスト16', color: 'bg-purple-100 text-purple-800' },
+  { value: '32', label: 'ベスト32', color: 'bg-indigo-100 text-indigo-800' },
+  { value: 'other', label: 'その他', color: 'bg-gray-100 text-gray-800' }
+];
+
+// メダル取得関数
+const getMedalIcon = (rank: string) => {
+  switch (rank) {
+    case '1':
+      return '🥇';
+    case '2':
+      return '🥈';
+    case '3':
+      return '🥉';
+    default:
+      return null;
+  }
+};
+
+// ランクバッジ表示関数
+const getRankBadge = (rank: string) => {
+  const rankInfo = RANKS.find(r => r.value === rank);
+  if (!rankInfo) return null;
+  
+  const medal = getMedalIcon(rank);
+  
+  return (
+    <div className="flex items-center space-x-2">
+      {medal && <span className="text-lg">{medal}</span>}
+      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${rankInfo.color}`}>
+        {rankInfo.label}
+      </span>
+    </div>
+  );
+};
+
 
 export default ProfilePage;
