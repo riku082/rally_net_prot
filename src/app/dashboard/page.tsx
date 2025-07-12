@@ -7,10 +7,12 @@ import Topbar from '@/components/Topbar';
 import TopNewsPanel from '@/components/TopNewsPanel';
 import AuthGuard from '@/components/AuthGuard';
 import PerformanceMonitor from '@/components/PerformanceMonitor';
+
 import { Match } from '@/types/match';
+import { Practice, PracticeCard } from '@/types/practice';
 import { firestoreDb } from '@/utils/db';
 import { useAuth } from '@/context/AuthContext';
-import { FaUsers, FaUserCircle, FaEdit, FaBrain, FaEye } from 'react-icons/fa';
+import { FaUsers, FaUserCircle, FaEdit, FaBrain, FaEye, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { FiCalendar, FiPlay } from 'react-icons/fi';
 import { GiShuttlecock } from 'react-icons/gi';
 import Link from 'next/link';
@@ -28,11 +30,478 @@ interface MbtiAnalysisResult {
   };
 }
 
+// ダッシュボード用モバイルカレンダーコンポーネント
+interface DashboardMobileCalendarProps {
+  practices: Practice[];
+  onCalendarClick: () => void;
+}
+
+const DashboardMobileCalendar: React.FC<DashboardMobileCalendarProps> = ({ practices, onCalendarClick }) => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+  const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+
+  const generateWeekDays = () => {
+    const startOfWeek = new Date(currentDate);
+    const day = startOfWeek.getDay();
+    startOfWeek.setDate(currentDate.getDate() - day);
+
+    const weekDays = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(startOfWeek);
+      date.setDate(startOfWeek.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0];
+      const dayPractices = practices.filter(p => p.date === dateStr);
+      
+      weekDays.push({
+        date: new Date(date),
+        practices: dayPractices,
+        isToday: isSameDay(date, new Date()),
+        isCurrentMonth: date.getMonth() === currentDate.getMonth()
+      });
+    }
+    return weekDays;
+  };
+
+  const isSameDay = (date1: Date, date2: Date) => {
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate();
+  };
+
+  const navigateWeek = (direction: 'prev' | 'next') => {
+    const newDate = new Date(currentDate);
+    if (direction === 'prev') {
+      newDate.setDate(currentDate.getDate() - 7);
+    } else {
+      newDate.setDate(currentDate.getDate() + 7);
+    }
+    setCurrentDate(newDate);
+  };
+
+  const goToToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  const getPracticeIndicatorColor = (practices: Practice[]) => {
+    if (practices.length === 0) return '';
+    
+    const totalIntensity = practices.reduce((sum, p) => {
+      const intensityMap = { low: 1, medium: 2, high: 3, very_high: 4 };
+      return sum + intensityMap[p.intensity];
+    }, 0);
+    
+    const avgIntensity = totalIntensity / practices.length;
+    
+    if (avgIntensity <= 1.5) return 'bg-green-400';
+    if (avgIntensity <= 2.5) return 'bg-yellow-400';
+    if (avgIntensity <= 3.5) return 'bg-orange-400';
+    return 'bg-red-400';
+  };
+
+  const weekDays = generateWeekDays();
+
+  return (
+    <div className="space-y-4">
+      {/* ヘッダー */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => navigateWeek('prev')}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <FaChevronLeft className="w-3 h-3 text-gray-600" />
+          </button>
+          <div className="text-center min-w-[120px]">
+            <h4 className="text-sm font-semibold text-gray-800">
+              {currentDate.getFullYear()}年 {months[currentDate.getMonth()]}
+            </h4>
+          </div>
+          <button
+            onClick={() => navigateWeek('next')}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <FaChevronRight className="w-3 h-3 text-gray-600" />
+          </button>
+        </div>
+        <button
+          onClick={goToToday}
+          className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+        >
+          今日
+        </button>
+      </div>
+
+      {/* 週表示カレンダー */}
+      <div className="grid grid-cols-7 gap-1">
+        {/* 曜日ヘッダー */}
+        {weekdays.map(day => (
+          <div key={day} className="text-center text-xs font-medium text-gray-600 py-2">
+            {day}
+          </div>
+        ))}
+        
+        {/* 日付セル */}
+        {weekDays.map((day, index) => (
+          <div
+            key={index}
+            onClick={onCalendarClick}
+            className={`min-h-[50px] p-1 border rounded cursor-pointer transition-all duration-200 ${
+              !day.isCurrentMonth 
+                ? 'bg-gray-50 text-gray-400' 
+                : day.isToday
+                ? 'bg-blue-50 border-blue-300'
+                : 'bg-white border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            <div className="flex flex-col h-full items-center">
+              <div className="text-xs font-medium mb-1">
+                {day.date.getDate()}
+              </div>
+              
+              {day.practices.length > 0 && (
+                <div className="flex flex-col items-center space-y-0.5">
+                  <div 
+                    className={`w-2 h-2 rounded-full ${getPracticeIndicatorColor(day.practices)}`}
+                    title={`${day.practices.length}件の練習`}
+                  />
+                  <div className="text-xs text-gray-600">
+                    {day.practices.length}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 簡易統計 */}
+      <div className="bg-gray-50 rounded-lg p-3">
+        <div className="grid grid-cols-3 gap-3 text-center">
+          <div>
+            <div className="text-xs text-gray-600">今週</div>
+            <div className="text-sm font-bold text-gray-800">
+              {weekDays.reduce((sum, day) => sum + day.practices.length, 0)}回
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-600">今月</div>
+            <div className="text-sm font-bold text-gray-800">
+              {practices.filter(p => {
+                const practiceDate = new Date(p.date);
+                return practiceDate.getMonth() === currentDate.getMonth() && 
+                       practiceDate.getFullYear() === currentDate.getFullYear();
+              }).length}回
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-600">総計</div>
+            <div className="text-sm font-bold text-gray-800">{practices.length}回</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 凡例 */}
+      <div className="flex items-center justify-center space-x-3 text-xs text-gray-600">
+        <div className="flex items-center space-x-1">
+          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+          <span>軽</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+          <span>普通</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+          <span>きつい</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+          <span>激</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ダッシュボード用デスクトップカレンダーコンポーネント
+interface DashboardDesktopCalendarProps {
+  practices: Practice[];
+  onCalendarClick: () => void;
+}
+
+const DashboardDesktopCalendar: React.FC<DashboardDesktopCalendarProps> = ({ practices, onCalendarClick }) => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+  const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+
+  const generateCalendarDays = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    
+    const startDate = new Date(firstDay);
+    startDate.setDate(firstDay.getDate() - firstDay.getDay());
+    
+    const endDate = new Date(lastDay);
+    endDate.setDate(lastDay.getDate() + (6 - lastDay.getDay()));
+    
+    const days = [];
+    const currentCalendarDate = new Date(startDate);
+    
+    while (currentCalendarDate <= endDate) {
+      const dateStr = currentCalendarDate.toISOString().split('T')[0];
+      const dayPractices = practices.filter(p => p.date === dateStr);
+      
+      days.push({
+        date: new Date(currentCalendarDate),
+        isCurrentMonth: currentCalendarDate.getMonth() === month,
+        isToday: isSameDay(currentCalendarDate, new Date()),
+        practices: dayPractices
+      });
+      
+      currentCalendarDate.setDate(currentCalendarDate.getDate() + 1);
+    }
+    
+    return days;
+  };
+
+  const isSameDay = (date1: Date, date2: Date) => {
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate();
+  };
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    const newDate = new Date(currentDate);
+    if (direction === 'prev') {
+      newDate.setMonth(currentDate.getMonth() - 1);
+    } else {
+      newDate.setMonth(currentDate.getMonth() + 1);
+    }
+    setCurrentDate(newDate);
+  };
+
+  const goToToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  const getPracticeIndicatorColor = (practices: Practice[]) => {
+    if (practices.length === 0) return '';
+    
+    const totalIntensity = practices.reduce((sum, p) => {
+      const intensityMap = { low: 1, medium: 2, high: 3, very_high: 4 };
+      return sum + intensityMap[p.intensity];
+    }, 0);
+    
+    const avgIntensity = totalIntensity / practices.length;
+    
+    if (avgIntensity <= 1.5) return 'bg-green-100 border-green-300';
+    if (avgIntensity <= 2.5) return 'bg-yellow-100 border-yellow-300';
+    if (avgIntensity <= 3.5) return 'bg-orange-100 border-orange-300';
+    return 'bg-red-100 border-red-300';
+  };
+
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0) {
+      return `${hours}h${mins}m`;
+    }
+    return `${mins}m`;
+  };
+
+  const getMonthlyStats = () => {
+    const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    
+    const monthPractices = practices.filter(p => {
+      const practiceDate = new Date(p.date);
+      return practiceDate >= monthStart && practiceDate <= monthEnd;
+    });
+    
+    const totalDuration = monthPractices.reduce((sum, p) => sum + p.duration, 0);
+    const practiceDays = new Set(monthPractices.map(p => p.date)).size;
+    
+    return {
+      totalPractices: monthPractices.length,
+      totalDuration,
+      practiceDays,
+      avgDuration: monthPractices.length > 0 ? totalDuration / monthPractices.length : 0
+    };
+  };
+
+  const calendarDays = generateCalendarDays();
+  const monthlyStats = getMonthlyStats();
+
+  return (
+    <div 
+      className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 cursor-pointer hover:shadow-xl transition-all duration-300"
+      onClick={onCalendarClick}
+    >
+      {/* ヘッダー */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigateMonth('prev');
+            }}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <FaChevronLeft className="w-4 h-4 text-gray-600" />
+          </button>
+          <h3 className="text-lg font-semibold text-gray-800 min-w-[120px] text-center">
+            {currentDate.getFullYear()}年 {months[currentDate.getMonth()]}
+          </h3>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigateMonth('next');
+            }}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <FaChevronRight className="w-4 h-4 text-gray-600" />
+          </button>
+        </div>
+        
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            goToToday();
+          }}
+          className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+        >
+          今日
+        </button>
+      </div>
+
+      {/* 月次統計 */}
+      <div className="grid grid-cols-4 gap-3 mb-4">
+        <div className="bg-blue-50 rounded-lg p-3 text-center">
+          <div className="flex items-center justify-center mb-1">
+            <GiShuttlecock className="w-4 h-4 text-blue-600 mr-1" />
+          </div>
+          <p className="text-xs text-blue-600 font-medium">練習回数</p>
+          <p className="text-lg font-bold text-blue-800">{monthlyStats.totalPractices}</p>
+        </div>
+        
+        <div className="bg-green-50 rounded-lg p-3 text-center">
+          <div className="flex items-center justify-center mb-1">
+            <FiCalendar className="w-4 h-4 text-green-600 mr-1" />
+          </div>
+          <p className="text-xs text-green-600 font-medium">総時間</p>
+          <p className="text-lg font-bold text-green-800">{formatDuration(monthlyStats.totalDuration)}</p>
+        </div>
+        
+        <div className="bg-purple-50 rounded-lg p-3 text-center">
+          <div className="flex items-center justify-center mb-1">
+            <FiCalendar className="w-4 h-4 text-purple-600 mr-1" />
+          </div>
+          <p className="text-xs text-purple-600 font-medium">練習日数</p>
+          <p className="text-lg font-bold text-purple-800">{monthlyStats.practiceDays}</p>
+        </div>
+        
+        <div className="bg-orange-50 rounded-lg p-3 text-center">
+          <div className="flex items-center justify-center mb-1">
+            <FiCalendar className="w-4 h-4 text-orange-600 mr-1" />
+          </div>
+          <p className="text-xs text-orange-600 font-medium">平均時間</p>
+          <p className="text-lg font-bold text-orange-800">{formatDuration(monthlyStats.avgDuration)}</p>
+        </div>
+      </div>
+
+      {/* カレンダーグリッド */}
+      <div className="grid grid-cols-7 gap-1">
+        {/* 曜日ヘッダー */}
+        {weekdays.map(day => (
+          <div key={day} className="p-2 text-center font-medium text-gray-600 text-sm">
+            {day}
+          </div>
+        ))}
+        
+        {/* 日付セル */}
+        {calendarDays.map((day, index) => (
+          <div
+            key={index}
+            className={`min-h-[60px] p-1 border rounded transition-all duration-200 ${
+              !day.isCurrentMonth 
+                ? 'bg-gray-50 text-gray-400' 
+                : day.isToday
+                ? 'bg-blue-50 border-blue-300'
+                : day.practices.length > 0
+                ? getPracticeIndicatorColor(day.practices)
+                : 'bg-white border-gray-200'
+            }`}
+          >
+            <div className="flex flex-col h-full">
+              <div className="text-sm font-medium mb-1 text-center">
+                {day.date.getDate()}
+              </div>
+              
+              {day.practices.length > 0 && (
+                <div className="flex-1 space-y-1">
+                  {day.practices.slice(0, 2).map(practice => (
+                    <div
+                      key={practice.id}
+                      className="bg-white bg-opacity-80 rounded px-1 py-0.5 text-xs truncate"
+                      title={`${practice.title} (${formatDuration(practice.duration)})`}
+                    >
+                      <span className="truncate">{practice.title}</span>
+                    </div>
+                  ))}
+                  
+                  {day.practices.length > 2 && (
+                    <div className="text-xs text-gray-600 px-1">
+                      +{day.practices.length - 2} 件
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 凡例 */}
+      <div className="mt-4 flex items-center justify-center space-x-4 text-xs text-gray-600">
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
+          <span>軽い練習</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 bg-yellow-100 border border-yellow-300 rounded"></div>
+          <span>普通の練習</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 bg-orange-100 border border-orange-300 rounded"></div>
+          <span>きつい練習</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 bg-red-100 border border-red-300 rounded"></div>
+          <span>非常にきつい練習</span>
+        </div>
+      </div>
+      
+      {/* クリックで詳細表示の案内 */}
+      <div className="mt-3 text-center">
+        <p className="text-xs text-gray-500">カレンダーをクリックして詳細管理 →</p>
+      </div>
+    </div>
+  );
+};
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const [matches, setMatches] = useState<Match[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [mbtiResult, setMbtiResult] = useState<MbtiAnalysisResult | null>(null);
+  const [practices, setPractices] = useState<Practice[]>([]);
+
 
   useEffect(() => {
     const loadData = async () => {
@@ -54,6 +523,14 @@ export default function DashboardPage() {
         const mbtiData = await firestoreDb.getMBTIResult(user.uid);
         setMbtiResult(mbtiData as MbtiAnalysisResult);
 
+        // 練習データを取得
+        const loadedPractices = await firestoreDb.getPractices(user.uid);
+        setPractices(loadedPractices);
+
+        // 練習カードを取得
+              // const loadedPracticeCards = await firestoreDb.getPracticeCards(user.uid);
+      // setPracticeCards(loadedPracticeCards);
+
       } catch (error) {
         console.error('データの読み込みに失敗しました:', error);
       }
@@ -63,6 +540,12 @@ export default function DashboardPage() {
 
   // 統計データ計算
   const recentMatches = matches.slice(0, 3);
+
+  // カレンダー用のハンドラー（練習管理ページに移動）
+  const handleCalendarInteraction = () => {
+    // カレンダーの任意の操作で練習管理ページに移動
+    window.location.href = '/practice-management';
+  };
 
   return (
     <AuthGuard>
@@ -85,21 +568,52 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* メインコンテンツグリッド - レスポンシブレイアウト */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+              {/* メインコンテンツグリッド - 3列レイアウト */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
                 {/* 左側：プロフィールとBPSI診断 */}
-                <div className="space-y-4 sm:space-y-6 order-1 md:order-1">
+                <div className="space-y-4 sm:space-y-6 order-1 lg:order-1">
                   <ModernProfileCard />
                   <BPSIResultCard mbtiResult={mbtiResult} />
                 </div>
 
+                {/* 中央：カレンダー */}
+                <div className="order-3 lg:order-2">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
+                    <div className="flex items-center justify-between mb-4 sm:mb-6">
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center">
+                        <FiCalendar className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-green-600" />
+                        練習カレンダー
+                      </h3>
+                      <Link href="/practice-management" className="text-green-600 hover:text-green-800 transition-colors text-xs sm:text-sm font-medium">
+                        詳細表示 →
+                      </Link>
+                    </div>
+                    
+                    {/* デスクトップ版：表示専用カレンダー */}
+                    <div className="hidden lg:block">
+                      <DashboardDesktopCalendar
+                        practices={practices}
+                        onCalendarClick={handleCalendarInteraction}
+                      />
+                    </div>
+                    
+                    {/* モバイル版：表示専用カレンダー */}
+                    <div className="lg:hidden">
+                      <DashboardMobileCalendar 
+                        practices={practices}
+                        onCalendarClick={handleCalendarInteraction}
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 {/* 右側：最近の試合とフレンド */}
-                <div className="space-y-4 sm:space-y-6 order-2 md:order-2">
+                <div className="space-y-4 sm:space-y-6 order-2 lg:order-3">
                   {/* 最近の試合 */}
                   <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
                     <div className="flex items-center justify-between mb-4 sm:mb-6">
                       <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center">
-                        <FiCalendar className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                        <GiShuttlecock className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
                         最近の試合
                       </h3>
                       <Link href="/matches" className="text-blue-600 hover:text-blue-800 transition-colors text-xs sm:text-sm font-medium">
@@ -114,7 +628,7 @@ export default function DashboardPage() {
                       </div>
                     ) : (
                       <EmptyState 
-                        icon={<FiCalendar className="w-6 h-6 sm:w-8 sm:h-8" />}
+                        icon={<GiShuttlecock className="w-6 h-6 sm:w-8 sm:h-8" />}
                         title="試合データなし"
                         description="まだ試合が登録されていません"
                         actionText="試合を登録"
@@ -425,3 +939,4 @@ const getTypeTitle = (type: string): string => {
   
   return typeTitles[type] || type;
 };
+

@@ -8,7 +8,7 @@ import { UserProfile } from '@/types/userProfile';
 import { Friendship, FriendshipStatus } from '@/types/friendship';
 import { MatchRequest, MatchRequestStatus } from '@/types/matchRequest';
 import { MBTIResult, MBTIDiagnostic } from '@/types/mbti';
-import { Practice, PracticeGoal, PracticeStats } from '@/types/practice';
+import { Practice, PracticeGoal, PracticeStats, PracticeCard } from '@/types/practice';
 
 
 
@@ -694,5 +694,34 @@ export const firestoreDb = {
       return;
     }
     await deleteDoc(doc(db, `users/${userId}/practiceGoals`, goalId));
+  },
+
+  // 練習カード関連
+  async getPracticeCards(userId: string): Promise<PracticeCard[]> {
+    if (!userId) {
+      console.warn('getPracticeCards: userId is undefined or empty');
+      return [];
+    }
+    const q = query(collection(db, `users/${userId}/practiceCards`));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PracticeCard));
+  },
+
+  async addPracticeCard(card: PracticeCard): Promise<void> {
+    const cleanedCard = this.removeUndefinedFields(card);
+    await setDoc(doc(db, `users/${card.userId}/practiceCards`, card.id), cleanedCard);
+  },
+
+  async updatePracticeCard(card: PracticeCard): Promise<void> {
+    const cleanedCard = this.removeUndefinedFields(card);
+    await setDoc(doc(db, `users/${card.userId}/practiceCards`, card.id), cleanedCard);
+  },
+
+  async deletePracticeCard(cardId: string, userId: string): Promise<void> {
+    if (!userId || !cardId) {
+      console.warn('deletePracticeCard: userId or cardId is undefined or empty');
+      return;
+    }
+    await deleteDoc(doc(db, `users/${userId}/practiceCards`, cardId));
   }
 };
