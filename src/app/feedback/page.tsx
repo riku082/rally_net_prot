@@ -4,10 +4,12 @@ import React, { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import Topbar from '@/components/Topbar';
+import { useAuth } from '@/context/AuthContext';
 import { FiMail, FiSend, FiAlertCircle, FiCheck, FiTool } from 'react-icons/fi';
 import { FaBrain, FaBug } from 'react-icons/fa';
 
 const FeedbackPage: React.FC = () => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     appearanceRating: 5,
     contentRating: 5,
@@ -30,7 +32,11 @@ const FeedbackPage: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          userEmail: user?.email || null,
+          userId: user?.uid || null
+        })
       });
 
       const data = await response.json();
@@ -297,13 +303,13 @@ const FeedbackPage: React.FC = () => {
                   </p>
                 </div>
 
-                {/* 匿名投稿の説明 */}
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                {/* 送信者情報の説明 */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-start">
-                    <FiAlertCircle className="w-5 h-5 text-yellow-600 mr-3 mt-0.5" />
-                    <div className="text-sm text-yellow-800">
-                      <p className="font-medium mb-1">プライバシーについて</p>
-                      <p>すべての評価は匿名で処理されます。</p>
+                    <FiAlertCircle className="w-5 h-5 text-blue-600 mr-3 mt-0.5" />
+                    <div className="text-sm text-blue-800">
+                      <p className="font-medium mb-1">送信者情報について</p>
+                      <p>匿名で処理されます。</p>
                     </div>
                   </div>
                 </div>

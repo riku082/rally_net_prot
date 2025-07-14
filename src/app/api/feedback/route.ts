@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { db } from '@/utils/firebase';
 import { collection, addDoc, getDocs, query, orderBy } from 'firebase/firestore';
 
+// CORS対応
+export const runtime = 'nodejs';
+
 interface FeedbackData {
   id?: string;
   appearanceRating: number;
@@ -9,18 +12,43 @@ interface FeedbackData {
   usabilityRating: number;
   overallRating: number;
   comment: string;
-  userId?: string; // データベース側での識別用（匿名表示でも記録）
-  userEmail?: string; // 投稿者メールアドレス（識別用）
+  userId?: string | null; // ユーザーID（識別用）
+  userEmail?: string | null; // 投稿者メールアドレス（識別用）
   submittedAt: string;
   status: 'new' | 'reviewed' | 'resolved';
+  mbtiAccuracyRating?: number | null; // BPSI診断精度評価
+  bugReport?: string; // バグ報告
 }
 
 export async function POST(request: Request) {
+  console.log('Feedback POST API called');
+  
   try {
-    const { appearanceRating, contentRating, usabilityRating, overallRating, comment } = await request.json();
+    const { 
+      appearanceRating, 
+      contentRating, 
+      usabilityRating, 
+      mbtiAccuracyRating, 
+      overallRating, 
+      comment, 
+      bugReport,
+      userEmail,
+      userId 
+    } = await request.json();
+    console.log('Feedback data received:', { 
+      appearanceRating, 
+      contentRating, 
+      usabilityRating, 
+      mbtiAccuracyRating, 
+      overallRating, 
+      comment, 
+      bugReport,
+      userEmail,
+      userId 
+    });
 
     // バリデーション
-    const ratings = [appearanceRating, contentRating, usabilityRating, overallRating];
+    const ratings = [appearanceRating, contentRating, usabilityRating, mbtiAccuracyRating, overallRating];
     for (const rating of ratings) {
       if (!rating || rating < 1 || rating > 5) {
         return NextResponse.json(
@@ -43,10 +71,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // 実際の実装では、認証情報から userId と userEmail を取得
-    // 現在は仮の値を設定（実装時は認証コンテキストから取得）
-    const mockUserId = `user-${Math.random().toString(36).substr(2, 9)}`;
-    const mockUserEmail = `user${Date.now()}@example.com`;
+    if (bugReport && bugReport.length > 500) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'バグ報告は500文字以内で入力してください'
+        },
+        { status: 400 }
+      );
+    }
 
     const feedbackData: Omit<FeedbackData, 'id'> = {
       appearanceRating,
@@ -54,14 +87,20 @@ export async function POST(request: Request) {
       usabilityRating,
       overallRating,
       comment: comment || '',
-      userId: mockUserId, // データベース側で投稿者識別用
-      userEmail: mockUserEmail, // データベース側で投稿者識別用
+      userId: userId || null,
+      userEmail: userEmail || null,
       submittedAt: new Date().toISOString(),
-      status: 'new'
+      status: 'new',
+      // 追加フィールド
+      mbtiAccuracyRating: mbtiAccuracyRating || null,
+      bugReport: bugReport || ''
     };
 
-    // Firestoreに保存
+    console.log('Saving feedback to Firestore:', feedbackData);
+    
+    // Firestoreに保存（セキュリティルールでサーバーサイドアクセスを許可済み）
     const docRef = await addDoc(collection(db, 'user_feedback'), feedbackData);
+    console.log('Feedback saved successfully with ID:', docRef.id);
 
     return NextResponse.json({
       success: true,
@@ -71,10 +110,20 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('Feedback submission error:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : 'Unknown'
+    });
+    
+    // 開発環境では詳細なエラーを返す
+    const isDev = process.env.NODE_ENV === 'development';
     return NextResponse.json(
       { 
         success: false, 
-        error: '評価の送信中にエラーが発生しました'
+        error: '評価の送信中にエラーが発生しました',
+        details: isDev ? (error instanceof Error ? error.message : 'Unknown error') : undefined,
+        stack: isDev && error instanceof Error ? error.stack : undefined
       },
       { status: 500 }
     );
@@ -86,7 +135,7 @@ export async function GET() {
     // 管理者用：フィードバック一覧取得
     // 実際の実装では認証チェックが必要
     
-    // Firestoreからフィードバックデータを取得
+    // Firestoreからフィードバックデータを取得（セキュリティルールでサーバーサイドアクセスを許可済み）
     const feedbackQuery = query(
       collection(db, 'user_feedback'),
       orderBy('submittedAt', 'desc')

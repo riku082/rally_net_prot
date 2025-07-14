@@ -664,13 +664,31 @@ export const firestoreDb = {
   },
 
   async getMBTIResult(userId: string): Promise<MBTIResult | null> {
-    const q = query(collection(db, 'mbtiResults'), where('userId', '==', userId));
-    const snapshot = await getDocs(q);
-    if (snapshot.empty) return null;
-    
-    // 最新の結果を取得（createdAtでソート）
-    const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MBTIResult));
-    return results.sort((a, b) => b.createdAt - a.createdAt)[0];
+    console.log('Getting MBTI result for user:', userId);
+    try {
+      if (!userId) {
+        console.warn('getMBTIResult: userId is undefined or empty');
+        return null;
+      }
+
+      const q = query(collection(db, 'mbtiResults'), where('userId', '==', userId));
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        console.log('No MBTI results found for user:', userId);
+        return null;
+      }
+      
+      // 最新の結果を取得（createdAtでソート）
+      const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MBTIResult));
+      const latestResult = results.sort((a, b) => b.createdAt - a.createdAt)[0];
+      
+      console.log('MBTI result retrieved successfully:', latestResult.id);
+      return latestResult;
+    } catch (error) {
+      console.error('Failed to get MBTI result:', error);
+      throw error;
+    }
   },
 
   async saveMBTIDiagnostic(diagnostic: MBTIDiagnostic): Promise<void> {
