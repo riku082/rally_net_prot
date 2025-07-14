@@ -70,10 +70,15 @@ const MBTIResult: React.FC<MBTIResultProps> = ({ result, onRestart, previousResu
             詳細スコア
           </h3>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
             {/* レーダーチャート */}
             <div className="flex justify-center">
-              <RadarChart data={result.scores} maxValue={totalAnswers / 4} />
+              <RadarChart 
+                data={result.scores} 
+                maxValue={totalAnswers / 4} 
+                size={320}
+                mobileSize={260}
+              />
             </div>
             
             {/* アニメーション付きプログレスバー */}

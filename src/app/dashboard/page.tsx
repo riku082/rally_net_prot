@@ -820,11 +820,11 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <div className="space-y-4">
-                        <EmptyState 
-                          icon={<GiShuttlecock className="w-6 h-6 sm:w-8 sm:h-8" />}
-                          title="試合記録機能（Coming Soon）"
-                          description="試合記録・分析機能は現在開発中です"
-                        />
+                        <div className="text-center py-8">
+                          <div className="text-4xl text-gray-300 mb-4">🏸</div>
+                          <h4 className="text-lg font-medium text-gray-500 mb-2">Coming Soon</h4>
+                          <p className="text-gray-400 text-sm">試合戦績機能は現在開発中です</p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -883,11 +883,11 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <div className="space-y-3 sm:space-y-4">
-                      <EmptyState 
-                        icon={<GiShuttlecock className="w-6 h-6 sm:w-8 sm:h-8" />}
-                        title="試合記録機能（Coming Soon）"
-                        description="試合記録・分析機能は現在開発中です"
-                      />
+                      <div className="text-center py-6 sm:py-8">
+                        <div className="text-3xl sm:text-4xl text-gray-300 mb-3 sm:mb-4">🏸</div>
+                        <h4 className="text-base sm:text-lg font-medium text-gray-500 mb-1 sm:mb-2">Coming Soon</h4>
+                        <p className="text-gray-400 text-xs sm:text-sm">試合戦績機能は現在開発中です</p>
+                      </div>
                     </div>
                   </div>
 

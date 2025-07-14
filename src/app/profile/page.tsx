@@ -7,6 +7,9 @@ import { useRouter } from 'next/navigation';
 import { FiUser, FiUsers, FiAward, FiCalendar, FiEdit, FiSave, FiXCircle, FiArrowLeft, FiTarget, FiTrendingUp, FiActivity, FiHeart, FiLock, FiCheckCircle, FiPlus, FiMinus, FiPercent, FiMapPin } from 'react-icons/fi';
 import { UserProfile } from '@/types/userProfile';
 import PrivacySettings from '@/components/PrivacySettings';
+import { badmintonMBTITypes } from '@/data/badmintonMBTITypes';
+import { MBTIType } from '@/types/mbti';
+import AchievementBadges, { Achievement } from '@/components/AchievementBadges';
 
 const ProfilePage: React.FC = () => {
   const { user } = useAuth();
@@ -36,6 +39,111 @@ const ProfilePage: React.FC = () => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'privacy'>('profile');
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+
+  // プロフィールの主な戦績から実績メダルを生成する関数
+  const generateAchievementsFromProfile = (profileAchievements: string[], achievementRanks?: string[]): Achievement[] => {
+    const achievements: Achievement[] = [];
+    
+    profileAchievements.forEach((achievement, index) => {
+      const lowerAchievement = achievement.toLowerCase();
+      const rank = achievementRanks && achievementRanks[index] ? achievementRanks[index] : null;
+      let type: Achievement['type'] = 'bronze';
+      let category: Achievement['category'] = 'tournament';
+      let description = `${achievement}の成績を収めました`;
+      
+      // まず順位情報でメダル判定を行う（achievementRanksが存在する場合）
+      if (rank) {
+        switch (rank) {
+          case '1':
+            if (lowerAchievement.includes('全国') || lowerAchievement.includes('国際') || lowerAchievement.includes('世界')) {
+              type = 'special';
+              description = `${achievement}で優勝！素晴らしい成果です`;
+            } else {
+              type = 'gold';
+              description = `${achievement}で優勝しました`;
+            }
+            break;
+          case '2':
+            if (lowerAchievement.includes('全国') || lowerAchievement.includes('国際') || lowerAchievement.includes('世界')) {
+              type = 'special';
+              description = `${achievement}で準優勝！大変優秀な成績です`;
+            } else {
+              type = 'silver';
+              description = `${achievement}で準優勝しました`;
+            }
+            break;
+          case '3':
+            type = 'silver';
+            description = `${achievement}で3位入賞しました`;
+            break;
+          case '4':
+            type = 'silver';
+            description = `${achievement}でベスト4の成績を残しました`;
+            break;
+          case '8':
+            type = 'bronze';
+            description = `${achievement}でベスト8に進出しました`;
+            break;
+          case '16':
+          case '32':
+            type = 'bronze';
+            description = `${achievement}で上位進出を果たしました`;
+            break;
+          case 'other':
+            type = 'bronze';
+            description = `${achievement}に参加しました`;
+            break;
+          default:
+            type = 'bronze';
+            break;
+        }
+      } else {
+        // 従来のテキスト解析による判定（順位情報がない場合）
+        if (lowerAchievement.includes('優勝') || lowerAchievement.includes('1位') || lowerAchievement.includes('チャンピオン')) {
+          if (lowerAchievement.includes('全国') || lowerAchievement.includes('国際') || lowerAchievement.includes('世界')) {
+            type = 'special';
+            description = `${achievement}！素晴らしい成果です`;
+          } else {
+            type = 'gold';
+            description = `${achievement}を達成しました`;
+          }
+        } else if (lowerAchievement.includes('準優勝') || lowerAchievement.includes('2位')) {
+          type = 'silver';
+          description = `${achievement}を獲得しました`;
+        } else if (lowerAchievement.includes('3位') || lowerAchievement.includes('ベスト4')) {
+          type = 'silver';
+          description = `${achievement}の成績を残しました`;
+        } else if (lowerAchievement.includes('ベスト8') || lowerAchievement.includes('入賞')) {
+          type = 'bronze';
+          description = `${achievement}を達成しました`;
+        }
+      }
+
+      // カテゴリの判定
+      if (lowerAchievement.includes('大会') || lowerAchievement.includes('選手権') || lowerAchievement.includes('トーナメント')) {
+        category = 'tournament';
+      } else if (lowerAchievement.includes('級') || lowerAchievement.includes('段') || lowerAchievement.includes('認定')) {
+        category = 'skill';
+      } else if (lowerAchievement.includes('記録') || lowerAchievement.includes('達成')) {
+        category = 'milestone';
+      }
+
+      const earnedDate = new Date();
+      earnedDate.setMonth(earnedDate.getMonth() - (index + 1) * 2);
+
+      achievements.push({
+        id: `profile-achievement-${index + 1}`,
+        title: achievement.length > 20 ? achievement.substring(0, 20) + '...' : achievement,
+        description: description,
+        type: type,
+        earnedAt: earnedDate.toISOString().split('T')[0],
+        category: category
+      });
+    });
+
+    return achievements.sort((a, b) => new Date(b.earnedAt).getTime() - new Date(a.earnedAt).getTime());
+  };
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -73,6 +181,12 @@ const ProfilePage: React.FC = () => {
               preferredGameType: migratedProfile?.preferredGameType || '',
               playRegion: migratedProfile?.playRegion || ''
             });
+            
+            // メダルを生成
+            if (migratedProfile?.achievements && migratedProfile.achievements.length > 0) {
+              const generatedAchievements = generateAchievementsFromProfile(migratedProfile.achievements, migratedProfile.achievementRanks);
+              setAchievements(generatedAchievements);
+            }
           } else {
             setProfile(existingProfile);
             setFormData({
@@ -93,6 +207,12 @@ const ProfilePage: React.FC = () => {
               preferredGameType: existingProfile.preferredGameType || '',
               playRegion: existingProfile.playRegion || ''
             });
+            
+            // メダルを生成
+            if (existingProfile.achievements && existingProfile.achievements.length > 0) {
+              const generatedAchievements = generateAchievementsFromProfile(existingProfile.achievements, existingProfile.achievementRanks);
+              setAchievements(generatedAchievements);
+            }
           }
         } else {
           // プロフィールが存在しない場合、オンボーディングページへリダイレクト
@@ -343,6 +463,14 @@ const ProfilePage: React.FC = () => {
       setProfile(finalProfile as UserProfile);
       setIsEditing(false);
       setAvatarFile(null); // アップロード後ファイルをクリア
+      
+      // メダルを再生成
+      if (finalProfile.achievements && finalProfile.achievements.length > 0) {
+        const generatedAchievements = generateAchievementsFromProfile(finalProfile.achievements, finalProfile.achievementRanks);
+        setAchievements(generatedAchievements);
+      } else {
+        setAchievements([]);
+      }
 
     } catch (error) {
       console.error('プロフィールの保存に失敗しました:', error);
@@ -846,19 +974,14 @@ const ProfilePage: React.FC = () => {
                     <div>
                       <h3 className="text-lg font-semibold text-gray-800 mb-4">戦績・目標</h3>
                       <div className="space-y-6">
-                        {profile.achievements && profile.achievements.length > 0 && (
+                        {achievements.length > 0 && (
                           <div className="space-y-3">
-                            <h4 className="text-sm font-medium text-gray-500">大会戦績</h4>
-                            {profile.achievements.map((achievement, index) => (
-                              <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                                <span className="font-semibold text-gray-800">{achievement}</span>
-                                {profile.achievementRanks?.[index] && (
-                                  <div className="flex items-center">
-                                    {getRankBadge(profile.achievementRanks[index])}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
+                            <h4 className="text-sm font-medium text-gray-500">実績・メダル</h4>
+                            <AchievementBadges 
+                              achievements={achievements}
+                              maxDisplay={6}
+                              showDetails={true}
+                            />
                           </div>
                         )}
                         {profile.goals && profile.goals.length > 0 && (
@@ -878,6 +1001,82 @@ const ProfilePage: React.FC = () => {
                     </div>
                   )}
                   
+                  {/* BPSI診断結果 */}
+                  {profile.mbtiResult && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <FiActivity className="mr-2" />
+                        BPSI診断結果
+                      </h3>
+                      <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg border border-blue-200">
+                        {(() => {
+                          const mbtiData = badmintonMBTITypes[profile.mbtiResult as MBTIType];
+                          if (!mbtiData) return null;
+                          
+                          return (
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h4 className="text-xl font-bold text-gray-800">{mbtiData.title}</h4>
+                                  <p className="text-sm text-gray-600 mt-1">タイプ: {profile.mbtiResult}</p>
+                                  {profile.mbtiCompletedAt && (
+                                    <p className="text-xs text-gray-500">
+                                      診断日時: {new Date(profile.mbtiCompletedAt).toLocaleDateString('ja-JP')}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="text-4xl">🧠</div>
+                              </div>
+                              
+                              <p className="text-gray-700 leading-relaxed">{mbtiData.description}</p>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <h5 className="font-semibold text-green-700 mb-2">🌟 強み</h5>
+                                  <ul className="text-sm text-gray-700 space-y-1">
+                                    {mbtiData.strengths.slice(0, 3).map((strength, index) => (
+                                      <li key={index} className="flex items-start">
+                                        <span className="text-green-500 mr-2">•</span>
+                                        {strength}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                                <div>
+                                  <h5 className="font-semibold text-orange-700 mb-2">⚠️ 注意点</h5>
+                                  <ul className="text-sm text-gray-700 space-y-1">
+                                    {mbtiData.weaknesses.slice(0, 3).map((weakness, index) => (
+                                      <li key={index} className="flex items-start">
+                                        <span className="text-orange-500 mr-2">•</span>
+                                        {weakness}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <h5 className="font-semibold text-blue-700 mb-2">🎯 プレースタイル</h5>
+                                <p className="text-sm text-gray-700 bg-white p-3 rounded-md">
+                                  {mbtiData.playStyle}
+                                </p>
+                              </div>
+                              
+                              <div className="text-center pt-2">
+                                <button
+                                  onClick={() => router.push('/mbti')}
+                                  className="text-blue-600 hover:text-blue-800 text-sm font-medium underline"
+                                >
+                                  詳細な診断結果を見る →
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  )}
+
                   {/* 自己紹介 */}
                   {profile.bio && (
                     <div>

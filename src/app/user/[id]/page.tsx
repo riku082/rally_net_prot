@@ -8,9 +8,10 @@ import Topbar from '@/components/Topbar';
 import AuthGuard from '@/components/AuthGuard';
 import { UserProfile } from '@/types/userProfile';
 import { Practice, PracticeStats } from '@/types/practice';
-import { MBTIResult } from '@/types/mbti';
+import { MBTIResult, MBTIType } from '@/types/mbti';
 import { firestoreDb } from '@/utils/db';
 import { useAuth } from '@/context/AuthContext';
+import { badmintonMBTITypes } from '@/data/badmintonMBTITypes';
 import AchievementBadges, { Achievement } from '@/components/AchievementBadges';
 import MatchResultsDisplay, { MatchResult } from '@/components/MatchResultsDisplay';
 import { 
@@ -49,46 +50,96 @@ const UserProfilePage: React.FC = () => {
   const [friendshipId, setFriendshipId] = useState<string | null>(null);
 
   // プロフィールの主な戦績から実績メダルを生成する関数
-  const generateAchievementsFromProfile = (profileAchievements: string[]): Achievement[] => {
+  const generateAchievementsFromProfile = (profileAchievements: string[], achievementRanks?: string[]): Achievement[] => {
     const achievements: Achievement[] = [];
     
     // 戦績テキストを解析してメダルを生成
     profileAchievements.forEach((achievement, index) => {
       const lowerAchievement = achievement.toLowerCase();
+      const rank = achievementRanks && achievementRanks[index] ? achievementRanks[index] : null;
       let type: Achievement['type'] = 'bronze';
       let category: Achievement['category'] = 'tournament';
       let description = `${achievement}の成績を収めました`;
       
-      // 優勝・準優勝・入賞の判定
-      if (lowerAchievement.includes('優勝') || lowerAchievement.includes('1位') || lowerAchievement.includes('チャンピオン')) {
-        if (lowerAchievement.includes('全国') || lowerAchievement.includes('国際') || lowerAchievement.includes('世界')) {
-          type = 'special';
-          description = `${achievement}！素晴らしい成果です`;
-        } else if (lowerAchievement.includes('県') || lowerAchievement.includes('都道府県') || lowerAchievement.includes('地方')) {
-          type = 'gold';
-          description = `${achievement}を達成しました`;
-        } else {
-          type = 'gold';
-          description = `${achievement}を獲得しました`;
+      // まず順位情報でメダル判定を行う（achievementRanksが存在する場合）
+      if (rank) {
+        switch (rank) {
+          case '1':
+            if (lowerAchievement.includes('全国') || lowerAchievement.includes('国際') || lowerAchievement.includes('世界')) {
+              type = 'special';
+              description = `${achievement}で優勝！素晴らしい成果です`;
+            } else {
+              type = 'gold';
+              description = `${achievement}で優勝しました`;
+            }
+            break;
+          case '2':
+            if (lowerAchievement.includes('全国') || lowerAchievement.includes('国際') || lowerAchievement.includes('世界')) {
+              type = 'special';
+              description = `${achievement}で準優勝！大変優秀な成績です`;
+            } else {
+              type = 'silver';
+              description = `${achievement}で準優勝しました`;
+            }
+            break;
+          case '3':
+            type = 'silver';
+            description = `${achievement}で3位入賞しました`;
+            break;
+          case '4':
+            type = 'silver';
+            description = `${achievement}でベスト4の成績を残しました`;
+            break;
+          case '8':
+            type = 'bronze';
+            description = `${achievement}でベスト8に進出しました`;
+            break;
+          case '16':
+          case '32':
+            type = 'bronze';
+            description = `${achievement}で上位進出を果たしました`;
+            break;
+          case 'other':
+            type = 'bronze';
+            description = `${achievement}に参加しました`;
+            break;
+          default:
+            // 順位情報が不明な場合は、従来のテキスト解析にフォールバック
+            type = 'bronze';
+            break;
         }
-      } else if (lowerAchievement.includes('準優勝') || lowerAchievement.includes('2位') || lowerAchievement.includes('ファイナリスト')) {
-        if (lowerAchievement.includes('全国') || lowerAchievement.includes('国際')) {
-          type = 'special';
-          description = `${achievement}！大変優秀な成績です`;
-        } else {
+      } else {
+        // 従来のテキスト解析による判定（順位情報がない場合）
+        if (lowerAchievement.includes('優勝') || lowerAchievement.includes('1位') || lowerAchievement.includes('チャンピオン')) {
+          if (lowerAchievement.includes('全国') || lowerAchievement.includes('国際') || lowerAchievement.includes('世界')) {
+            type = 'special';
+            description = `${achievement}！素晴らしい成果です`;
+          } else if (lowerAchievement.includes('県') || lowerAchievement.includes('都道府県') || lowerAchievement.includes('地方')) {
+            type = 'gold';
+            description = `${achievement}を達成しました`;
+          } else {
+            type = 'gold';
+            description = `${achievement}を獲得しました`;
+          }
+        } else if (lowerAchievement.includes('準優勝') || lowerAchievement.includes('2位') || lowerAchievement.includes('ファイナリスト')) {
+          if (lowerAchievement.includes('全国') || lowerAchievement.includes('国際')) {
+            type = 'special';
+            description = `${achievement}！大変優秀な成績です`;
+          } else {
+            type = 'silver';
+            description = `${achievement}を獲得しました`;
+          }
+        } else if (lowerAchievement.includes('3位') || lowerAchievement.includes('ベスト4') || lowerAchievement.includes('準決勝')) {
           type = 'silver';
-          description = `${achievement}を獲得しました`;
+          description = `${achievement}の成績を残しました`;
+        } else if (lowerAchievement.includes('ベスト8') || lowerAchievement.includes('8強') || lowerAchievement.includes('入賞')) {
+          type = 'bronze';
+          description = `${achievement}を達成しました`;
+        } else if (lowerAchievement.includes('出場') || lowerAchievement.includes('参加')) {
+          type = 'bronze';
+          category = 'milestone';
+          description = `${achievement}を果たしました`;
         }
-      } else if (lowerAchievement.includes('3位') || lowerAchievement.includes('ベスト4') || lowerAchievement.includes('準決勝')) {
-        type = 'silver';
-        description = `${achievement}の成績を残しました`;
-      } else if (lowerAchievement.includes('ベスト8') || lowerAchievement.includes('8強') || lowerAchievement.includes('入賞')) {
-        type = 'bronze';
-        description = `${achievement}を達成しました`;
-      } else if (lowerAchievement.includes('出場') || lowerAchievement.includes('参加')) {
-        type = 'bronze';
-        category = 'milestone';
-        description = `${achievement}を果たしました`;
       }
 
       // カテゴリの判定
@@ -138,7 +189,7 @@ const UserProfilePage: React.FC = () => {
       // プロフィールの主な戦績から実績メダルを生成（基本情報が表示可能な場合）
       const canViewProfile = profile.privacySettings?.profilePublic || profile.privacySettings?.allowFriendView || !profile.privacySettings;
       if (canViewProfile && profile.achievements && profile.achievements.length > 0) {
-        const generatedAchievements = generateAchievementsFromProfile(profile.achievements);
+        const generatedAchievements = generateAchievementsFromProfile(profile.achievements, profile.achievementRanks);
         setAchievements(generatedAchievements);
       }
 
@@ -167,81 +218,9 @@ const UserProfilePage: React.FC = () => {
 
       // 実績と試合結果を取得（公開設定または友達の場合）
       if (canViewStats) {
-        // サンプル試合結果データ（実際の実装では firestoreDb から取得）
-        const sampleMatches: MatchResult[] = [
-          {
-            id: '1',
-            date: '2024-03-01',
-            opponent: '田中選手',
-            result: 'win',
-            score: '21-18, 21-15',
-            tournament: '地域大会決勝',
-            location: '市民体育館',
-            matchType: 'singles',
-            notes: '接戦でしたが最後まで集中力を保てました'
-          },
-          {
-            id: '2',
-            date: '2024-02-25',
-            opponent: '佐藤・鈴木ペア',
-            result: 'loss',
-            score: '18-21, 19-21',
-            tournament: '地域大会準決勝',
-            location: '市民体育館',
-            matchType: 'doubles'
-          },
-          {
-            id: '3',
-            date: '2024-02-20',
-            opponent: '山田選手',
-            result: 'win',
-            score: '21-16, 15-21, 21-19',
-            tournament: '地域大会準々決勝',
-            location: '市民体育館', 
-            matchType: 'singles'
-          },
-          {
-            id: '4',
-            date: '2024-02-15',
-            opponent: '伊藤選手',
-            result: 'win',
-            score: '21-12, 21-14',
-            tournament: '地域大会1回戦',
-            location: '市民体育館',
-            matchType: 'singles'
-          },
-          {
-            id: '5',
-            date: '2024-02-10',
-            opponent: '練習試合',
-            result: 'draw',
-            score: '21-19, 19-21, 20-22',
-            location: 'クラブハウス',
-            matchType: 'singles',
-            notes: '練習試合でしたが良い内容でした'
-          },
-          {
-            id: '6',
-            date: '2024-01-30',
-            opponent: '高橋選手',
-            result: 'win',
-            score: '21-10, 21-8',
-            tournament: '県大会決勝',
-            location: '県立体育館',
-            matchType: 'singles'
-          },
-          {
-            id: '7',
-            date: '2024-01-15',
-            opponent: '初戦相手',
-            result: 'win',
-            score: '21-15, 21-12',
-            tournament: '初参加大会',
-            location: '地区体育館',
-            matchType: 'singles'
-          }
-        ];
-        setMatchResults(sampleMatches);
+        // 試合結果機能は現在Coming Soon状態のため、データを設定しない
+        // TODO: 将来的にFirestoreから試合結果を取得する実装を追加
+        setMatchResults([]);
       }
     } catch (error) {
       console.error('ユーザープロフィールの取得に失敗しました:', error);
@@ -451,34 +430,36 @@ const UserProfilePage: React.FC = () => {
         <MobileNav activePath="/friends" />
         <div className="flex-1 flex flex-col">
           <Topbar />
-          <main className="flex-1 p-6 lg:p-8">
+          <main className="flex-1 p-3 sm:p-6 lg:p-8">
             <div className="max-w-6xl mx-auto">
               {/* ヘッダー */}
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <div className="flex items-center">
                   <button
                     onClick={() => router.back()}
-                    className="mr-4 p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                    className="mr-2 sm:mr-4 p-2 hover:bg-gray-200 rounded-lg transition-colors"
                   >
-                    <FiArrowLeft className="w-5 h-5" />
+                    <FiArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
-                  <h1 className="text-3xl font-bold text-gray-800">ユーザープロフィール</h1>
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">プロフィール</h1>
                 </div>
-                {renderFriendButton()}
+                <div className="flex-shrink-0">
+                  {renderFriendButton()}
+                </div>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* プロフィール基本情報 */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-8">
-                  <div className="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 lg:p-8">
+                  <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 sm:space-y-6 md:space-y-0 md:space-x-8">
                     <img
                       src={userProfile.avatar || `https://api.dicebear.com/8.x/initials/svg?seed=${userProfile.name || 'A'}`}
                       alt="Avatar"
-                      className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+                      className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white shadow-lg"
                     />
                     <div className="flex-grow text-center md:text-left">
-                      <h2 className="text-3xl font-bold text-gray-800 mb-4">{userProfile.name || '名無し'}</h2>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 mb-2 sm:mb-3">{userProfile.name || '名無し'}</h2>
+                      <div className="grid grid-cols-1 gap-2 text-xs sm:text-sm">
                         {canViewContent() ? (
                           <>
                             {userProfile.playRegion && (
@@ -511,7 +492,7 @@ const UserProfilePage: React.FC = () => {
                   </div>
 
                   {canViewContent() && userProfile.bio && (
-                    <div className="mt-6 p-6 bg-white rounded-lg">
+                    <div className="mt-4 sm:mt-6 p-4 sm:p-6 bg-white rounded-lg">
                       <h3 className="font-semibold text-gray-800 mb-3">自己紹介</h3>
                       <p className="text-gray-600">{userProfile.bio}</p>
                     </div>
@@ -520,34 +501,95 @@ const UserProfilePage: React.FC = () => {
 
                 {/* BPSI診断結果 */}
                 {canViewAnalysis() && userProfile.mbtiResult && (
-                  <div className="bg-white border rounded-xl p-6">
-                    <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                      <FiZap className="mr-2 text-purple-600" />
+                  <div className="bg-white border rounded-xl p-4 sm:p-6">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                      <FiActivity className="mr-2 text-purple-600" />
                       BPSI診断結果
                     </h3>
-                    <div className="flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="w-32 h-32 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                          <span className="text-3xl font-bold text-purple-700">{userProfile.mbtiResult}</span>
-                        </div>
-                        {userProfile.mbtiCompletedAt && (
-                          <p className="text-sm text-gray-500">
-                            {new Date(userProfile.mbtiCompletedAt).toLocaleDateString('ja-JP')} 診断完了
-                          </p>
-                        )}
-                      </div>
+                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 sm:p-6 rounded-lg border border-blue-200">
+                      {(() => {
+                        const mbtiData = badmintonMBTITypes[userProfile.mbtiResult as MBTIType];
+                        if (!mbtiData) {
+                          // フォールバック表示
+                          return (
+                            <div className="flex items-center justify-center">
+                              <div className="text-center">
+                                <div className="w-32 h-32 bg-purple-100 rounded-full flex items-center justify-center mb-4">
+                                  <span className="text-3xl font-bold text-purple-700">{userProfile.mbtiResult}</span>
+                                </div>
+                                {userProfile.mbtiCompletedAt && (
+                                  <p className="text-sm text-gray-500">
+                                    {new Date(userProfile.mbtiCompletedAt).toLocaleDateString('ja-JP')} 診断完了
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        return (
+                          <div className="space-y-3 sm:space-y-4">
+                            <div className="flex flex-col space-y-2">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800 leading-tight">{mbtiData.title}</h4>
+                                <div className="text-2xl sm:text-3xl lg:text-4xl">🧠</div>
+                              </div>
+                              <p className="text-xs sm:text-sm text-gray-600">タイプ: {userProfile.mbtiResult}</p>
+                              {userProfile.mbtiCompletedAt && (
+                                <p className="text-xs text-gray-500">
+                                  診断日時: {new Date(userProfile.mbtiCompletedAt).toLocaleDateString('ja-JP')}
+                                </p>
+                              )}
+                            </div>
+                            
+                            <p className="text-xs sm:text-sm lg:text-base text-gray-700 leading-relaxed">{mbtiData.description}</p>
+                            
+                            <div className="space-y-3 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
+                              <div className="bg-green-50 p-3 rounded-lg">
+                                <h5 className="font-semibold text-green-700 mb-2 text-xs sm:text-sm">🌟 強み</h5>
+                                <ul className="text-xs sm:text-sm text-gray-700 space-y-1">
+                                  {mbtiData.strengths.slice(0, 3).map((strength, index) => (
+                                    <li key={index} className="flex items-start">
+                                      <span className="text-green-500 mr-1 flex-shrink-0 text-xs">•</span>
+                                      <span className="break-words leading-relaxed">{strength}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                              <div className="bg-orange-50 p-3 rounded-lg">
+                                <h5 className="font-semibold text-orange-700 mb-2 text-xs sm:text-sm">⚠️ 注意点</h5>
+                                <ul className="text-xs sm:text-sm text-gray-700 space-y-1">
+                                  {mbtiData.weaknesses.slice(0, 3).map((weakness, index) => (
+                                    <li key={index} className="flex items-start">
+                                      <span className="text-orange-500 mr-1 flex-shrink-0 text-xs">•</span>
+                                      <span className="break-words leading-relaxed">{weakness}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                            
+                            <div className="bg-blue-50 p-3 rounded-lg">
+                              <h5 className="font-semibold text-blue-700 mb-2 text-xs sm:text-sm">🎯 プレースタイル</h5>
+                              <p className="text-xs sm:text-sm text-gray-700 leading-relaxed break-words">
+                                {mbtiData.playStyle}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 )}
 
                 {/* バドミントン詳細情報 */}
                 {canViewContent() && (
-                  <div className="bg-white border rounded-xl p-6">
-                    <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <div className="bg-white border rounded-xl p-4 sm:p-6">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center">
                       <FiTarget className="mr-2 text-green-600" />
                       バドミントン情報
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                       <div>
                         <h4 className="font-medium text-gray-700 mb-3">基本情報</h4>
                         <div className="space-y-3 text-sm">
@@ -566,7 +608,7 @@ const UserProfilePage: React.FC = () => {
                         <h4 className="font-medium text-gray-700 mb-3">技術・戦績</h4>
                         <div className="space-y-3 text-sm">
                           {userProfile.favoriteShots && userProfile.favoriteShots.length > 0 && (
-                            <p><span className="text-gray-500">得意ショット:</span> {userProfile.favoriteShots.join(', ')}</p>
+                            <p><span className="text-gray-500">得意ショット:</span> <span className="break-words">{userProfile.favoriteShots.join(', ')}</span></p>
                           )}
                         </div>
                       </div>
@@ -576,27 +618,27 @@ const UserProfilePage: React.FC = () => {
 
                 {/* 練習統計 */}
                 {canViewStats() && practiceStats && (
-                  <div className="bg-white border rounded-xl p-6">
-                    <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <div className="bg-white border rounded-xl p-4 sm:p-6">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center">
                       <FiTrendingUp className="mr-2 text-blue-600" />
                       練習統計
                     </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center p-6 bg-blue-50 rounded-lg">
-                        <div className="text-3xl font-bold text-blue-600">{practiceStats.totalPractices}</div>
-                        <div className="text-sm text-gray-600 mt-1">総練習回数</div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                      <div className="text-center p-3 sm:p-4 lg:p-6 bg-blue-50 rounded-lg">
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600">{practiceStats.totalPractices}</div>
+                        <div className="text-xs sm:text-sm text-gray-600 mt-1">総練習回数</div>
                       </div>
-                      <div className="text-center p-6 bg-green-50 rounded-lg">
-                        <div className="text-3xl font-bold text-green-600">{Math.round(practiceStats.averageDuration)}</div>
-                        <div className="text-sm text-gray-600 mt-1">平均練習時間(分)</div>
+                      <div className="text-center p-3 sm:p-4 lg:p-6 bg-green-50 rounded-lg">
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600">{Math.round(practiceStats.averageDuration)}</div>
+                        <div className="text-xs sm:text-sm text-gray-600 mt-1">平均練習時間(分)</div>
                       </div>
-                      <div className="text-center p-6 bg-purple-50 rounded-lg">
-                        <div className="text-3xl font-bold text-purple-600">{practiceStats.currentStreak}</div>
-                        <div className="text-sm text-gray-600 mt-1">連続練習日数</div>
+                      <div className="text-center p-3 sm:p-4 lg:p-6 bg-purple-50 rounded-lg">
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-purple-600">{practiceStats.currentStreak}</div>
+                        <div className="text-xs sm:text-sm text-gray-600 mt-1">連続練習日数</div>
                       </div>
-                      <div className="text-center p-6 bg-orange-50 rounded-lg">
-                        <div className="text-3xl font-bold text-orange-600">{practiceStats.longestStreak}</div>
-                        <div className="text-sm text-gray-600 mt-1">最長連続日数</div>
+                      <div className="text-center p-3 sm:p-4 lg:p-6 bg-orange-50 rounded-lg">
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-orange-600">{practiceStats.longestStreak}</div>
+                        <div className="text-xs sm:text-sm text-gray-600 mt-1">最長連続日数</div>
                       </div>
                     </div>
                   </div>
@@ -604,8 +646,8 @@ const UserProfilePage: React.FC = () => {
 
                 {/* 実績バッジ */}
                 {canViewContent() && userProfile.achievements && userProfile.achievements.length > 0 && (
-                  <div className="bg-white border rounded-xl p-6">
-                    <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <div className="bg-white border rounded-xl p-4 sm:p-6">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center">
                       <FiTarget className="mr-2 text-yellow-600" />
                       実績・メダル
                     </h3>
@@ -619,40 +661,40 @@ const UserProfilePage: React.FC = () => {
 
                 {/* 試合戦績 */}
                 {canViewStats() && (
-                  <div className="bg-white border rounded-xl p-6">
-                    <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <div className="bg-white border rounded-xl p-4 sm:p-6">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center">
                       <FiActivity className="mr-2 text-green-600" />
                       試合戦績
                     </h3>
-                    <MatchResultsDisplay 
-                      matches={matchResults}
-                      maxDisplay={5}
-                      showStats={true}
-                    />
+                    <div className="text-center py-8 sm:py-12">
+                      <div className="text-4xl sm:text-5xl lg:text-6xl text-gray-300 mb-4">🏸</div>
+                      <h4 className="text-lg sm:text-xl font-medium text-gray-600 mb-2">Coming Soon</h4>
+                      <p className="text-sm sm:text-base text-gray-500">試合戦績機能は現在開発中です</p>
+                    </div>
                   </div>
                 )}
 
                 {/* 最近の練習 */}
                 {canViewStats() && recentPractices.length > 0 && (
-                  <div className="bg-white border rounded-xl p-6">
-                    <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <div className="bg-white border rounded-xl p-4 sm:p-6">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center">
                       <FiCalendar className="mr-2 text-indigo-600" />
                       最近の練習
                     </h3>
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                       {recentPractices.map((practice) => (
-                        <div key={practice.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-3 h-3 bg-indigo-500 rounded-full"></div>
-                            <div>
-                              <p className="font-medium text-gray-800">{practice.type}</p>
-                              <p className="text-sm text-gray-500 flex items-center">
-                                <FiClock className="mr-1" />
+                        <div key={practice.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 rounded-lg space-y-2 sm:space-y-0">
+                          <div className="flex items-center space-x-3 sm:space-x-4">
+                            <div className="w-3 h-3 bg-indigo-500 rounded-full flex-shrink-0"></div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-gray-800 text-sm sm:text-base truncate">{practice.type}</p>
+                              <p className="text-xs sm:text-sm text-gray-500 flex items-center">
+                                <FiClock className="mr-1 flex-shrink-0" />
                                 {practice.duration}分
                               </p>
                             </div>
                           </div>
-                          <div className="text-sm text-gray-500">{practice.date}</div>
+                          <div className="text-xs sm:text-sm text-gray-500 pl-6 sm:pl-0">{practice.date}</div>
                         </div>
                       ))}
                     </div>
@@ -661,10 +703,10 @@ const UserProfilePage: React.FC = () => {
 
                 {/* プライバシー制限の表示 */}
                 {!canViewStats() && !canViewAnalysis() && (
-                  <div className="bg-gray-50 border rounded-xl p-8 text-center">
-                    <FiEyeOff className="mx-auto text-6xl text-gray-400 mb-4" />
-                    <h3 className="text-xl font-medium text-gray-600 mb-2">詳細情報は非公開です</h3>
-                    <p className="text-sm text-gray-500">
+                  <div className="bg-gray-50 border rounded-xl p-6 sm:p-8 text-center">
+                    <FiEyeOff className="mx-auto text-4xl sm:text-5xl lg:text-6xl text-gray-400 mb-3 sm:mb-4" />
+                    <h3 className="text-lg sm:text-xl font-medium text-gray-600 mb-2">詳細情報は非公開です</h3>
+                    <p className="text-sm text-gray-500 leading-relaxed">
                       このユーザーは練習データ、実績、試合戦績、MBTI診断結果を非公開に設定しています。
                     </p>
                   </div>

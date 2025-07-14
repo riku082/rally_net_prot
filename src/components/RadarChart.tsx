@@ -15,19 +15,54 @@ interface RadarChartProps {
   };
   maxValue?: number;
   size?: number;
+  mobileSize?: number;
 }
 
-const RadarChart: React.FC<RadarChartProps> = ({ data, maxValue = 4, size = 300 }) => {
+const RadarChart: React.FC<RadarChartProps> = ({ data, maxValue = 4, size = 350, mobileSize = 280 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
   const progressRef = useRef<number>(0);
+  const [isMobile, setIsMobile] = React.useState(false);
 
-  // 4つの主要軸のデータを準備
+  React.useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
+  const currentSize = isMobile ? mobileSize : size;
+
+  // 4つの主要軸のデータを準備（優勢な特性のみ表示）
   const axes = [
-    { label: '外向性', value: data.E, opposite: '内向性', oppositeValue: data.I },
-    { label: '感覚', value: data.S, opposite: '直観', oppositeValue: data.N },
-    { label: '思考', value: data.T, opposite: '感情', oppositeValue: data.F },
-    { label: '判断', value: data.J, opposite: '知覚', oppositeValue: data.P }
+    { 
+      label: data.E > data.I ? '外向性' : '内向性', 
+      value: data.E > data.I ? data.E : data.I,
+      rawE: data.E,
+      rawI: data.I
+    },
+    { 
+      label: data.S > data.N ? '感覚' : '直観', 
+      value: data.S > data.N ? data.S : data.N,
+      rawS: data.S,
+      rawN: data.N
+    },
+    { 
+      label: data.T > data.F ? '思考' : '感情', 
+      value: data.T > data.F ? data.T : data.F,
+      rawT: data.T,
+      rawF: data.F
+    },
+    { 
+      label: data.J > data.P ? '判断' : '知覚', 
+      value: data.J > data.P ? data.J : data.P,
+      rawJ: data.J,
+      rawP: data.P
+    }
   ];
 
   useEffect(() => {
@@ -37,9 +72,9 @@ const RadarChart: React.FC<RadarChartProps> = ({ data, maxValue = 4, size = 300 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const centerX = size / 2;
-    const centerY = size / 2;
-    const radius = (size - 120) / 2;
+    const centerX = currentSize / 2;
+    const centerY = currentSize / 2;
+    const radius = (currentSize - 140) / 2;
 
     const animate = () => {
       if (progressRef.current < 1) {
@@ -60,10 +95,10 @@ const RadarChart: React.FC<RadarChartProps> = ({ data, maxValue = 4, size = 300 
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [data, size, maxValue]);
+  }, [data, currentSize, maxValue]);
 
   const draw = (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, radius: number, progress: number) => {
-    ctx.clearRect(0, 0, size, size);
+    ctx.clearRect(0, 0, currentSize, currentSize);
 
     // 背景グリッドを描画
     drawGrid(ctx, centerX, centerY, radius);
@@ -104,15 +139,19 @@ const RadarChart: React.FC<RadarChartProps> = ({ data, maxValue = 4, size = 300 
 
   const drawAxisLabels = (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, radius: number) => {
     ctx.fillStyle = '#374151';
-    ctx.font = '12px "Hiragino Kaku Gothic Pro", "ヒラギノ角ゴ Pro W3", "Meiryo", "メイリオ", sans-serif';
+    const fontSize = isMobile ? 10 : 12;
+    ctx.font = `${fontSize}px "Hiragino Kaku Gothic Pro", "ヒラギノ角ゴ Pro W3", "Meiryo", "メイリオ", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
     axes.forEach((axis, index) => {
       const angle = (index * Math.PI) / 2 - Math.PI / 2;
-      const labelRadius = radius + 30;
       
-      // 主要軸のラベル
+      // ラベル距離を調整（優勢な特性のラベルのみ表示）
+      const labelDistance = isMobile ? 35 : 45;
+      const labelRadius = radius + labelDistance;
+      
+      // ラベル位置を計算
       const x = centerX + Math.cos(angle) * labelRadius;
       const y = centerY + Math.sin(angle) * labelRadius;
       
@@ -131,28 +170,8 @@ const RadarChart: React.FC<RadarChartProps> = ({ data, maxValue = 4, size = 300 
         ctx.textBaseline = 'middle';
       }
       
+      // 優勢な特性のラベルのみを表示
       ctx.fillText(axis.label, x, y);
-
-      // 対極軸のラベル
-      const oppositeX = centerX + Math.cos(angle + Math.PI) * labelRadius;
-      const oppositeY = centerY + Math.sin(angle + Math.PI) * labelRadius;
-      
-      // 対極軸のテキスト配置を調整
-      if (index === 0) { // 下
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-      } else if (index === 1) { // 左
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-      } else if (index === 2) { // 上
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-      } else { // 右
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-      }
-      
-      ctx.fillText(axis.opposite, oppositeX, oppositeY);
     });
   };
 
@@ -203,10 +222,11 @@ const RadarChart: React.FC<RadarChartProps> = ({ data, maxValue = 4, size = 300 
       
       // 値のラベル
       ctx.fillStyle = '#1f2937';
-      ctx.font = '10px "Hiragino Kaku Gothic Pro", "ヒラギノ角ゴ Pro W3", "Meiryo", "メイリオ", sans-serif';
+      const valueFontSize = isMobile ? 9 : 11;
+      ctx.font = `bold ${valueFontSize}px "Hiragino Kaku Gothic Pro", "ヒラギノ角ゴ Pro W3", "Meiryo", "メイリオ", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(axis.value.toString(), x, y - 15);
+      ctx.fillText(axis.value.toString(), x, y - (isMobile ? 12 : 15));
     });
   };
 
@@ -214,13 +234,14 @@ const RadarChart: React.FC<RadarChartProps> = ({ data, maxValue = 4, size = 300 
     <div className="flex flex-col items-center">
       <canvas
         ref={canvasRef}
-        width={size}
-        height={size}
-        className="border border-gray-200 rounded-lg shadow-sm"
+        width={currentSize}
+        height={currentSize}
+        className="border border-gray-200 rounded-lg shadow-sm max-w-full"
+        style={{ maxWidth: '100%', height: 'auto' }}
       />
-      <div className="mt-4 text-center">
-        <p className="text-sm text-gray-600">
-          各軸の数値が高いほど、その特性が強いことを示します
+      <div className="mt-3 sm:mt-4 text-center px-2">
+        <p className="text-xs sm:text-sm text-gray-600">
+          診断結果に基づく優勢な特性を表示しています
         </p>
       </div>
     </div>

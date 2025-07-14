@@ -130,7 +130,12 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
               return (
                 <button
                   key={zoneId}
-                  onClick={() => handleAreaToggle(zoneId as CourtZone)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleAreaToggle(zoneId as CourtZone);
+                  }}
                   className={`p-2 rounded border-2 text-xs font-medium transition-colors ${
                     isSelected
                       ? 'border-theme-primary-500 bg-theme-primary-200 text-theme-primary-800'
@@ -153,7 +158,12 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
               return (
                 <button
                   key={zoneId}
-                  onClick={() => handleAreaToggle(zoneId as CourtZone)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleAreaToggle(zoneId as CourtZone);
+                  }}
                   className={`p-2 rounded border-2 text-xs font-medium transition-colors ${
                     isSelected
                       ? 'border-theme-primary-500 bg-theme-primary-200 text-theme-primary-800'
@@ -176,7 +186,12 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
               return (
                 <button
                   key={zoneId}
-                  onClick={() => handleAreaToggle(zoneId as CourtZone)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleAreaToggle(zoneId as CourtZone);
+                  }}
                   className={`p-2 rounded border-2 text-xs font-medium transition-colors ${
                     isSelected
                       ? 'border-theme-primary-500 bg-theme-primary-200 text-theme-primary-800'
@@ -215,7 +230,12 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
                     <div key={areaId} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                       <span className="text-sm text-gray-700">{zone.name}</span>
                       <button
-                        onClick={() => handleAreaToggle(areaId as CourtZone)}
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleAreaToggle(areaId as CourtZone);
+                        }}
                         className="p-1 bg-red-100 text-red-600 rounded hover:bg-red-200"
                         title="エリア削除"
                       >
@@ -232,7 +252,10 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
             <h5 className="text-sm font-medium text-gray-700 mb-2">クイック選択</h5>
             <div className="space-y-2">
               <button
-                onClick={() => {
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   const allAreas: CourtZone[] = ['frontcourt_left', 'frontcourt_center', 'frontcourt_right'];
                   const newAreas = [...new Set([...selectedAreas, ...allAreas])];
                   setSelectedAreas(newAreas);
@@ -243,7 +266,10 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
                 前衛エリア
               </button>
               <button
-                onClick={() => {
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   const allAreas: CourtZone[] = ['midcourt_left', 'midcourt_center', 'midcourt_right'];
                   const newAreas = [...new Set([...selectedAreas, ...allAreas])];
                   setSelectedAreas(newAreas);
@@ -254,7 +280,10 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
                 中衛エリア
               </button>
               <button
-                onClick={() => {
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   const allAreas: CourtZone[] = ['backcourt_left', 'backcourt_center', 'backcourt_right'];
                   const newAreas = [...new Set([...selectedAreas, ...allAreas])];
                   setSelectedAreas(newAreas);
@@ -265,7 +294,10 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
                 後衛エリア
               </button>
               <button
-                onClick={() => {
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   const allAreas = getAllIndividualAreas();
                   setSelectedAreas(allAreas);
                   updateCourtInfo(allAreas, undefined, courtType, notes);
@@ -276,7 +308,12 @@ const CourtSelector: React.FC<CourtSelectorProps> = ({ courtInfo, onChange }) =>
               </button>
               {selectedAreas.length > 0 && (
                 <button
-                  onClick={clearSelection}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    clearSelection();
+                  }}
                   className="w-full text-left px-3 py-2 text-sm bg-gray-50 text-gray-700 rounded hover:bg-gray-100 transition-colors"
                 >
                   選択をクリア
