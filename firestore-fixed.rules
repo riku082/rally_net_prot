@@ -29,14 +29,6 @@ service cloud.firestore {
              request.resource.data.userId == request.auth.uid;
     }
     
-    // フレンド関係をチェック（シンプル版）
-    function isFriend(userId) {
-      return isAuthenticated() && (
-        exists(/databases/$(database)/documents/friendships/$(request.auth.uid + '_' + userId)) ||
-        exists(/databases/$(database)/documents/friendships/$(userId + '_' + request.auth.uid))
-      );
-    }
-    
     // 基本的なデータバリデーション
     function isValidString(str, minLen, maxLen) {
       return str is string && 
@@ -48,6 +40,18 @@ service cloud.firestore {
     
     // ユーザープロフィール
     match /users/{userId} {
+      // 読み取り: 自分のデータまたは公開プロフィール
+      allow read: if isAuthenticated() && (
+        isOwner(userId) || 
+        (resource != null && resource.data.get('privacySettings', {}).get('profilePublic', false) == true)
+      );
+      
+      // 書き込み: 自分のデータのみ
+      allow write: if isOwner(userId);
+    }
+    
+    // ユーザープロフィール（users コレクションとは別）
+    match /userProfiles/{userId} {
       // 読み取り: 自分のデータまたは公開プロフィール
       allow read: if isAuthenticated() && (
         isOwner(userId) || 
@@ -93,34 +97,17 @@ service cloud.firestore {
     // === MBTI診断結果 ===
     
     match /mbtiResults/{resultId} {
-      // 開発環境では一時的に全アクセス許可
-      allow read, write: if true;
-      
-      // 本番環境用のルール（コメントアウト）
-      // allow read: if isAuthenticated() && 
-      //                resource != null && 
-      //                resource.data.userId == request.auth.uid;
-      // allow create: if isAuthenticated() && 
-      //                  request.resource.data.userId == request.auth.uid;
-      // allow update: if isAuthenticated() && 
-      //                  resource != null && 
-      //                  resource.data.userId == request.auth.uid;
-      // allow delete: if isAuthenticated() && 
-      //                  resource != null && 
-      //                  resource.data.userId == request.auth.uid;
-    }
-    
-    // ユーザープロフィール（users コレクションとは別）
-    match /userProfiles/{userId} {
-      // 開発環境では一時的に全アクセス許可
-      allow read, write: if true;
-      
-      // 本番環境用のルール（コメントアウト）
-      // allow read: if isAuthenticated() && (
-      //   isOwner(userId) || 
-      //   (resource != null && resource.data.get('privacySettings', {}).get('profilePublic', false) == true)
-      // );
-      // allow write: if isOwner(userId);
+      allow read: if isAuthenticated() && 
+                     resource != null && 
+                     resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && 
+                       request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                       resource != null && 
+                       resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && 
+                       resource != null && 
+                       resource.data.userId == request.auth.uid;
     }
     
     // === フレンド機能 ===

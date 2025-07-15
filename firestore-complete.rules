@@ -1,0 +1,569 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // バドミントンアプリケーション用完全版セキュリティルール
+    // 本番環境対応 - 包括的なセキュリティ・プライバシー・機能制御
+    
+    // ========================================
+    // === セキュリティ・ユーティリティ関数 ===
+    // ========================================
+    
+    // 基本認証チェック
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // ユーザー所有権チェック
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // リソース所有者チェック
+    function isResourceOwner() {
+      return isAuthenticated() && 
+             resource != null && 
+             resource.data.userId == request.auth.uid;
+    }
+    
+    // 新規リソース所有者チェック
+    function isNewResourceOwner() {
+      return isAuthenticated() && 
+             request.resource.data.userId == request.auth.uid;
+    }
+    
+    // 管理者権限チェック（カスタムクレーム使用）
+    function isAdmin() {
+      return isAuthenticated() && 
+             request.auth.token.get('admin', false) == true;
+    }
+    
+    // モデレーター権限チェック
+    function isModerator() {
+      return isAuthenticated() && 
+             (request.auth.token.get('admin', false) == true ||
+              request.auth.token.get('moderator', false) == true);
+    }
+    
+    // フレンド関係チェック（双方向）
+    function isFriend(userId) {
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/friendships/$(request.auth.uid + '_' + userId)) ||
+        exists(/databases/$(database)/documents/friendships/$(userId + '_' + request.auth.uid))
+      );
+    }
+    
+    // 承認済みフレンドかチェック
+    function isAcceptedFriend(userId) {
+      return isAuthenticated() && (
+        (exists(/databases/$(database)/documents/friendships/$(request.auth.uid + '_' + userId)) &&
+         get(/databases/$(database)/documents/friendships/$(request.auth.uid + '_' + userId)).data.status == 'accepted') ||
+        (exists(/databases/$(database)/documents/friendships/$(userId + '_' + request.auth.uid)) &&
+         get(/databases/$(database)/documents/friendships/$(userId + '_' + request.auth.uid)).data.status == 'accepted')
+      );
+    }
+    
+    // プライバシー設定チェック
+    function canViewProfile(userId) {
+      return isOwner(userId) || 
+             get(/databases/$(database)/documents/users/$(userId)).data.privacySettings.get('profilePublic', false) ||
+             (get(/databases/$(database)/documents/users/$(userId)).data.privacySettings.get('allowFriendView', false) && isAcceptedFriend(userId));
+    }
+    
+    function canViewStats(userId) {
+      return isOwner(userId) || 
+             get(/databases/$(database)/documents/users/$(userId)).data.privacySettings.get('statsPublic', false) ||
+             (get(/databases/$(database)/documents/users/$(userId)).data.privacySettings.get('allowFriendView', false) && isAcceptedFriend(userId));
+    }
+    
+    function canViewAnalysis(userId) {
+      return isOwner(userId) || 
+             get(/databases/$(database)/documents/users/$(userId)).data.privacySettings.get('analysisPublic', false) ||
+             (get(/databases/$(database)/documents/users/$(userId)).data.privacySettings.get('allowFriendView', false) && isAcceptedFriend(userId));
+    }
+    
+    function isSearchable(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data.privacySettings.get('allowSearch', true);
+    }
+    
+    // データバリデーション関数
+    function isValidString(str, minLen, maxLen) {
+      return str is string && 
+             str.size() >= minLen && 
+             str.size() <= maxLen &&
+             str.matches('^[^<>]*$'); // HTMLタグ防止
+    }
+    
+    function isValidEmail(email) {
+      return email is string && 
+             email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+    }
+    
+    function isValidUrl(url) {
+      return url is string && 
+             url.matches('^https?://[^\\s/$.?#].[^\\s]*$');
+    }
+    
+    function isValidDifficulty(difficulty) {
+      return difficulty in ['beginner', 'intermediate', 'advanced'];
+    }
+    
+    function isValidGameType(gameType) {
+      return gameType in ['singles', 'doubles', 'mixed'];
+    }
+    
+    function isValidPlayStyle(style) {
+      return style in ['aggressive', 'defensive', 'all-round'];
+    }
+    
+    function isValidStatus(status) {
+      return status in ['pending', 'accepted', 'declined', 'blocked'];
+    }
+    
+    function isValidReportType(type) {
+      return type in ['spam', 'harassment', 'inappropriate', 'fake', 'other'];
+    }
+    
+    function isValidFeedbackType(type) {
+      return type in ['bug', 'feature', 'improvement', 'question', 'other'];
+    }
+    
+    // 時間制限チェック
+    function isRecentlyCreated(maxMinutes) {
+      return request.time.toMillis() - resource.data.createdAt.toMillis() < maxMinutes * 60 * 1000;
+    }
+    
+    function isWithinRateLimit(collection, maxPerHour) {
+      return query(collection)
+        .where('userId', '==', request.auth.uid)
+        .where('createdAt', '>=', request.time - duration.value(1, 'h'))
+        .limit(maxPerHour + 1)
+        .size() <= maxPerHour;
+    }
+    
+    // ========================================
+    // === ユーザー・プロフィール管理 ===
+    // ========================================
+    
+    // ユーザープロフィール
+    match /users/{userId} {
+      allow read: if isAuthenticated() && canViewProfile(userId);
+      
+      allow create: if isOwner(userId) && 
+                       isValidString(request.resource.data.name, 1, 50) &&
+                       isValidEmail(request.resource.data.email) &&
+                       request.resource.data.keys().hasAll(['name', 'email', 'createdAt']) &&
+                       request.resource.data.createdAt == request.time;
+      
+      allow update: if isOwner(userId) && 
+                       isValidString(request.resource.data.name, 1, 50) &&
+                       request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['name', 'age', 'playRegion', 'experience', 'playStyle', 
+                                  'preferredGameType', 'dominantHand', 'favoriteShots', 'bio', 
+                                  'avatar', 'achievements', 'achievementRanks', 'privacySettings', 
+                                  'updatedAt', 'mbtiResult', 'mbtiCompletedAt']) &&
+                       request.resource.data.updatedAt == request.time;
+      
+      allow delete: if false; // ユーザー削除は管理者のみ
+    }
+    
+    // 検索用パブリックプロフィール
+    match /publicProfiles/{userId} {
+      allow read: if isAuthenticated() && isSearchable(userId);
+      allow write: if isOwner(userId);
+    }
+    
+    // ユーザー設定
+    match /userSettings/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // ========================================
+    // === 練習・トレーニング管理 ===
+    // ========================================
+    
+    // 練習記録
+    match /practices/{practiceId} {
+      allow read: if isAuthenticated() && (
+        isResourceOwner() ||
+        (canViewStats(resource.data.userId) && resource.data.get('isShared', false))
+      );
+      
+      allow create: if isNewResourceOwner() && 
+                       isValidString(request.resource.data.title, 1, 100) &&
+                       isValidString(request.resource.data.type, 1, 50) &&
+                       request.resource.data.duration > 0 &&
+                       request.resource.data.duration <= 600 && // 最大10時間
+                       request.resource.data.keys().hasAll(['userId', 'date', 'title', 'type', 'duration', 'createdAt']) &&
+                       request.resource.data.createdAt == request.time &&
+                       isWithinRateLimit('practices', 50); // 1時間に最大50件
+      
+      allow update: if isResourceOwner() && 
+                       request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['title', 'description', 'notes', 'skills', 'goals', 
+                                  'achievements', 'isShared', 'updatedAt']) &&
+                       request.resource.data.updatedAt == request.time;
+      
+      allow delete: if isResourceOwner();
+    }
+    
+    // 練習統計
+    match /practiceStats/{userId} {
+      allow read: if isAuthenticated() && canViewStats(userId);
+      allow write: if isOwner(userId); // システムが更新
+    }
+    
+    // 練習カード
+    match /practiceCards/{cardId} {
+      allow read: if isAuthenticated() && (
+        isResourceOwner() ||
+        resource.data.get('isPublic', false) ||
+        request.auth.uid in resource.data.get('sharedWith', []) ||
+        (resource.data.get('isDiscoverable', false) && isSearchable(resource.data.userId))
+      );
+      
+      allow create: if isNewResourceOwner() && 
+                       isValidString(request.resource.data.title, 1, 100) &&
+                       isValidString(request.resource.data.description, 1, 1000) &&
+                       isValidDifficulty(request.resource.data.difficulty) &&
+                       request.resource.data.drill.duration > 0 &&
+                       request.resource.data.drill.duration <= 300 && // 最大5時間
+                       request.resource.data.keys().hasAll(['userId', 'title', 'description', 'difficulty', 'drill', 'createdAt']) &&
+                       request.resource.data.createdAt == request.time &&
+                       isWithinRateLimit('practiceCards', 20); // 1時間に最大20件
+      
+      allow update: if isResourceOwner() && 
+                       request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['title', 'description', 'difficulty', 'drill', 'tags', 
+                                  'isPublic', 'isDiscoverable', 'sharedWith', 'rating', 
+                                  'usageCount', 'lastUsed', 'updatedAt']) &&
+                       request.resource.data.updatedAt == request.time;
+      
+      allow delete: if isResourceOwner();
+    }
+    
+    // 公開練習カードテンプレート
+    match /publicPracticeCards/{cardId} {
+      allow read: if isAuthenticated();
+      allow write: if isModerator();
+    }
+    
+    // ========================================
+    // === MBTI・分析機能 ===
+    // ========================================
+    
+    // MBTI診断結果
+    match /mbtiResults/{userId} {
+      allow read: if isAuthenticated() && canViewAnalysis(userId);
+      
+      allow create: if isOwner(userId) && 
+                       isValidString(request.resource.data.result, 4, 4) && // 4文字のMBTIタイプ
+                       request.resource.data.keys().hasAll(['result', 'scores', 'createdAt']) &&
+                       request.resource.data.createdAt == request.time;
+      
+      allow update: if isOwner(userId) && 
+                       request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['result', 'scores', 'analysis', 'updatedAt']) &&
+                       request.resource.data.updatedAt == request.time;
+      
+      allow delete: if isOwner(userId);
+    }
+    
+    // ========================================
+    // === ソーシャル機能 ===
+    // ========================================
+    
+    // フレンドシップ
+    match /friendships/{friendshipId} {
+      allow read: if isAuthenticated() && 
+                     resource != null && (
+                       request.auth.uid == resource.data.fromUserId || 
+                       request.auth.uid == resource.data.toUserId
+                     );
+      
+      allow create: if isAuthenticated() && 
+                       request.auth.uid == request.resource.data.fromUserId &&
+                       request.resource.data.fromUserId != request.resource.data.toUserId &&
+                       isValidStatus(request.resource.data.status) &&
+                       request.resource.data.keys().hasAll(['fromUserId', 'toUserId', 'status', 'createdAt']) &&
+                       request.resource.data.createdAt == request.time &&
+                       isWithinRateLimit('friendships', 10); // 1時間に最大10件
+      
+      allow update: if isAuthenticated() && 
+                       resource != null && (
+                         request.auth.uid == resource.data.fromUserId || 
+                         request.auth.uid == resource.data.toUserId
+                       ) &&
+                       isValidStatus(request.resource.data.status) &&
+                       request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['status', 'updatedAt']) &&
+                       request.resource.data.updatedAt == request.time;
+      
+      allow delete: if isAuthenticated() && 
+                       resource != null && (
+                         request.auth.uid == resource.data.fromUserId || 
+                         request.auth.uid == resource.data.toUserId
+                       );
+    }
+    
+    // フレンドリクエスト
+    match /friendRequests/{requestId} {
+      allow read: if isAuthenticated() && 
+                     resource != null && (
+                       request.auth.uid == resource.data.fromUserId || 
+                       request.auth.uid == resource.data.toUserId
+                     );
+      
+      allow create: if isAuthenticated() && 
+                       request.auth.uid == request.resource.data.fromUserId &&
+                       request.resource.data.fromUserId != request.resource.data.toUserId &&
+                       isValidString(request.resource.data.get('message', ''), 0, 500) &&
+                       request.resource.data.keys().hasAll(['fromUserId', 'toUserId', 'createdAt']) &&
+                       request.resource.data.createdAt == request.time &&
+                       isWithinRateLimit('friendRequests', 5); // 1時間に最大5件
+      
+      allow update: if isAuthenticated() && 
+                       resource != null && 
+                       request.auth.uid == resource.data.toUserId &&
+                       request.resource.data.status in ['accepted', 'declined'] &&
+                       request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['status', 'respondedAt']) &&
+                       request.resource.data.respondedAt == request.time;
+      
+      allow delete: if isAuthenticated() && 
+                       resource != null && (
+                         request.auth.uid == resource.data.fromUserId || 
+                         request.auth.uid == resource.data.toUserId
+                       );
+    }
+    
+    // ========================================
+    // === 試合・競技記録 ===
+    // ========================================
+    
+    // 試合記録
+    match /matches/{matchId} {
+      allow read: if isAuthenticated() && (
+        isResourceOwner() ||
+        request.auth.uid in resource.data.get('participants', [])
+      );
+      
+      allow create: if isNewResourceOwner() && 
+                       isValidString(request.resource.data.opponent, 1, 100) &&
+                       isValidGameType(request.resource.data.matchType) &&
+                       request.resource.data.result in ['win', 'loss', 'draw'] &&
+                       isValidString(request.resource.data.score, 1, 50) &&
+                       request.resource.data.keys().hasAll(['userId', 'date', 'opponent', 'matchType', 'result', 'score', 'createdAt']) &&
+                       request.resource.data.createdAt == request.time &&
+                       isWithinRateLimit('matches', 20); // 1時間に最大20件
+      
+      allow update: if isResourceOwner() && 
+                       request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['opponent', 'result', 'score', 'tournament', 'location', 'notes', 'updatedAt']) &&
+                       request.resource.data.updatedAt == request.time;
+      
+      allow delete: if isResourceOwner();
+    }
+    
+    // ========================================
+    // === 通知・メッセージ機能 ===
+    // ========================================
+    
+    // 通知
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && 
+                     resource != null && 
+                     resource.data.userId == request.auth.uid;
+      
+      allow create: if isAuthenticated(); // システムまたは他ユーザーが作成
+      
+      allow update: if isAuthenticated() && 
+                       resource != null && 
+                       resource.data.userId == request.auth.uid &&
+                       request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['read', 'readAt']) &&
+                       (!request.resource.data.keys().hasAny(['readAt']) || 
+                        request.resource.data.readAt == request.time);
+      
+      allow delete: if isAuthenticated() && 
+                       resource != null && (
+                         resource.data.userId == request.auth.uid ||
+                         isRecentlyCreated(60) // 1時間以内なら削除可能
+                       );
+    }
+    
+    // ========================================
+    // === フィードバック・レポート ===
+    // ========================================
+    
+    // フィードバック
+    match /feedbacks/{feedbackId} {
+      allow read: if isResourceOwner() || isModerator();
+      
+      allow create: if isAuthenticated() && 
+                       isNewResourceOwner() &&
+                       isValidString(request.resource.data.message, 1, 2000) &&
+                       isValidFeedbackType(request.resource.data.type) &&
+                       request.resource.data.keys().hasAll(['userId', 'type', 'message', 'createdAt']) &&
+                       request.resource.data.createdAt == request.time &&
+                       isWithinRateLimit('feedbacks', 3); // 1時間に最大3件
+      
+      allow update: if isResourceOwner() && 
+                       request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['message', 'updatedAt']) &&
+                       request.resource.data.updatedAt == request.time &&
+                       isRecentlyCreated(24 * 60); // 24時間以内なら編集可能
+      
+      allow delete: if isResourceOwner() && isRecentlyCreated(60); // 1時間以内なら削除可能
+    }
+    
+    // レポート（不適切コンテンツ報告）
+    match /reports/{reportId} {
+      allow read: if isModerator();
+      
+      allow create: if isAuthenticated() &&
+                       isNewResourceOwner() &&
+                       isValidString(request.resource.data.reason, 1, 500) &&
+                       isValidReportType(request.resource.data.type) &&
+                       isValidString(request.resource.data.targetId, 1, 100) &&
+                       request.resource.data.keys().hasAll(['userId', 'type', 'targetId', 'reason', 'createdAt']) &&
+                       request.resource.data.createdAt == request.time &&
+                       isWithinRateLimit('reports', 5); // 1時間に最大5件
+      
+      allow update: if isModerator();
+      allow delete: if isModerator();
+    }
+    
+    // ========================================
+    // === イベント・コミュニティ機能 ===
+    // ========================================
+    
+    // イベント・大会
+    match /events/{eventId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isAuthenticated() && 
+                       isNewResourceOwner() &&
+                       isValidString(request.resource.data.title, 1, 100) &&
+                       isValidString(request.resource.data.description, 1, 2000) &&
+                       request.resource.data.eventDate.toMillis() > request.time.toMillis() &&
+                       request.resource.data.keys().hasAll(['userId', 'title', 'description', 'eventDate', 'createdAt']) &&
+                       request.resource.data.createdAt == request.time &&
+                       isWithinRateLimit('events', 3); // 1時間に最大3件
+      
+      allow update: if isResourceOwner() && 
+                       request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['title', 'description', 'location', 'maxParticipants', 
+                                  'participants', 'isPublic', 'updatedAt']) &&
+                       request.resource.data.updatedAt == request.time;
+      
+      allow delete: if isResourceOwner() || isModerator();
+    }
+    
+    // 練習場所・施設情報
+    match /venues/{venueId} {
+      allow read: if isAuthenticated();
+      allow write: if isModerator(); // モデレーターのみ編集可能
+    }
+    
+    // ========================================
+    // === 公開コンテンツ ===
+    // ========================================
+    
+    // システム設定
+    match /systemSettings/{document} {
+      allow read: if true; // 公開設定
+      allow write: if isAdmin();
+    }
+    
+    // アプリバージョン情報
+    match /appVersions/{versionId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // 記事・ニュース
+    match /articles/{articleId} {
+      allow read: if true;
+      allow write: if isModerator();
+    }
+    
+    match /news/{newsId} {
+      allow read: if true;
+      allow write: if isModerator();
+    }
+    
+    // バドミントンニュース（外部API用）
+    match /badmintonNews/{newsId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin(); // システムのみ更新
+    }
+    
+    // ========================================
+    // === 管理・分析機能 ===
+    // ========================================
+    
+    // アプリ使用統計（匿名化）
+    match /analytics/{document} {
+      allow create: if isAuthenticated(); // アプリが自動作成
+      allow read: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+    
+    // ユーザー行動ログ（匿名化）
+    match /userLogs/{logId} {
+      allow create: if isAuthenticated();
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+    
+    // システムログ
+    match /systemLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // システムのみ作成
+    }
+    
+    // 管理者専用設定
+    match /adminSettings/{document} {
+      allow read, write: if isAdmin();
+    }
+    
+    // バックアップメタデータ
+    match /backups/{backupId} {
+      allow read: if isAdmin();
+      allow write: if false; // システムのみ作成
+    }
+    
+    // ========================================
+    // === セキュリティ・監査 ===
+    // ========================================
+    
+    // セキュリティイベント
+    match /securityEvents/{eventId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated(); // システムが自動記録
+      allow update, delete: if false;
+    }
+    
+    // 不正アクセス試行ログ
+    match /accessAttempts/{attemptId} {
+      allow read: if isAdmin();
+      allow create: if true; // 認証前でも記録
+      allow update, delete: if false;
+    }
+    
+    // ユーザーブロック・制限
+    match /userRestrictions/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isAdmin();
+    }
+    
+    // ========================================
+    // === フォールバック・拒否ルール ===
+    // ========================================
+    
+    // 明示的に定義されていないパスへのアクセスを拒否
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

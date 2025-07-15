@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmail, signUpWithEmail, signInWithGoogle } from '@/utils/auth';
+import { signInWithEmail, signUpWithEmailVerification, signInWithGoogle } from '@/utils/auth';
 import { firestoreDb } from '@/utils/db';
 import Image from 'next/image';
 
@@ -43,13 +43,25 @@ const AuthPage: React.FC = () => {
 
     try {
       const { user, error: authError } = isSignUp 
-        ? await signUpWithEmail(email, password)
+        ? await signUpWithEmailVerification(email, password)
         : await signInWithEmail(email, password);
 
       if (authError) {
         setError(authError);
       } else if (user) {
-        await checkProfileAndRedirect(user.uid);
+        if (isSignUp) {
+          // 新規登録の場合、メール認証の案内を表示
+          setError('');
+          alert('アカウントを作成しました！認証メールを送信しましたので、メールボックスをご確認ください。メール認証後にログインしてください。');
+          setIsSignUp(false);
+        } else {
+          // ログインの場合、メール認証チェック
+          if (!user.emailVerified) {
+            setError('メールアドレスが認証されていません。メールボックスをご確認ください。');
+            return;
+          }
+          await checkProfileAndRedirect(user.uid);
+        }
       }
     } catch {
       setError('認証に失敗しました');

@@ -40,6 +40,32 @@ const ProfilePage: React.FC = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'privacy'>('profile');
   const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [mbtiResult, setMbtiResult] = useState<any>(null);
+
+  // MBTI結果を取得する関数
+  const loadMBTIResult = async (userId: string) => {
+    try {
+      const { db } = await import('@/utils/firebase');
+      const { collection, query, where, orderBy, limit, getDocs } = await import('firebase/firestore');
+      
+      const mbtiCollection = collection(db, 'mbtiResults');
+      const q = query(
+        mbtiCollection,
+        where('userId', '==', userId),
+        limit(1)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const doc = querySnapshot.docs[0];
+        const data = doc.data();
+        setMbtiResult({ id: doc.id, ...data });
+      }
+    } catch (error) {
+      console.error('MBTI結果の読み込みエラー:', error);
+    }
+  };
 
   // プロフィールの主な戦績から実績メダルを生成する関数
   const generateAchievementsFromProfile = (profileAchievements: string[], achievementRanks?: string[]): Achievement[] => {
@@ -154,6 +180,10 @@ const ProfilePage: React.FC = () => {
 
       try {
         const existingProfile = await firestoreDb.getUserProfile(user.uid);
+        
+        // MBTI結果を取得
+        await loadMBTIResult(user.uid);
+        
         if (existingProfile) {
           // プロフィールが新しい形式にマイグレーションされているかチェック
           const isMigrated = await firestoreDb.isProfileMigrated(user.uid);
@@ -1002,7 +1032,7 @@ const ProfilePage: React.FC = () => {
                   )}
                   
                   {/* BPSI診断結果 */}
-                  {profile.mbtiResult && (
+                  {mbtiResult && (
                     <div>
                       <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                         <FiActivity className="mr-2" />
@@ -1010,7 +1040,7 @@ const ProfilePage: React.FC = () => {
                       </h3>
                       <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg border border-blue-200">
                         {(() => {
-                          const mbtiData = badmintonMBTITypes[profile.mbtiResult as MBTIType];
+                          const mbtiData = badmintonMBTITypes[mbtiResult.result as MBTIType];
                           if (!mbtiData) return null;
                           
                           return (
@@ -1018,10 +1048,10 @@ const ProfilePage: React.FC = () => {
                               <div className="flex items-center justify-between">
                                 <div>
                                   <h4 className="text-xl font-bold text-gray-800">{mbtiData.title}</h4>
-                                  <p className="text-sm text-gray-600 mt-1">タイプ: {profile.mbtiResult}</p>
-                                  {profile.mbtiCompletedAt && (
+                                  <p className="text-sm text-gray-600 mt-1">タイプ: {mbtiResult.result}</p>
+                                  {mbtiResult.createdAt && (
                                     <p className="text-xs text-gray-500">
-                                      診断日時: {new Date(profile.mbtiCompletedAt).toLocaleDateString('ja-JP')}
+                                      診断日時: {new Date(mbtiResult.createdAt).toLocaleDateString('ja-JP')}
                                     </p>
                                   )}
                                 </div>
@@ -1073,6 +1103,34 @@ const ProfilePage: React.FC = () => {
                             </div>
                           );
                         })()}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* MBTI結果がない場合の診断促進メッセージ */}
+                  {!mbtiResult && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <FiActivity className="mr-2" />
+                        BPSI診断結果
+                      </h3>
+                      <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-6 rounded-lg border border-gray-200">
+                        <div className="text-center">
+                          <div className="text-4xl mb-4">🧠</div>
+                          <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                            あなたのプレースタイルを診断してみませんか？
+                          </h4>
+                          <p className="text-gray-600 mb-4">
+                            BPSI診断を受けて、あなたのバドミントンプレースタイルを16タイプに分類し、
+                            最適な練習方法やパートナー選びのアドバイスを受けましょう。
+                          </p>
+                          <button
+                            onClick={() => router.push('/mbti')}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                          >
+                            診断を受ける
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}

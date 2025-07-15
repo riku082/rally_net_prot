@@ -7,6 +7,8 @@ import Topbar from '@/components/Topbar';
 import TopNewsPanel from '@/components/TopNewsPanel';
 import AuthGuard from '@/components/AuthGuard';
 import PracticeSummary from '@/components/PracticeSummary';
+import EmailVerificationBanner from '@/components/EmailVerificationBanner';
+import UserAvatar from '@/components/UserAvatar';
 import { Match } from '@/types/match';
 import { Practice } from '@/types/practice';
 import { firestoreDb } from '@/utils/db';
@@ -78,6 +80,9 @@ export default function HomePage() {
                   <p className="text-gray-600 text-sm sm:text-base md:text-lg">システムの概要と最新情報を確認できます</p>
                 </div>
               </div>
+
+              {/* メール認証バナー */}
+              <EmailVerificationBanner />
 
               {/* メインコンテンツグリッド - レスポンシブレイアウト */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
@@ -280,8 +285,13 @@ const ModernProfileCard: React.FC = () => {
 };
 
 interface Friend {
+  id: string;
   name: string;
   email: string;
+  avatar?: string;
+  team?: string;
+  position?: string;
+  mbtiResult?: string;
 }
 
 // フレンド一覧カード
@@ -301,16 +311,50 @@ const FriendsListCard: React.FC<{ friends: Friend[] }> = ({ friends }) => {
       {friends.length > 0 ? (
         <div className="space-y-2 sm:space-y-3">
           {friends.map((friend, index) => (
-            <div key={index} className="flex items-center p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gray-50 hover:bg-gray-100 transition-all duration-200">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0">
-                <FaUserCircle className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
-              </div>
+            <Link 
+              key={friend.id || index} 
+              href={`/user/${friend.id}`}
+              className="flex items-center p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gray-50 hover:bg-gray-100 transition-all duration-200 group cursor-pointer"
+            >
+              <UserAvatar 
+                avatar={friend.avatar}
+                name={friend.name || 'ユーザー'}
+                size="md"
+              />
               <div className="ml-2 sm:ml-3 flex-1 min-w-0">
-                <p className="font-medium text-gray-800 text-sm sm:text-base truncate">{friend.name || 'ユーザー'}</p>
-                <p className="text-xs sm:text-sm text-gray-600 truncate">{friend.email}</p>
+                <p className="font-medium text-gray-800 text-sm sm:text-base truncate group-hover:text-blue-600 transition-colors">
+                  {friend.name || 'ユーザー'}
+                </p>
+                <div className="flex items-center space-x-2">
+                  {friend.team && (
+                    <p className="text-xs sm:text-sm text-gray-600 truncate">
+                      {friend.team}
+                    </p>
+                  )}
+                  {friend.position && friend.team && (
+                    <span className="text-gray-400">•</span>
+                  )}
+                  {friend.position && (
+                    <p className="text-xs sm:text-sm text-gray-600 truncate">
+                      {friend.position}
+                    </p>
+                  )}
+                  {!friend.team && !friend.position && (
+                    <p className="text-xs sm:text-sm text-gray-600 truncate">
+                      {friend.email}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
-            </div>
+              <div className="flex items-center space-x-2">
+                {friend.mbtiResult && (
+                  <div className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                    {friend.mbtiResult}
+                  </div>
+                )}
+                <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+              </div>
+            </Link>
           ))}
         </div>
       ) : (

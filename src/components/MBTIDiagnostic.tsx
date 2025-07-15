@@ -107,17 +107,40 @@ const MBTIDiagnostic: React.FC<MBTIDiagnosticProps> = ({ onComplete }) => {
       };
 
       // API経由で保存
-      console.log('MBTI結果を保存中...', result);
+      console.log('💾 MBTI結果を保存中...', result);
+      console.log('💾 User ID:', user.uid);
+      console.log('💾 Result ID:', result.id);
+      
+      // Get Firebase auth token
+      const token = await user.getIdToken();
+      console.log('💾 Token obtained:', token.substring(0, 20) + '...');
+      
       const response = await fetch('/api/mbti', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ result, userId: user.uid })
       });
+      
+      console.log('💾 API Response status:', response.status, response.statusText);
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('MBTI結果の保存に失敗:', errorData);
-        throw new Error(`保存に失敗しました: ${errorData.error || response.statusText}`);
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText };
+        }
+        console.error('MBTI結果の保存に失敗:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData,
+          userId: user.uid
+        });
+        throw new Error(`保存に失敗しました: ${errorData.error || response.statusText} (Status: ${response.status})`);
       }
 
       const responseData = await response.json();

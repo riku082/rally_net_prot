@@ -9,6 +9,8 @@ import {
   EmailAuthProvider,
   signOut,
   onAuthStateChanged,
+  sendEmailVerification,
+  reload,
   User,
   AuthError,
 } from 'firebase/auth';
@@ -55,6 +57,14 @@ const getJapaneseErrorMessage = (error: AuthError): string => {
       return 'この環境では操作がサポートされていません。';
     case 'auth/timeout':
       return '認証がタイムアウトしました。';
+    
+    // メール認証関連エラー
+    case 'auth/invalid-action-code':
+      return '無効な認証コードです。';
+    case 'auth/expired-action-code':
+      return '認証コードの有効期限が切れています。';
+    case 'auth/user-token-expired':
+      return 'ユーザートークンの有効期限が切れています。再度ログインしてください。';
     
     default:
       return '認証に失敗しました。しばらく時間をおいてから再試行してください。';
@@ -175,5 +185,80 @@ export const linkAnonymousWithEmail = async (email: string, password: string) =>
       return { user: null, error: error.message };
     }
     return { user: null, error: 'アカウントの連携に失敗しました。' };
+  }
+};
+
+// メール認証の送信
+export const sendVerificationEmail = async (user?: User) => {
+  try {
+    const currentUser = user || auth.currentUser;
+    if (!currentUser) {
+      return { error: 'ユーザーがログインしていません。' };
+    }
+
+    if (currentUser.emailVerified) {
+      return { error: 'メールアドレスは既に認証済みです。' };
+    }
+
+    await sendEmailVerification(currentUser, {
+      url: `${window.location.origin}/auth?verified=true`,
+      handleCodeInApp: true,
+    });
+    
+    return { error: null };
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      if ('code' in error) {
+        return { error: getJapaneseErrorMessage(error as AuthError) };
+      }
+      return { error: error.message };
+    }
+    return { error: 'メール送信に失敗しました。' };
+  }
+};
+
+// メール認証状態の確認
+export const checkEmailVerification = async () => {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      return { verified: false, error: 'ユーザーがログインしていません。' };
+    }
+
+    // ユーザー情報を更新
+    await reload(user);
+    
+    return { verified: user.emailVerified, error: null };
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      if ('code' in error) {
+        return { verified: false, error: getJapaneseErrorMessage(error as AuthError) };
+      }
+      return { verified: false, error: error.message };
+    }
+    return { verified: false, error: 'メール認証の確認に失敗しました。' };
+  }
+};
+
+// メール認証必須のサインアップ
+export const signUpWithEmailVerification = async (email: string, password: string) => {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    
+    // 自動的にメール認証を送信
+    await sendEmailVerification(userCredential.user, {
+      url: `${window.location.origin}/auth?verified=true`,
+      handleCodeInApp: true,
+    });
+
+    return { user: userCredential.user, error: null };
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      if ('code' in error) {
+        return { user: null, error: getJapaneseErrorMessage(error as AuthError) };
+      }
+      return { user: null, error: error.message };
+    }
+    return { user: null, error: '新規登録に失敗しました。' };
   }
 }; 

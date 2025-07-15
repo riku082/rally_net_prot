@@ -37,13 +37,73 @@ export default function MBTIPage() {
     
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/mbti?userId=${user.uid}`);
-      const data = await response.json();
-      if (data.result) {
-        setPreviousResults([data.result]);
+      // 直接Firestoreから取得
+      const { db } = await import('@/utils/firebase');
+      const { collection, query, where, orderBy, getDocs } = await import('firebase/firestore');
+      
+      console.log('🔍 Searching for MBTI results for user:', user.uid);
+      console.log('🔍 Database instance:', db);
+      
+      const mbtiCollection = collection(db, 'mbtiResults');
+      console.log('🔍 Collection reference created');
+      
+      // まずはwhere句なしで全件取得してみる
+      const allDocsQuery = query(mbtiCollection);
+      const allDocsSnapshot = await getDocs(allDocsQuery);
+      console.log('🔍 Total documents in mbtiResults:', allDocsSnapshot.size);
+      
+      if (!allDocsSnapshot.empty) {
+        allDocsSnapshot.docs.forEach(doc => {
+          console.log('🔍 Document:', doc.id, doc.data());
+        });
+      }
+      
+      // インデックスなしでクエリを実行（orderByを除去）
+      const q = query(
+        mbtiCollection,
+        where('userId', '==', user.uid)
+      );
+      
+      console.log('🔍 Query created for userId:', user.uid);
+      const querySnapshot = await getDocs(q);
+      console.log('🔍 Query results:', querySnapshot.size, 'documents');
+      
+      const results: MBTIResultType[] = [];
+      
+      if (!querySnapshot.empty) {
+        querySnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          console.log('🔍 Found result:', doc.id, data);
+          results.push({ id: doc.id, ...data } as MBTIResultType);
+        });
+        
+        // クライアント側でソート（createdAtの降順）
+        results.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        console.log(`Found ${results.length} MBTI results for user:`, user.uid);
+        setPreviousResults(results);
+      } else {
+        console.log('No MBTI results found for user:', user.uid);
+        setPreviousResults([]);
       }
     } catch (error) {
       console.error('過去の結果の読み込みエラー:', error);
+      // APIフォールバック
+      try {
+        const token = await user.getIdToken();
+        const response = await fetch(`/api/mbti?userId=${user.uid}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await response.json();
+        if (data.results && data.results.length > 0) {
+          setPreviousResults(data.results);
+        } else if (data.result) {
+          setPreviousResults([data.result]);
+        }
+      } catch (apiError) {
+        console.error('API フォールバックも失敗:', apiError);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -200,15 +260,13 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart, onShowHistory, h
             <FaPlay className="w-5 h-5 mr-2" />
             診断を開始する
           </button>
-          {hasPreviousResults && (
-            <button
-              onClick={onShowHistory}
-              className="flex items-center justify-center px-8 py-4 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors text-lg font-medium"
-            >
-              <FaHistory className="w-5 h-5 mr-2" />
-              過去の結果を見る
-            </button>
-          )}
+          <button
+            onClick={onShowHistory}
+            className="flex items-center justify-center px-8 py-4 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors text-lg font-medium"
+          >
+            <FaHistory className="w-5 h-5 mr-2" />
+            過去の結果を見る
+          </button>
         </div>
 
       </div>
@@ -282,7 +340,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-800">
-                    {result.result} - タイプ名
+                    {result.result} - {result.typeName || 'バドミントンプレイヤー'}
                   </h3>
                   <p className="text-sm text-gray-600">
                     {new Date(result.createdAt).toLocaleDateString('ja-JP', {

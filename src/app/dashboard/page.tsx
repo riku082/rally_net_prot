@@ -7,6 +7,7 @@ import Topbar from '@/components/Topbar';
 import TopNewsPanel from '@/components/TopNewsPanel';
 import AuthGuard from '@/components/AuthGuard';
 import BPSIIntroCard from '@/components/BPSIIntroCard';
+import UserAvatar from '@/components/UserAvatar';
 
 import { Match } from '@/types/match';
 import { Practice, PracticeCard } from '@/types/practice';
@@ -18,8 +19,13 @@ import { GiShuttlecock } from 'react-icons/gi';
 import Link from 'next/link';
 
 interface Friend {
+  id: string;
   name: string;
   email: string;
+  avatar?: string;
+  team?: string;
+  position?: string;
+  mbtiResult?: string;
 }
 
 interface MbtiAnalysisResult {
@@ -695,7 +701,69 @@ export default function DashboardPage() {
           friendship.fromUserId === user.uid ? friendship.toUserId : friendship.fromUserId
         );
         const friendProfiles = await firestoreDb.getUserProfilesByIds(friendUserIds);
+        
+        // デバッグ: フレンドのMBTI状況をログ出力
+        console.log('🔍 フレンドのMBTI状況:');
+        for (const friend of friendProfiles) {
+          console.log(`Friend ${friend.name}: userProfile.mbtiResult = ${friend.mbtiResult}`);
+          
+          // mbtiResultsコレクションから直接確認
+          try {
+            const { db } = await import('@/utils/firebase');
+            const { collection, query, where, getDocs } = await import('firebase/firestore');
+            
+            const mbtiCollection = collection(db, 'mbtiResults');
+            const q = query(mbtiCollection, where('userId', '==', friend.id));
+            const mbtiSnapshot = await getDocs(q);
+            
+            if (!mbtiSnapshot.empty) {
+              const mbtiData = mbtiSnapshot.docs[0].data();
+              console.log(`  → mbtiResults collection: ${mbtiData.result} (${new Date(mbtiData.createdAt).toLocaleDateString()})`);
+              
+              // userProfilesに同期されていない場合は自動修復
+              if (!friend.mbtiResult && mbtiData.result) {
+                console.log(`⚠️ ${friend.name}のMBTI結果が同期されていません！自動修復を実行...`);
+                console.log(`  修復: mbtiResults(${mbtiData.result}) → userProfiles(${friend.mbtiResult || 'null'})`);
+                
+                try {
+                  console.log(`🔧 ${friend.name}の同期API呼び出し中...`);
+                  const syncResponse = await fetch('/api/mbti/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: friend.id })
+                  });
+                  
+                  console.log(`📡 ${friend.name}の同期APIレスポンス:`, syncResponse.status, syncResponse.statusText);
+                  
+                  if (syncResponse.ok) {
+                    const syncResult = await syncResponse.json();
+                    console.log(`✅ ${friend.name}のMBTI結果を修復しました: ${syncResult.result}`);
+                    
+                    // フレンド情報を更新
+                    friend.mbtiResult = syncResult.result;
+                  } else {
+                    const errorText = await syncResponse.text();
+                    console.error(`❌ ${friend.name}のMBTI修復に失敗:`, syncResponse.status, errorText);
+                  }
+                } catch (syncError) {
+                  console.error(`❌ ${friend.name}のMBTI修復中にエラー:`, syncError);
+                }
+              }
+            } else {
+              console.log(`  → mbtiResults collection: データなし`);
+            }
+          } catch (error) {
+            console.error(`  → mbtiResults取得エラー:`, error);
+          }
+        }
+        
+        // 修復処理完了後にstateを更新
         setFriends(friendProfiles.slice(0, 5) as Friend[]); // 最大5人まで表示
+        
+        // 修復処理を完了した後、再度フレンドリストをリフレッシュ
+        setTimeout(() => {
+          setFriends([...friendProfiles.slice(0, 5)] as Friend[]);
+        }, 100);
 
         // 練習データを取得
         const loadedPractices = await firestoreDb.getPractices(user.uid);
@@ -1064,16 +1132,50 @@ const FriendsListCard: React.FC<{ friends: Friend[] }> = ({ friends }) => {
       {friends.length > 0 ? (
         <div className="space-y-2 sm:space-y-3">
           {friends.map((friend, index) => (
-            <div key={index} className="flex items-center p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gray-50 hover:bg-gray-100 transition-all duration-200">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0">
-                <FaUserCircle className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
-              </div>
+            <Link 
+              key={friend.id || index} 
+              href={`/user/${friend.id}`}
+              className="flex items-center p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gray-50 hover:bg-gray-100 transition-all duration-200 group cursor-pointer"
+            >
+              <UserAvatar 
+                avatar={friend.avatar}
+                name={friend.name || 'ユーザー'}
+                size="md"
+              />
               <div className="ml-2 sm:ml-3 flex-1 min-w-0">
-                <p className="font-medium text-gray-800 text-sm sm:text-base truncate">{friend.name || 'ユーザー'}</p>
-                <p className="text-xs sm:text-sm text-gray-600 truncate">{friend.email}</p>
+                <p className="font-medium text-gray-800 text-sm sm:text-base truncate group-hover:text-theme-primary-600 transition-colors">
+                  {friend.name || 'ユーザー'}
+                </p>
+                <div className="flex items-center space-x-2">
+                  {friend.team && (
+                    <p className="text-xs sm:text-sm text-gray-600 truncate">
+                      {friend.team}
+                    </p>
+                  )}
+                  {friend.position && friend.team && (
+                    <span className="text-gray-400">•</span>
+                  )}
+                  {friend.position && (
+                    <p className="text-xs sm:text-sm text-gray-600 truncate">
+                      {friend.position}
+                    </p>
+                  )}
+                  {!friend.team && !friend.position && (
+                    <p className="text-xs sm:text-sm text-gray-600 truncate">
+                      {friend.email}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
-            </div>
+              <div className="flex items-center space-x-2">
+                {friend.mbtiResult && (
+                  <div className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                    {friend.mbtiResult}
+                  </div>
+                )}
+                <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+              </div>
+            </Link>
           ))}
         </div>
       ) : (

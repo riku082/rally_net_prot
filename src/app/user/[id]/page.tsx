@@ -49,6 +49,31 @@ const UserProfilePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [friendshipId, setFriendshipId] = useState<string | null>(null);
 
+  // MBTI結果を取得する関数
+  const loadMBTIResult = async (userId: string) => {
+    try {
+      const { db } = await import('@/utils/firebase');
+      const { collection, query, where, orderBy, limit, getDocs } = await import('firebase/firestore');
+      
+      const mbtiCollection = collection(db, 'mbtiResults');
+      const q = query(
+        mbtiCollection,
+        where('userId', '==', userId),
+        limit(1)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const doc = querySnapshot.docs[0];
+        const data = doc.data();
+        setMbtiResult({ id: doc.id, ...data } as MBTIResult);
+      }
+    } catch (error) {
+      console.error('MBTI結果の読み込みエラー:', error);
+    }
+  };
+
   // プロフィールの主な戦績から実績メダルを生成する関数
   const generateAchievementsFromProfile = (profileAchievements: string[], achievementRanks?: string[]): Achievement[] => {
     const achievements: Achievement[] = [];
@@ -210,10 +235,28 @@ const UserProfilePage: React.FC = () => {
         setRecentPractices(sortedPractices);
       }
 
-      // MBTI結果を取得
+      // MBTI結果を取得 - userProfilesから同期済みデータを確認し、なければmbtiResultsから直接取得
       if (canViewAnalysis) {
         const mbti = await firestoreDb.getMBTIResult(userId);
-        setMbtiResult(mbti);
+        if (mbti) {
+          setMbtiResult(mbti);
+        } else {
+          // userProfilesに結果がない場合は、mbtiResultsから直接取得して同期
+          await loadMBTIResult(userId);
+          // 同期処理を実行してuserProfilesも更新
+          try {
+            const syncResponse = await fetch('/api/mbti/sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId })
+            });
+            if (syncResponse.ok) {
+              console.log('🔧 MBTI data synchronized for user:', userId);
+            }
+          } catch (syncError) {
+            console.warn('MBTI同期に失敗しましたが、表示は継続します:', syncError);
+          }
+        }
       }
 
       // 実績と試合結果を取得（公開設定または友達の場合）
@@ -500,7 +543,7 @@ const UserProfilePage: React.FC = () => {
                 </div>
 
                 {/* BPSI診断結果 */}
-                {canViewAnalysis() && userProfile.mbtiResult && (
+                {canViewAnalysis() && mbtiResult && (
                   <div className="bg-white border rounded-xl p-4 sm:p-6">
                     <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center">
                       <FiActivity className="mr-2 text-purple-600" />
@@ -508,18 +551,18 @@ const UserProfilePage: React.FC = () => {
                     </h3>
                     <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 sm:p-6 rounded-lg border border-blue-200">
                       {(() => {
-                        const mbtiData = badmintonMBTITypes[userProfile.mbtiResult as MBTIType];
+                        const mbtiData = badmintonMBTITypes[mbtiResult.result as MBTIType];
                         if (!mbtiData) {
                           // フォールバック表示
                           return (
                             <div className="flex items-center justify-center">
                               <div className="text-center">
                                 <div className="w-32 h-32 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                                  <span className="text-3xl font-bold text-purple-700">{userProfile.mbtiResult}</span>
+                                  <span className="text-3xl font-bold text-purple-700">{mbtiResult.result}</span>
                                 </div>
-                                {userProfile.mbtiCompletedAt && (
+                                {mbtiResult.createdAt && (
                                   <p className="text-sm text-gray-500">
-                                    {new Date(userProfile.mbtiCompletedAt).toLocaleDateString('ja-JP')} 診断完了
+                                    {new Date(mbtiResult.createdAt).toLocaleDateString('ja-JP')} 診断完了
                                   </p>
                                 )}
                               </div>
@@ -534,10 +577,10 @@ const UserProfilePage: React.FC = () => {
                                 <h4 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800 leading-tight">{mbtiData.title}</h4>
                                 <div className="text-2xl sm:text-3xl lg:text-4xl">🧠</div>
                               </div>
-                              <p className="text-xs sm:text-sm text-gray-600">タイプ: {userProfile.mbtiResult}</p>
-                              {userProfile.mbtiCompletedAt && (
+                              <p className="text-xs sm:text-sm text-gray-600">タイプ: {mbtiResult.result}</p>
+                              {mbtiResult.createdAt && (
                                 <p className="text-xs text-gray-500">
-                                  診断日時: {new Date(userProfile.mbtiCompletedAt).toLocaleDateString('ja-JP')}
+                                  診断日時: {new Date(mbtiResult.createdAt).toLocaleDateString('ja-JP')}
                                 </p>
                               )}
                             </div>

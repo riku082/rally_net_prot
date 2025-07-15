@@ -1,0 +1,67 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // PUBLIC ACCESS RULES
+    // Allow public read access to system information needed for agreement
+    match /system/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid in resource.data.adminUsers;
+    }
+    
+    // Allow public read access to news and announcements
+    match /news/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid in resource.data.adminUsers;
+    }
+    
+    // Allow public read access to static content like policy if stored in Firestore
+    match /static_content/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid in resource.data.adminUsers;
+    }
+    
+    // USER DATA RULES
+    // User profiles - read/write by owner only
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // User subcollections (practices, mbti, etc.) - owner only
+    match /users/{userId}/{subcollection=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // SHARED CONTENT RULES
+    // Practice cards - read by authenticated users, write by owner
+    match /practice_cards/{cardId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    
+    // Practice routines - read by authenticated users, write by owner
+    match /practice_routines/{routineId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    
+    // COMMUNITY FEATURES
+    // Friend requests - participants only
+    match /friend_requests/{requestId} {
+      allow read, write: if request.auth != null && 
+        (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
+    }
+    
+    // Friendships - participants only
+    match /friendships/{friendshipId} {
+      allow read, write: if request.auth != null && 
+        (request.auth.uid == resource.data.user1Id || request.auth.uid == resource.data.user2Id);
+    }
+    
+    // FALLBACK RULE
+    // Default authenticated access for other collections
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

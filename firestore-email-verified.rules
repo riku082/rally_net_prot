@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // System information (public read)
+    match /system/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // News and announcements (public read)
+    match /news/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // Static content (public read)
+    match /static_content/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // User profiles (email verified required)
+    match /users/{userId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid == userId && 
+        request.auth.token.email_verified == true;
+    }
+    
+    // User subcollections (email verified required)
+    match /users/{userId}/{subcollection=**} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid == userId && 
+        request.auth.token.email_verified == true;
+    }
+    
+    // Practice cards (email verified required)
+    match /practice_cards/{cardId} {
+      allow read: if request.auth != null && request.auth.token.email_verified == true;
+      allow write: if request.auth != null && 
+        request.auth.uid == resource.data.userId && 
+        request.auth.token.email_verified == true;
+    }
+    
+    // Practice routines (email verified required)
+    match /practice_routines/{routineId} {
+      allow read: if request.auth != null && request.auth.token.email_verified == true;
+      allow write: if request.auth != null && 
+        request.auth.uid == resource.data.userId && 
+        request.auth.token.email_verified == true;
+    }
+    
+    // Friend requests (email verified required)
+    match /friend_requests/{requestId} {
+      allow read, write: if request.auth != null && 
+        request.auth.token.email_verified == true &&
+        (request.auth.uid == resource.data.senderId || 
+         request.auth.uid == resource.data.receiverId);
+    }
+    
+    // Friendships (email verified required)
+    match /friendships/{friendshipId} {
+      allow read, write: if request.auth != null && 
+        request.auth.token.email_verified == true &&
+        (request.auth.uid == resource.data.user1Id || 
+         request.auth.uid == resource.data.user2Id);
+    }
+    
+    // Default rule (email verified required)
+    match /{document=**} {
+      allow read, write: if request.auth != null && 
+        request.auth.token.email_verified == true;
+    }
+  }
+}

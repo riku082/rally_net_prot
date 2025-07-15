@@ -5,7 +5,12 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: ['rally-net.vercel.app', 'rallynet.com', 'www.rallynet.com'],
+    domains: [
+      'rally-net.vercel.app', 
+      'rallynet.com', 
+      'www.rallynet.com',
+      'firebasestorage.googleapis.com'
+    ],
   },
   // パフォーマンス最適化
   experimental: {

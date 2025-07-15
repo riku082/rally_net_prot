@@ -351,23 +351,56 @@ const PracticeCardList: React.FC<PracticeCardListProps> = ({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {sortedCards.map(card => (
-            <PracticeCardItem
-              key={card.id}
-              card={card}
-              editMode={editMode}
-              isSelected={selectedForDeletion.has(card.id)}
-              onCardClick={() => handleCardClick(card)}
-              onEdit={() => onEdit(card)}
-              onDelete={() => onDelete(card.id)}
-              onDeleteSelection={() => handleDeleteSelection(card.id)}
-              difficultyLabel={difficultyLabels[card.difficulty]}
-              difficultyColor={difficultyColors[card.difficulty]}
-              formatDuration={formatDuration}
-              formatLastUsed={formatLastUsed}
-            />
-          ))}
+        <div className="relative">
+          {/* スクロールヒント */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-sm text-gray-500">
+              {sortedCards.length}件のカード
+            </div>
+            <div className="text-xs text-gray-400 hidden sm:block">
+              横にスワイプして他のカードを表示
+            </div>
+          </div>
+          
+          {/* 横スクロールコンテナ */}
+          <div className="overflow-x-auto scrollbar-hide">
+            <div className="flex space-x-4 pb-4" style={{ minWidth: 'max-content' }}>
+              {sortedCards.map(card => (
+                <div key={card.id} className="flex-shrink-0 w-80 sm:w-96">
+                  <PracticeCardItem
+                    card={card}
+                    editMode={editMode}
+                    isSelected={selectedForDeletion.has(card.id)}
+                    onCardClick={() => handleCardClick(card)}
+                    onEdit={() => onEdit(card)}
+                    onDelete={() => onDelete(card.id)}
+                    onDeleteSelection={() => handleDeleteSelection(card.id)}
+                    difficultyLabel={difficultyLabels[card.difficulty]}
+                    difficultyColor={difficultyColors[card.difficulty]}
+                    formatDuration={formatDuration}
+                    formatLastUsed={formatLastUsed}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* スクロールインジケーター */}
+          {sortedCards.length > 1 && (
+            <div className="flex justify-center mt-4 space-x-1">
+              {Array.from({ length: Math.min(sortedCards.length, 10) }).map((_, index) => (
+                <div 
+                  key={index} 
+                  className="w-2 h-2 rounded-full bg-gray-300"
+                />
+              ))}
+              {sortedCards.length > 10 && (
+                <div className="text-xs text-gray-400 ml-2">
+                  +{sortedCards.length - 10}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
       
@@ -538,7 +571,7 @@ const PracticeCardItem: React.FC<PracticeCardItemProps> = ({
 
   return (
     <div 
-      className={`border rounded-xl transition-all duration-200 overflow-hidden cursor-pointer ${
+      className={`border rounded-xl transition-all duration-200 overflow-hidden cursor-pointer h-full ${
         editMode 
           ? isSelected 
             ? 'border-red-300 bg-red-50' 
