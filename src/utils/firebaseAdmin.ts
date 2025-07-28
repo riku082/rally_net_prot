@@ -1,37 +1,32 @@
-import { initializeApp, getApps, cert, applicationDefault } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
-import { getAuth } from 'firebase-admin/auth';
+import * as admin from 'firebase-admin';
+import * as path from 'path';
+import * as fs from 'fs';
 
-// Firebase Admin SDKの初期化
-let firebaseAdminConfig: any = {
-  projectId: "badsnsn-q2xa94"
-};
+// サービスアカウントキーファイルのパス (プロジェクトルートからの相対パス)
+const serviceAccountFileName = 'badsnsn-q2xa94-firebase-adminsdk-fbsvc-21f8d57b36.json';
+const serviceAccountPath = path.resolve(process.cwd(), serviceAccountFileName);
 
-// 認証設定の優先順位: 1. Service Account Key, 2. Application Default, 3. Development fallback
-try {
-  if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-    firebaseAdminConfig.credential = cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY));
-  } else if (process.env.NODE_ENV === 'production') {
-    firebaseAdminConfig.credential = applicationDefault();
-  } else {
-    // Development environment: Allow initialization without credentials
-    // This will work for Firestore operations in server-side environment
-    console.log('Firebase Admin: Using development configuration without explicit credentials');
+// アプリが既に初期化されているか確認し、重複初期化を防ぐ
+if (!admin.apps.length) {
+  try {
+    console.log('Attempting to initialize Firebase Admin SDK from file...');
+    // ファイルからサービスアカウントキーを読み込む
+    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
+    });
+    console.log('Firebase Admin SDK initialized successfully from file.');
+  } catch (error: any) {
+    console.error('CRITICAL: Firebase Admin SDK initialization failed from file.', error.message);
+    // 初期化エラーは致命的なので、ここでエラーを再スローする
+    throw new Error(`Firebase Admin SDK could not be initialized. Check the service account file at ${serviceAccountPath}. Error: ${error.message}`);
   }
-} catch (error) {
-  console.warn('Firebase Admin credential initialization failed, falling back to default config');
 }
 
-// Admin SDKの重複初期化を防ぐ
-let adminApp;
-try {
-  adminApp = getApps().length === 0 
-    ? initializeApp(firebaseAdminConfig, 'admin') 
-    : getApps().find(app => app.name === 'admin') || getApps()[0];
-} catch (error) {
-  console.error('Firebase Admin initialization failed:', error);
-  throw error;
-}
+// 初期化済みのサービスをエクスポート
+const db = admin.firestore();
+const auth = admin.auth();
 
-export const adminDb = getFirestore(adminApp);
-export const adminAuth = getAuth(adminApp);
+export { db, auth };
+

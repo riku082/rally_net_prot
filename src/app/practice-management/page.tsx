@@ -10,7 +10,7 @@ import PracticeDayDetail from '@/components/PracticeDayDetail';
 import PracticeList from '@/components/PracticeList';
 import PracticeForm from '@/components/PracticeForm';
 import PracticeCardList from '@/components/PracticeCardList';
-import PracticeCardForm from '@/components/PracticeCardForm';
+import PracticeCardCreationSelector from '@/components/PracticeCardCreationSelector';
 import PracticeAnalyticsCharts from '@/components/PracticeAnalyticsCharts';
 import { Practice, PracticeCard } from '@/types/practice';
 import { firestoreDb } from '@/utils/db';
@@ -615,19 +615,15 @@ function PracticeManagementContent() {
       )}
 
       {showCardForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
-            <PracticeCardForm
-              card={editingCard || undefined}
-              onSave={handleSavePracticeCard}
-              onCancel={() => {
-                setShowCardForm(false);
-                setEditingCard(null);
-              }}
-              isLoading={isSaving}
-            />
-          </div>
-        </div>
+        <PracticeCardCreationSelector
+          card={editingCard || undefined}
+          onSave={handleSavePracticeCard}
+          onCancel={() => {
+            setShowCardForm(false);
+            setEditingCard(null);
+          }}
+          isLoading={isSaving}
+        />
       )}
     </AuthGuard>
   );

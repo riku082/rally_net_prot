@@ -115,14 +115,19 @@ export interface PracticeCard {
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   equipment: string[]; // 必要な用具
   courtInfo?: PracticeCourtInfo; // コート情報
+  visualInfo?: PracticeVisualInfo; // ビジュアル情報（新規追加）
   notes?: string;
   tags: string[];
-  isPublic: boolean; // 将来的なコミュニティ共有用
+  isPublic: boolean; // コミュニティ共有用
+  sharingSettings?: PracticeSharingSettings; // 共有設定（新規追加）
   usageCount: number; // 使用回数
   lastUsed?: string; // 最後に使用した日付
   rating?: number; // 1-5の評価
+  userRatings?: PracticeUserRating[]; // ユーザー評価（新規追加）
   createdAt: number;
   updatedAt: number;
+  createdBy?: string; // 作成者情報（共有用）
+  originalCardId?: string; // 元カードID（コピー/フォーク用）
 }
 
 // 練習ルーティン（複数のカードを組み合わせ）
@@ -236,5 +241,130 @@ export interface PracticeCardFilter {
   minDuration?: number; // 最小時間
   tags?: string[];
   searchTerm?: string;
-  sortBy?: 'updated' | 'usage' | 'duration';
+  sortBy?: 'updated' | 'usage' | 'duration' | 'rating' | 'popular';
+  showPublicOnly?: boolean; // 公開カードのみ表示
+  createdBy?: string; // 特定ユーザーの作成カード
 }
+
+// ビジュアル情報（コートグラフィック用）
+export interface PracticeVisualInfo {
+  playerPositions?: PlayerPosition[]; // プレイヤー位置
+  shotTrajectories?: ShotTrajectory[]; // ショット軌道
+  movementPatterns?: MovementPattern[]; // 移動パターン
+  equipmentPositions?: EquipmentPosition[]; // 用具配置
+  keyPoints?: PracticeKeyPoint[]; // 重要ポイント
+  sequence?: PracticeSequenceStep[]; // 練習手順
+}
+
+// プレイヤー位置
+export interface PlayerPosition {
+  id: string;
+  x: number; // コート座標（0-400）
+  y: number; // コート座標（0-600）
+  label: string; // 'P1', 'P2', 'コーチ' など
+  role?: 'player' | 'opponent' | 'coach' | 'feeder';
+  color?: string;
+}
+
+// ショット軌道
+export interface ShotTrajectory {
+  id: string;
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  shotType: string; // 'smash', 'clear', 'drop' など
+  order?: number; // 練習手順での順序
+  description?: string;
+}
+
+// 移動パターン
+export interface MovementPattern {
+  id: string;
+  playerId: string; // PlayerPosition.id
+  path: { x: number; y: number }[]; // 移動経路
+  timing?: number; // タイミング（秒）
+  description?: string;
+}
+
+// 用具配置
+export interface EquipmentPosition {
+  id: string;
+  x: number;
+  y: number;
+  type: string; // 'cone', 'shuttle', 'target' など
+  label?: string;
+  color?: string;
+}
+
+// 重要ポイント
+export interface PracticeKeyPoint {
+  id: string;
+  x: number;
+  y: number;
+  title: string;
+  description: string;
+  type: 'technique' | 'positioning' | 'timing' | 'strategy';
+  icon?: string;
+}
+
+// 練習手順ステップ
+export interface PracticeSequenceStep {
+  id: string;
+  order: number;
+  title: string;
+  description: string;
+  duration?: number; // 秒
+  visualElements?: string[]; // 表示する要素のID
+}
+
+// 共有設定
+export interface PracticeSharingSettings {
+  visibility: 'private' | 'friends' | 'public';
+  allowComments: boolean;
+  allowRating: boolean;
+  allowCopy: boolean; // コピー/フォーク許可
+  allowModification: boolean; // 改変許可
+  tags?: string[]; // 検索用追加タグ
+}
+
+// ユーザー評価
+export interface PracticeUserRating {
+  userId: string;
+  rating: number; // 1-5
+  comment?: string;
+  difficulty?: 'easier' | 'as_expected' | 'harder';
+  effectiveness?: number; // 1-5
+  createdAt: number;
+}
+
+// 公開練習カード（コミュニティ用）
+export interface PublicPracticeCard extends Omit<PracticeCard, 'userId'> {
+  createdByName?: string; // 作成者表示名
+  downloads: number; // ダウンロード数
+  favorites: number; // お気に入り数
+  comments?: PracticeCardComment[];
+  category?: PracticeCardCategory;
+}
+
+// 練習カードコメント
+export interface PracticeCardComment {
+  id: string;
+  userId: string;
+  userName?: string;
+  content: string;
+  rating?: number;
+  createdAt: number;
+  replies?: PracticeCardComment[];
+}
+
+// 練習カードカテゴリ
+export type PracticeCardCategory = 
+  | 'basic_technique'    // 基礎技術
+  | 'footwork'          // フットワーク
+  | 'serve_practice'    // サーブ練習
+  | 'net_play'          // ネットプレイ
+  | 'rally_practice'    // ラリー練習
+  | 'match_simulation'  // 試合形式
+  | 'conditioning'      // フィジカル
+  | 'strategy'          // 戦術
+  | 'doubles_formation' // ダブルス陣形
+  | 'singles_tactics';  // シングルス戦術

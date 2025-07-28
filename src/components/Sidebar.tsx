@@ -1,7 +1,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { FaTachometerAlt, FaUser, FaChartBar, FaUserCircle, FaRss, FaUserFriends, FaBrain, FaBook, FaMailBulk, FaQuestionCircle } from 'react-icons/fa';
+import { FaTachometerAlt, FaUser, FaChartBar, FaUserCircle, FaRss, FaUserFriends, FaBrain, FaBook, FaMailBulk, FaQuestionCircle, FaShare, FaUsers } from 'react-icons/fa';
 import { GiShuttlecock } from 'react-icons/gi';
 import Image from 'next/image';
 import NotificationBadge from './NotificationBadge';
@@ -9,6 +9,8 @@ import NotificationBadge from './NotificationBadge';
 const navItems = [
   { label: 'ダッシュボード', icon: <FaTachometerAlt />, path: '/dashboard' },
   { label: '練習管理', icon: <FaBook />, path: '/practice-management' },
+  
+  
   { label: 'ニュース', icon: <FaRss />, path: '/news' },
   { label: 'フレンド', icon: <FaUserFriends />, path: '/friends' },
   { label: 'BPSI診断', icon: <FaBrain />, path: '/mbti' },

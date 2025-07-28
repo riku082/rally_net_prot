@@ -9,6 +9,13 @@ import { Friendship, FriendshipStatus } from '@/types/friendship';
 import { MatchRequest, MatchRequestStatus } from '@/types/matchRequest';
 import { MBTIResult, MBTIDiagnostic } from '@/types/mbti';
 import { Practice, PracticeGoal, PracticeStats, PracticeCard } from '@/types/practice';
+import { 
+  Community, CommunityMember, CommunityInvitation, CommunityPractice, 
+  CommunityPracticeParticipant, CommunityPracticeResult, CommunityPracticeFeedback,
+  CommunitySharedPractice, CommunityPracticeComment, CommunityPracticeReaction,
+  CommunityStats, CommunityNotification, CommunityUserSettings,
+  CommunityInvitationStatus, ParticipationStatus, CommunityRole
+} from '@/types/community';
 
 interface TermsAgreement {
   userId: string;
@@ -924,19 +931,35 @@ export const firestoreDb = {
       console.warn('getPracticeCards: userId is undefined or empty');
       return [];
     }
-    const q = query(collection(db, `users/${userId}/practiceCards`));
+    // 新しい統一コレクションから取得（個人カードのみ）
+    const q = query(
+      collection(db, 'practiceCards'),
+      where('userId', '==', userId)
+    );
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PracticeCard));
   },
 
   async addPracticeCard(card: PracticeCard): Promise<void> {
-    const cleanedCard = cleanUndefinedFields(card);
-    await setDoc(doc(db, `users/${card.userId}/practiceCards`, card.id), cleanedCard);
+    const cleanedCard = cleanUndefinedFields({
+      ...card,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      usageCount: 0,
+      downloads: card.isPublic ? 0 : undefined,
+      favorites: card.isPublic ? 0 : undefined,
+    });
+    // 新しい統一コレクションに保存
+    await setDoc(doc(db, 'practiceCards', card.id), cleanedCard);
   },
 
   async updatePracticeCard(cardId: string, card: PracticeCard): Promise<void> {
-    const cleanedCard = cleanUndefinedFields(card);
-    await setDoc(doc(db, `users/${card.userId}/practiceCards`, cardId), cleanedCard);
+    const cleanedCard = cleanUndefinedFields({
+      ...card,
+      updatedAt: Date.now(),
+    });
+    // 新しい統一コレクションで更新
+    await setDoc(doc(db, 'practiceCards', cardId), cleanedCard);
   },
 
   async deletePracticeCard(cardId: string, userId: string): Promise<void> {
@@ -949,7 +972,35 @@ export const firestoreDb = {
       return;
     }
     console.log(`Deleting practice card: ${cardId} for user: ${userId}`);
-    await deleteDoc(doc(db, `users/${userId}/practiceCards`, cardId));
+    
+    // 新しい統一コレクションから削除
+    await deleteDoc(doc(db, 'practiceCards', cardId));
+    
+    // 関連データも削除（お気に入り、コメント等）
+    if (cardId) {
+      try {
+        // お気に入りを削除
+        const favoritesQuery = query(
+          collection(db, 'practiceCardFavorites'),
+          where('cardId', '==', cardId)
+        );
+        const favoritesSnapshot = await getDocs(favoritesQuery);
+        await Promise.all(favoritesSnapshot.docs.map(doc => deleteDoc(doc.ref)));
+
+        // コメントを削除
+        const commentsQuery = query(
+          collection(db, 'practiceCardComments'),
+          where('cardId', '==', cardId)
+        );
+        const commentsSnapshot = await getDocs(commentsQuery);
+        await Promise.all(commentsSnapshot.docs.map(doc => deleteDoc(doc.ref)));
+
+        console.log(`Deleted practice card ${cardId} and related data`);
+      } catch (error) {
+        console.warn('Error deleting related practice card data:', error);
+      }
+    }
+    
     console.log(`Successfully deleted practice card: ${cardId}`);
   },
 
@@ -974,5 +1025,265 @@ export const firestoreDb = {
   async hasAgreedToTerms(userId: string): Promise<boolean> {
     const agreement = await this.getTermsAgreement(userId);
     return agreement ? (agreement.termsAgreed && agreement.policyAgreed) : false;
+  },
+
+  // コミュニティ関連
+  async createCommunity(community: Community): Promise<void> {
+    const cleanedCommunity = cleanUndefinedFields(community);
+    await setDoc(doc(db, 'communities', community.id), cleanedCommunity);
+    
+    // 作成者を管理者として追加
+    const ownerMember: CommunityMember = {
+      id: `${community.id}_${community.createdBy}`,
+      communityId: community.id,
+      userId: community.createdBy,
+      role: 'owner',
+      joinedAt: Date.now(),
+      isActive: true
+    };
+    await setDoc(doc(db, 'communityMembers', ownerMember.id), ownerMember);
+  },
+
+  async getCommunities(): Promise<Community[]> {
+    const q = query(collection(db, 'communities'), where('isActive', '==', true));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Community));
+  },
+
+  async getCommunity(communityId: string): Promise<Community | null> {
+    const docSnap = await getDoc(doc(db, 'communities', communityId));
+    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Community : null;
+  },
+
+  async updateCommunity(communityId: string, updates: Partial<Community>): Promise<void> {
+    const cleanedUpdates = cleanUndefinedFields({ ...updates, updatedAt: Date.now() });
+    await updateDoc(doc(db, 'communities', communityId), cleanedUpdates);
+  },
+
+  async deleteCommunity(communityId: string): Promise<void> {
+    await updateDoc(doc(db, 'communities', communityId), { 
+      isActive: false, 
+      updatedAt: Date.now() 
+    });
+  },
+
+  // コミュニティメンバー管理
+  async getCommunityMembers(communityId: string): Promise<CommunityMember[]> {
+    const q = query(
+      collection(db, 'communityMembers'),
+      where('communityId', '==', communityId),
+      where('isActive', '==', true)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunityMember));
+  },
+
+  async getUserCommunities(userId: string): Promise<CommunityMember[]> {
+    const q = query(
+      collection(db, 'communityMembers'),
+      where('userId', '==', userId),
+      where('isActive', '==', true)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunityMember));
+  },
+
+  async addCommunityMember(member: CommunityMember): Promise<void> {
+    const cleanedMember = cleanUndefinedFields(member);
+    await setDoc(doc(db, 'communityMembers', member.id), cleanedMember);
+  },
+
+  async updateMemberRole(memberId: string, role: CommunityRole): Promise<void> {
+    await updateDoc(doc(db, 'communityMembers', memberId), { role });
+  },
+
+  async removeCommunityMember(memberId: string): Promise<void> {
+    await updateDoc(doc(db, 'communityMembers', memberId), { 
+      isActive: false 
+    });
+  },
+
+  // コミュニティ招待
+  async createCommunityInvitation(invitation: CommunityInvitation): Promise<void> {
+    const cleanedInvitation = cleanUndefinedFields(invitation);
+    await setDoc(doc(db, 'communityInvitations', invitation.id), cleanedInvitation);
+  },
+
+  async getCommunityInvitations(communityId: string): Promise<CommunityInvitation[]> {
+    const q = query(
+      collection(db, 'communityInvitations'),
+      where('communityId', '==', communityId)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunityInvitation));
+  },
+
+  async getUserCommunityInvitations(userId: string): Promise<CommunityInvitation[]> {
+    const q = query(
+      collection(db, 'communityInvitations'),
+      where('invitedUserId', '==', userId),
+      where('status', '==', 'pending')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunityInvitation));
+  },
+
+  async updateInvitationStatus(invitationId: string, status: CommunityInvitationStatus): Promise<void> {
+    await updateDoc(doc(db, 'communityInvitations', invitationId), { 
+      status, 
+      updatedAt: Date.now() 
+    });
+  },
+
+  // コミュニティ練習管理
+  async createCommunityPractice(practice: CommunityPractice): Promise<void> {
+    const cleanedPractice = cleanUndefinedFields(practice);
+    await setDoc(doc(db, 'communityPractices', practice.id), cleanedPractice);
+  },
+
+  async getCommunityPractices(communityId: string): Promise<CommunityPractice[]> {
+    const q = query(
+      collection(db, 'communityPractices'),
+      where('communityId', '==', communityId)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunityPractice));
+  },
+
+  async updateCommunityPractice(practiceId: string, updates: Partial<CommunityPractice>): Promise<void> {
+    const cleanedUpdates = cleanUndefinedFields({ ...updates, updatedAt: Date.now() });
+    await updateDoc(doc(db, 'communityPractices', practiceId), cleanedUpdates);
+  },
+
+  async deleteCommunityPractice(practiceId: string): Promise<void> {
+    await deleteDoc(doc(db, 'communityPractices', practiceId));
+  },
+
+  // 練習参加管理
+  async updatePracticeParticipation(participant: CommunityPracticeParticipant): Promise<void> {
+    const cleanedParticipant = cleanUndefinedFields(participant);
+    await setDoc(doc(db, 'communityPracticeParticipants', participant.id), cleanedParticipant);
+  },
+
+  async getPracticeParticipants(practiceId: string): Promise<CommunityPracticeParticipant[]> {
+    const q = query(
+      collection(db, 'communityPracticeParticipants'),
+      where('practiceId', '==', practiceId)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunityPracticeParticipant));
+  },
+
+  // 練習結果管理
+  async createPracticeResult(result: CommunityPracticeResult): Promise<void> {
+    const cleanedResult = cleanUndefinedFields(result);
+    await setDoc(doc(db, 'communityPracticeResults', result.id), cleanedResult);
+  },
+
+  async getPracticeResult(practiceId: string): Promise<CommunityPracticeResult | null> {
+    const q = query(
+      collection(db, 'communityPracticeResults'),
+      where('practiceId', '==', practiceId)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.empty ? null : { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as CommunityPracticeResult;
+  },
+
+  // フィードバック管理
+  async createPracticeFeedback(feedback: CommunityPracticeFeedback): Promise<void> {
+    const cleanedFeedback = cleanUndefinedFields(feedback);
+    await setDoc(doc(db, 'communityPracticeFeedbacks', feedback.id), cleanedFeedback);
+  },
+
+  async getPracticeFeedbacks(practiceResultId: string): Promise<CommunityPracticeFeedback[]> {
+    const q = query(
+      collection(db, 'communityPracticeFeedbacks'),
+      where('practiceResultId', '==', practiceResultId)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunityPracticeFeedback));
+  },
+
+  // 練習記録共有
+  async sharePracticeWithCommunity(sharedPractice: CommunitySharedPractice): Promise<void> {
+    const cleanedSharedPractice = cleanUndefinedFields(sharedPractice);
+    await setDoc(doc(db, 'communitySharedPractices', sharedPractice.id), cleanedSharedPractice);
+  },
+
+  async getCommunitySharedPractices(communityId: string): Promise<CommunitySharedPractice[]> {
+    const q = query(
+      collection(db, 'communitySharedPractices'),
+      where('communityId', '==', communityId)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunitySharedPractice));
+  },
+
+  // コメント管理
+  async addPracticeComment(comment: CommunityPracticeComment): Promise<void> {
+    const cleanedComment = cleanUndefinedFields(comment);
+    await setDoc(doc(db, 'communityPracticeComments', comment.id), cleanedComment);
+  },
+
+  async getPracticeComments(sharedPracticeId: string): Promise<CommunityPracticeComment[]> {
+    const q = query(
+      collection(db, 'communityPracticeComments'),
+      where('sharedPracticeId', '==', sharedPracticeId)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunityPracticeComment));
+  },
+
+  // リアクション管理
+  async addPracticeReaction(reaction: CommunityPracticeReaction): Promise<void> {
+    const cleanedReaction = cleanUndefinedFields(reaction);
+    await setDoc(doc(db, 'communityPracticeReactions', reaction.id), cleanedReaction);
+  },
+
+  async removePracticeReaction(reactionId: string): Promise<void> {
+    await deleteDoc(doc(db, 'communityPracticeReactions', reactionId));
+  },
+
+  async getPracticeReactions(sharedPracticeId: string): Promise<CommunityPracticeReaction[]> {
+    const q = query(
+      collection(db, 'communityPracticeReactions'),
+      where('sharedPracticeId', '==', sharedPracticeId)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunityPracticeReaction));
+  },
+
+  // 通知管理
+  async createCommunityNotification(notification: CommunityNotification): Promise<void> {
+    const cleanedNotification = cleanUndefinedFields(notification);
+    await setDoc(doc(db, 'communityNotifications', notification.id), cleanedNotification);
+  },
+
+  async getUserCommunityNotifications(userId: string): Promise<CommunityNotification[]> {
+    const q = query(
+      collection(db, 'communityNotifications'),
+      where('userId', '==', userId)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunityNotification));
+  },
+
+  async markNotificationAsRead(notificationId: string): Promise<void> {
+    await updateDoc(doc(db, 'communityNotifications', notificationId), { 
+      isRead: true 
+    });
+  },
+
+  // ユーザー設定管理
+  async saveCommunityUserSettings(settings: CommunityUserSettings): Promise<void> {
+    const cleanedSettings = cleanUndefinedFields(settings);
+    const settingsId = `${settings.communityId}_${settings.userId}`;
+    await setDoc(doc(db, 'communityUserSettings', settingsId), cleanedSettings);
+  },
+
+  async getCommunityUserSettings(communityId: string, userId: string): Promise<CommunityUserSettings | null> {
+    const settingsId = `${communityId}_${userId}`;
+    const docSnap = await getDoc(doc(db, 'communityUserSettings', settingsId));
+    return docSnap.exists() ? docSnap.data() as CommunityUserSettings : null;
   }
 };

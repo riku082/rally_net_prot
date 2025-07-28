@@ -340,7 +340,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-800">
-                    {result.result} - {result.typeName || 'バドミントンプレイヤー'}
+                    {result.result} - {(result as any).typeName || 'バドミントンプレイヤー'}
                   </h3>
                   <p className="text-sm text-gray-600">
                     {new Date(result.createdAt).toLocaleDateString('ja-JP', {

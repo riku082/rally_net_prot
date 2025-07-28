@@ -50,9 +50,9 @@ export async function POST(request: NextRequest) {
       id: doc.id,
       ...doc.data()
     }));
-    const latestResult = results.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
+    const latestResult = results.sort((a, b) => ((b as any).createdAt || 0) - ((a as any).createdAt || 0))[0];
     
-    console.log('🔧 Latest MBTI result found:', latestResult.result, 'created at:', new Date(latestResult.createdAt));
+    console.log('🔧 Latest MBTI result found:', (latestResult as any).result, 'created at:', new Date((latestResult as any).createdAt));
 
     // userProfilesコレクションを更新
     const userProfileRef = doc(db, 'userProfiles', userId);
@@ -60,23 +60,23 @@ export async function POST(request: NextRequest) {
     
     try {
       await updateDoc(userProfileRef, {
-        mbtiResult: latestResult.result,
-        mbtiCompletedAt: latestResult.createdAt
+        mbtiResult: (latestResult as any).result,
+        mbtiCompletedAt: (latestResult as any).createdAt
       });
       console.log('🔧 User profile updated successfully with updateDoc');
     } catch (updateError) {
       console.log('🔧 updateDoc failed, trying setDoc with merge...', updateError);
       // updateDocが失敗した場合（ドキュメントが存在しない）、setDocを使用
       await setDoc(userProfileRef, {
-        mbtiResult: latestResult.result,
-        mbtiCompletedAt: latestResult.createdAt
+        mbtiResult: (latestResult as any).result,
+        mbtiCompletedAt: (latestResult as any).createdAt
       }, { merge: true });
       console.log('🔧 User profile updated successfully with setDoc merge');
     }
 
     return NextResponse.json({ 
       success: true, 
-      result: latestResult.result,
+      result: (latestResult as any).result,
       syncedAt: Date.now()
     });
   } catch (error) {
