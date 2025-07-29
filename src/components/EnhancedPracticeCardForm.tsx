@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { PracticeCard, PracticeDrill, PracticeDifficulty, SkillCategory, PracticeCourtInfo, PracticeVisualInfo, PlayerPosition, ShotTrajectory, PracticeSharingSettings, CourtZone, PracticeCardCategory } from '@/types/practice';
+import { PracticeCard, PracticeDrill, PracticeDifficulty, SkillCategory, PracticeCourtInfo, PracticeVisualInfo, PlayerPosition, ShotTrajectory, PracticeSharingSettings, CourtZone, PracticeCardCategory, PracticeMenuType } from '@/types/practice';
 import { FaClock, FaPlus, FaTrash, FaTag, FaTools, FaBullseye, FaUsers, FaShare, FaEye, FaEyeSlash, FaComment, FaStar, FaCopy, FaEdit } from 'react-icons/fa';
 import { FiSave, FiX, FiMove, FiTarget, FiMapPin } from 'react-icons/fi';
 import { GiShuttlecock } from 'react-icons/gi';
+import { MdSportsBaseball } from 'react-icons/md';
 import PracticeCourtVisualizer from './PracticeCourtVisualizer';
+import PracticeCardVisualEditor from './PracticeCardVisualEditor';
 
 interface EnhancedPracticeCardFormProps {
   card?: PracticeCard;
@@ -29,6 +31,7 @@ const EnhancedPracticeCardForm: React.FC<EnhancedPracticeCardFormProps> = ({
   const [formData, setFormData] = useState({
     title: card?.title || '',
     description: card?.description || '',
+    practiceType: card?.practiceType || undefined as PracticeMenuType | undefined,
     drill: card?.drill || {
       id: Date.now().toString(),
       name: '',
@@ -187,7 +190,8 @@ const EnhancedPracticeCardForm: React.FC<EnhancedPracticeCardFormProps> = ({
         ...formData.courtInfo,
         targetAreas: selectedAreas,
         focusArea: focusArea
-      }
+      },
+      practiceType: formData.practiceType
     };
 
     onSave(cardData);
@@ -286,6 +290,37 @@ const EnhancedPracticeCardForm: React.FC<EnhancedPracticeCardFormProps> = ({
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="この練習カードの目的や内容を説明してください"
         />
+      </div>
+
+      {/* 練習メニュー選択 */}
+      <div className="bg-blue-50 rounded-lg p-4 mb-4">
+        <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+          <MdSportsBaseball className="w-5 h-5 mr-2 text-blue-600" />
+          練習メニュータイプ
+        </h3>
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
+          {[
+            { value: 'knock_practice', label: 'ノック練習', icon: '🏸' },
+            { value: 'pattern_practice', label: 'パターン練習', icon: '🔄' },
+            { value: 'footwork_practice', label: 'フットワーク', icon: '👟' },
+            { value: 'serve_practice', label: 'サーブ練習', icon: '🎯' },
+            { value: 'game_practice', label: 'ゲーム形式', icon: '🏆' }
+          ].map((type) => (
+            <button
+              key={type.value}
+              type="button"
+              onClick={() => setFormData(prev => ({ ...prev, practiceType: type.value as PracticeMenuType }))}
+              className={`p-3 text-sm font-medium rounded-lg transition-colors flex flex-col items-center gap-1 ${
+                formData.practiceType === type.value
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-white text-gray-700 hover:bg-blue-100'
+              }`}
+            >
+              <span className="text-2xl">{type.icon}</span>
+              <span>{type.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 練習詳細 */}
@@ -480,11 +515,29 @@ const EnhancedPracticeCardForm: React.FC<EnhancedPracticeCardFormProps> = ({
 
   const renderVisualForm = () => (
     <div className="space-y-6">
+      {/* 練習カードビジュアルエディター */}
+      {formData.practiceType && (
+        <div>
+          <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+            <FiMapPin className="w-5 h-5 mr-2 text-purple-600" />
+            コート配置設定
+          </h3>
+          <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
+            <PracticeCardVisualEditor
+              visualInfo={formData.visualInfo || {}}
+              practiceType={formData.practiceType}
+              onUpdate={(visualInfo) => setFormData(prev => ({ ...prev, visualInfo }))}
+              courtType={formData.courtInfo.courtType}
+            />
+          </div>
+        </div>
+      )}
+
       {/* コートエリア選択 */}
       <div>
         <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
           <FaBullseye className="w-5 h-5 mr-2 text-green-600" />
-          コートエリア設定
+          練習対象エリア
         </h3>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -537,57 +590,6 @@ const EnhancedPracticeCardForm: React.FC<EnhancedPracticeCardFormProps> = ({
                 )}
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* プレイヤー位置とショット軌道 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div>
-          <h4 className="text-md font-medium text-gray-900 mb-3 flex items-center">
-            <FaUsers className="w-4 h-4 mr-2 text-blue-600" />
-            プレイヤー位置
-          </h4>
-          <div className="space-y-2">
-            {formData.visualInfo?.playerPositions?.map((position, index) => (
-              <div key={position.id} className="flex items-center space-x-2 p-2 bg-gray-50 rounded">
-                <span className="text-sm font-medium">{position.label}</span>
-                <span className="text-xs text-gray-500">({position.x}, {position.y})</span>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={addPlayerPosition}
-              className="flex items-center px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            >
-              <FaPlus className="w-4 h-4 mr-2" />
-              プレイヤー位置を追加
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <h4 className="text-md font-medium text-gray-900 mb-3 flex items-center">
-            <FiMove className="w-4 h-4 mr-2 text-purple-600" />
-            ショット軌道
-          </h4>
-          <div className="space-y-2">
-            {formData.visualInfo?.shotTrajectories?.map((trajectory, index) => (
-              <div key={trajectory.id} className="flex items-center space-x-2 p-2 bg-gray-50 rounded">
-                <span className="text-sm font-medium">{trajectory.shotType}</span>
-                <span className="text-xs text-gray-500">
-                  ({trajectory.from.x}, {trajectory.from.y}) → ({trajectory.to.x}, {trajectory.to.y})
-                </span>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={addShotTrajectory}
-              className="flex items-center px-3 py-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-            >
-              <FaPlus className="w-4 h-4 mr-2" />
-              ショット軌道を追加
-            </button>
           </div>
         </div>
       </div>

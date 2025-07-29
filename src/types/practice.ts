@@ -48,6 +48,14 @@ export type PracticeType =
   | 'individual_practice' // 個人練習
   | 'group_practice';   // グループ練習
 
+// 練習メニュータイプ（練習カード作り込み用）
+export type PracticeMenuType = 
+  | 'knock_practice'    // ノック練習
+  | 'pattern_practice'  // パターン練習
+  | 'footwork_practice' // フットワーク練習
+  | 'serve_practice'    // サーブ練習
+  | 'game_practice';    // ゲーム形式練習
+
 
 export interface PracticeSkill {
   id: string;
@@ -111,6 +119,7 @@ export interface PracticeCard {
   userId: string;
   title: string; // 例: "基礎うち", "クリア練習", "ネット前ドロップ"
   description: string;
+  practiceType?: PracticeMenuType; // 練習メニュータイプ
   drill: PracticeDrill; // 単一の練習メニュー
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   equipment: string[]; // 必要な用具
@@ -262,8 +271,10 @@ export interface PlayerPosition {
   x: number; // コート座標（0-400）
   y: number; // コート座標（0-600）
   label: string; // 'P1', 'P2', 'コーチ' など
-  role?: 'player' | 'opponent' | 'coach' | 'feeder';
+  role?: 'player' | 'opponent' | 'coach' | 'feeder' | 'knocker';
   color?: string;
+  direction?: 'north' | 'northeast' | 'east' | 'southeast' | 'south' | 'southwest' | 'west' | 'northwest';
+  icon?: string; // カスタムアイコン
 }
 
 // ショット軌道
