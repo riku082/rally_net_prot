@@ -1139,6 +1139,18 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                     onClick={(e) => {
                       e.stopPropagation();
                       setIshotInputMode('area');
+                      // エリアモードに切り替えた時、プレイヤーが選択されていなければ選択
+                      if (!currentShot.from && practiceType === 'pattern_practice') {
+                        const player = playerPositions.find(p => p.role === 'player');
+                        if (player) {
+                          setCurrentShot({ from: player });
+                        }
+                      } else if (!currentShot.from && practiceType === 'knock_practice' && isWaitingForPlayer) {
+                        const player = playerPositions.find(p => p.role === 'player');
+                        if (player) {
+                          setCurrentShot({ from: player });
+                        }
+                      }
                     }}
                     className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                       shotInputMode === 'area' 
