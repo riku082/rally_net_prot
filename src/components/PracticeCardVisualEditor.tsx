@@ -288,36 +288,34 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
     if (shotInputMode === 'pinpoint') {
       if (practiceType === 'knock_practice') {
         if (!isWaitingForPlayer) {
-          // ノック練習: ノッカーからの配球（ショットタイプ選択なし）
+          // ノック練習: 初回のノッカーからの配球
           if (selectedKnocker) {
-            // 既存の最新ショットがノッカーからでプレイヤーがまだ移動していない場合は更新
-            const lastShot = shotTrajectories[shotTrajectories.length - 1];
-            if (lastShot && lastShot.shotBy === 'knocker' && isWaitingForPlayer && latestShotLanding) {
-              // 最新のノッカーショットを更新
-              saveToHistory('addShot');
-              const updatedShots = [...shotTrajectories];
-              updatedShots[updatedShots.length - 1] = {
-                ...lastShot,
-                to: { x, y }
-              };
-              setShotTrajectories(updatedShots);
-              setLatestShotLanding({ x, y });
-            } else {
-              // 新規ショットを追加
-              saveToHistory('addShot');
-              const newShot: ShotTrajectory = {
-                id: `shot_${Date.now()}`,
-                from: { x: selectedKnocker.x, y: selectedKnocker.y },
-                to: { x, y },
-                shotType: '',
-                shotBy: 'knocker',
-                order: currentShotNumber
-              };
-              setShotTrajectories([...shotTrajectories, newShot]);
-              setCurrentShotNumber(currentShotNumber + 1);
-              setLatestShotLanding({ x, y });
-              setIsWaitingForPlayer(true);
-            }
+            saveToHistory('addShot');
+            const newShot: ShotTrajectory = {
+              id: `shot_${Date.now()}`,
+              from: { x: selectedKnocker.x, y: selectedKnocker.y },
+              to: { x, y },
+              shotType: '',
+              shotBy: 'knocker',
+              order: currentShotNumber
+            };
+            setShotTrajectories([...shotTrajectories, newShot]);
+            setLatestShotLanding({ x, y });
+            setIsWaitingForPlayer(true);
+            // currentShotNumberはまだ増やさない（プレイヤー移動後に増やす）
+          }
+        } else if (latestShotLanding && !currentShot.from) {
+          // プレイヤーが移動していない間は、ノッカーの配球を更新し続ける
+          const lastShot = shotTrajectories[shotTrajectories.length - 1];
+          if (lastShot && lastShot.shotBy === 'knocker') {
+            saveToHistory('addShot');
+            const updatedShots = [...shotTrajectories];
+            updatedShots[updatedShots.length - 1] = {
+              ...lastShot,
+              to: { x, y }
+            };
+            setShotTrajectories(updatedShots);
+            setLatestShotLanding({ x, y });
           }
         } else {
           // プレイヤーからの返球を設定
@@ -504,6 +502,8 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
       );
       // 移動後、着地点をクリア
       setLatestShotLanding(null);
+      // プレイヤーが移動したので、ノッカーのショット番号を確定
+      setCurrentShotNumber(currentShotNumber + 1);
     }
   };
 
@@ -1044,7 +1044,9 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               <div className="text-blue-600">
                 {practiceType === 'knock_practice' ? (
                   isWaitingForPlayer ? 
-                    '🎾 プレイヤーからの返球を設定してください' :
+                    (latestShotLanding && !currentShot.from ? 
+                      '🏸 ノッカーの配球位置を変更できます（クリックで変更）' :
+                      '🎾 プレイヤーからの返球を設定してください') :
                     '🏸 ノッカーからの配球位置をクリック'
                 ) : (
                   currentShot.from ? 
