@@ -1363,7 +1363,8 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                                 autoFocus
                               />
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   saveToHistory('editMemo');
                                   setShotTrajectories(prev => 
                                     prev.map(s => s.id === shot.id ? { ...s, memo: memoText } : s)
@@ -1384,7 +1385,8 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                                 </div>
                               ) : null}
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setEditingMemoId(shot.id);
                                   setMemoText(shot.memo || '');
                                 }}
