@@ -5,6 +5,7 @@ import { PracticeCard, PracticeCardFilter, PracticeDifficulty, CourtZone } from 
 import { FaClock, FaEdit, FaTrash, FaStar, FaTag, FaTools, FaBullseye, FaFilter, FaSearch, FaMapMarkerAlt, FaTimes, FaCheck, FaEye } from 'react-icons/fa';
 import { FiTrendingUp, FiUsers } from 'react-icons/fi';
 import { GiShuttlecock } from 'react-icons/gi';
+import PracticeCardMiniCourt from './PracticeCardMiniCourt';
 
 interface PracticeCardListProps {
   cards: PracticeCard[];
@@ -440,6 +441,60 @@ const PracticeCardList: React.FC<PracticeCardListProps> = ({
                 <p className="text-gray-700 mb-4">{selectedCard.description}</p>
               </div>
 
+              {/* ビジュアル情報 */}
+              {selectedCard.visualInfo && (
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h5 className="text-sm font-medium text-gray-700 mb-3">練習パターン</h5>
+                  <div className="flex justify-center mb-4">
+                    <PracticeCardMiniCourt
+                      shotTrajectories={selectedCard.visualInfo.shotTrajectories}
+                      playerPositions={selectedCard.visualInfo.playerPositions}
+                      width={200}
+                      height={350}
+                    />
+                  </div>
+                  
+                  {/* ショット履歴 */}
+                  {selectedCard.visualInfo.shotTrajectories.length > 0 && (
+                    <div>
+                      <h6 className="text-xs font-medium text-gray-600 mb-2">ショット履歴</h6>
+                      <div className="space-y-1 max-h-40 overflow-y-auto">
+                        {selectedCard.visualInfo.shotTrajectories.map((shot, index) => {
+                          const shotTypeLabels: Record<string, string> = {
+                            clear: 'クリア',
+                            smash: 'スマッシュ',
+                            drop: 'ドロップ',
+                            hairpin: 'ヘアピン',
+                            drive: 'ドライブ',
+                            push: 'プッシュ',
+                            lob: 'ロブ',
+                            receive: 'レシーブ',
+                            other: 'その他'
+                          };
+                          
+                          return (
+                            <div key={shot.id} className="flex items-center text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
+                              <span className="font-medium mr-2">#{shot.order || index + 1}</span>
+                              <span className="mr-2">
+                                {shot.shotBy === 'knocker' ? 'ノッカー' : 'プレイヤー'}
+                              </span>
+                              {shot.shotType && (
+                                <span className="text-gray-800 font-medium">
+                                  → {shotTypeLabels[shot.shotType] || shot.shotType}
+                                </span>
+                              )}
+                              {shot.memo && (
+                                <span className="ml-2 text-gray-500">📝 {shot.memo}</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* 使用統計 */}
               <div className="bg-gray-50 rounded-lg p-3">
                 <h5 className="text-sm font-medium text-gray-700 mb-2">使用統計</h5>
@@ -625,6 +680,18 @@ const PracticeCardItem: React.FC<PracticeCardItemProps> = ({
 
         {/* 説明 */}
         <p className="text-sm text-gray-600 mb-3 line-clamp-2">{card.description}</p>
+
+        {/* ビジュアル情報（ミニコート） */}
+        {card.visualInfo && (
+          <div className="mb-3 flex justify-center">
+            <PracticeCardMiniCourt
+              shotTrajectories={card.visualInfo.shotTrajectories}
+              playerPositions={card.visualInfo.playerPositions}
+              width={100}
+              height={175}
+            />
+          </div>
+        )}
 
         {/* コート情報 */}
         {card.courtInfo && card.courtInfo.targetAreas.length > 0 && (
