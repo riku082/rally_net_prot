@@ -1392,12 +1392,17 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                         {/* メモ表示・編集 */}
                         <div className="mt-2">
                           {editingMemoId === shot.id ? (
-                            <div className="flex gap-1">
+                            <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                               <input
                                 type="text"
                                 value={memoText}
-                                onChange={(e) => setMemoText(e.target.value)}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  setMemoText(e.target.value);
+                                }}
+                                onClick={(e) => e.stopPropagation()}
                                 onKeyDown={(e) => {
+                                  e.stopPropagation();
                                   if (e.key === 'Enter') {
                                     saveToHistory('editMemo');
                                     setShotTrajectories(prev => 
