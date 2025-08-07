@@ -31,17 +31,29 @@ const SHORT_SERVICE_LINE = 79; // ネットから1.98m
 const BACK_BOUNDARY_LINE_SINGLES = 30; // エンドラインから0.76m内側
 const SIDE_ALLEY_WIDTH = 17; // サイドアレー幅0.42m
 
-// コートエリアの9分割定義
+// コートエリアの9分割定義（上下コート別々）
+const HALF_COURT_HEIGHT = COURT_HEIGHT / 2;
 const COURT_AREAS = [
-  { id: 'fl', name: '前左', x: 0, y: 0, w: COURT_WIDTH/3, h: COURT_HEIGHT/3 },
-  { id: 'fc', name: '前中', x: COURT_WIDTH/3, y: 0, w: COURT_WIDTH/3, h: COURT_HEIGHT/3 },
-  { id: 'fr', name: '前右', x: 2*COURT_WIDTH/3, y: 0, w: COURT_WIDTH/3, h: COURT_HEIGHT/3 },
-  { id: 'ml', name: '中左', x: 0, y: COURT_HEIGHT/3, w: COURT_WIDTH/3, h: COURT_HEIGHT/3 },
-  { id: 'mc', name: '中央', x: COURT_WIDTH/3, y: COURT_HEIGHT/3, w: COURT_WIDTH/3, h: COURT_HEIGHT/3 },
-  { id: 'mr', name: '中右', x: 2*COURT_WIDTH/3, y: COURT_HEIGHT/3, w: COURT_WIDTH/3, h: COURT_HEIGHT/3 },
-  { id: 'bl', name: '後左', x: 0, y: 2*COURT_HEIGHT/3, w: COURT_WIDTH/3, h: COURT_HEIGHT/3 },
-  { id: 'bc', name: '後中', x: COURT_WIDTH/3, y: 2*COURT_HEIGHT/3, w: COURT_WIDTH/3, h: COURT_HEIGHT/3 },
-  { id: 'br', name: '後右', x: 2*COURT_WIDTH/3, y: 2*COURT_HEIGHT/3, w: COURT_WIDTH/3, h: COURT_HEIGHT/3 },
+  // 上側コート（相手側）
+  { id: 'opp_fl', name: '相手前左', x: 0, y: 0, w: COURT_WIDTH/3, h: HALF_COURT_HEIGHT/3 },
+  { id: 'opp_fc', name: '相手前中', x: COURT_WIDTH/3, y: 0, w: COURT_WIDTH/3, h: HALF_COURT_HEIGHT/3 },
+  { id: 'opp_fr', name: '相手前右', x: 2*COURT_WIDTH/3, y: 0, w: COURT_WIDTH/3, h: HALF_COURT_HEIGHT/3 },
+  { id: 'opp_ml', name: '相手中左', x: 0, y: HALF_COURT_HEIGHT/3, w: COURT_WIDTH/3, h: HALF_COURT_HEIGHT/3 },
+  { id: 'opp_mc', name: '相手中央', x: COURT_WIDTH/3, y: HALF_COURT_HEIGHT/3, w: COURT_WIDTH/3, h: HALF_COURT_HEIGHT/3 },
+  { id: 'opp_mr', name: '相手中右', x: 2*COURT_WIDTH/3, y: HALF_COURT_HEIGHT/3, w: COURT_WIDTH/3, h: HALF_COURT_HEIGHT/3 },
+  { id: 'opp_bl', name: '相手後左', x: 0, y: 2*HALF_COURT_HEIGHT/3, w: COURT_WIDTH/3, h: HALF_COURT_HEIGHT/3 },
+  { id: 'opp_bc', name: '相手後中', x: COURT_WIDTH/3, y: 2*HALF_COURT_HEIGHT/3, w: COURT_WIDTH/3, h: HALF_COURT_HEIGHT/3 },
+  { id: 'opp_br', name: '相手後右', x: 2*COURT_WIDTH/3, y: 2*HALF_COURT_HEIGHT/3, w: COURT_WIDTH/3, h: HALF_COURT_HEIGHT/3 },
+  // 下側コート（自分側）
+  { id: 'own_fl', name: '自分前左', x: 0, y: HALF_COURT_HEIGHT, w: COURT_WIDTH/3, h: HALF_COURT_HEIGHT/3 },
+  { id: 'own_fc', name: '自分前中', x: COURT_WIDTH/3, y: HALF_COURT_HEIGHT, w: COURT_WIDTH/3, h: HALF_COURT_HEIGHT/3 },
+  { id: 'own_fr', name: '自分前右', x: 2*COURT_WIDTH/3, y: HALF_COURT_HEIGHT, w: COURT_WIDTH/3, h: HALF_COURT_HEIGHT/3 },
+  { id: 'own_ml', name: '自分中左', x: 0, y: HALF_COURT_HEIGHT + HALF_COURT_HEIGHT/3, w: COURT_WIDTH/3, h: HALF_COURT_HEIGHT/3 },
+  { id: 'own_mc', name: '自分中央', x: COURT_WIDTH/3, y: HALF_COURT_HEIGHT + HALF_COURT_HEIGHT/3, w: COURT_WIDTH/3, h: HALF_COURT_HEIGHT/3 },
+  { id: 'own_mr', name: '自分中右', x: 2*COURT_WIDTH/3, y: HALF_COURT_HEIGHT + HALF_COURT_HEIGHT/3, w: COURT_WIDTH/3, h: HALF_COURT_HEIGHT/3 },
+  { id: 'own_bl', name: '自分後左', x: 0, y: HALF_COURT_HEIGHT + 2*HALF_COURT_HEIGHT/3, w: COURT_WIDTH/3, h: HALF_COURT_HEIGHT/3 },
+  { id: 'own_bc', name: '自分後中', x: COURT_WIDTH/3, y: HALF_COURT_HEIGHT + 2*HALF_COURT_HEIGHT/3, w: COURT_WIDTH/3, h: HALF_COURT_HEIGHT/3 },
+  { id: 'own_br', name: '自分後右', x: 2*COURT_WIDTH/3, y: HALF_COURT_HEIGHT + 2*HALF_COURT_HEIGHT/3, w: COURT_WIDTH/3, h: HALF_COURT_HEIGHT/3 },
 ];
 
 // ショットタイプ定義（イラスト付き）
@@ -281,14 +293,13 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
           }
         } else {
           // プレイヤーからの返球を設定
+          const player = playerPositions.find(p => p.role === 'player');
+          if (player && !currentShot.from) {
+            setCurrentShot({ from: player });
+          }
           if (!isSelectingTargets) {
-            // ターゲット選択開始
-            const player = playerPositions.find(p => p.role === 'player');
-            if (player) {
-              setCurrentShot({ from: player });
-              setIsSelectingTargets(true);
-              setSelectedPoints([]);
-            }
+            setIsSelectingTargets(true);
+            setSelectedPoints([{x, y}]);
           } else {
             // ターゲット追加
             setSelectedPoints([...selectedPoints, {x, y}]);
@@ -311,12 +322,17 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
           
           if (nearestPlayer && minDistance < 50) {
             setCurrentShot({ from: nearestPlayer });
-            setIsSelectingTargets(true);
-            setSelectedPoints([]);
+            return; // プレイヤーを選択したら次のクリックから着地点選択
           }
-        } else if (isSelectingTargets) {
-          // ターゲット追加
-          setSelectedPoints([...selectedPoints, {x, y}]);
+        } else {
+          // ターゲット選択中
+          if (!isSelectingTargets) {
+            setIsSelectingTargets(true);
+            setSelectedPoints([{x, y}]);
+          } else {
+            // ターゲット追加
+            setSelectedPoints([...selectedPoints, {x, y}]);
+          }
         }
       }
     }
@@ -326,14 +342,26 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   const handleAreaClick = (areaId: string) => {
     if (inputMode !== 'shot' || shotInputMode !== 'area') return;
 
-    if (!isSelectingTargets) {
-      // ターゲット選択開始
-      const player = currentShot.from || playerPositions.find(p => p.role === 'player');
+    // ノック練習で未選択の場合
+    if (practiceType === 'knock_practice' && isWaitingForPlayer && !currentShot.from) {
+      const player = playerPositions.find(p => p.role === 'player');
       if (player) {
         setCurrentShot({ from: player });
-        setIsSelectingTargets(true);
-        setSelectedAreas([areaId]);
       }
+    }
+
+    // パターン練習で未選択の場合
+    if (practiceType !== 'knock_practice' && !currentShot.from) {
+      const player = playerPositions.find(p => p.role === 'player');
+      if (player) {
+        setCurrentShot({ from: player });
+      }
+    }
+
+    if (!isSelectingTargets) {
+      // ターゲット選択開始
+      setIsSelectingTargets(true);
+      setSelectedAreas([areaId]);
     } else {
       // エリアの追加/削除
       if (selectedAreas.includes(areaId)) {

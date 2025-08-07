@@ -115,17 +115,28 @@ const SHOT_TYPES = [
   },
 ];
 
-// コートエリアの9分割定義
+// コートエリアの9分割定義（上下コート別々）
 const COURT_AREAS = [
-  { id: 'fl', name: '前左' },
-  { id: 'fc', name: '前中' },
-  { id: 'fr', name: '前右' },
-  { id: 'ml', name: '中左' },
-  { id: 'mc', name: '中央' },
-  { id: 'mr', name: '中右' },
-  { id: 'bl', name: '後左' },
-  { id: 'bc', name: '後中' },
-  { id: 'br', name: '後右' },
+  // 上側コート（相手側）
+  { id: 'opp_fl', name: '相手前左' },
+  { id: 'opp_fc', name: '相手前中' },
+  { id: 'opp_fr', name: '相手前右' },
+  { id: 'opp_ml', name: '相手中左' },
+  { id: 'opp_mc', name: '相手中央' },
+  { id: 'opp_mr', name: '相手中右' },
+  { id: 'opp_bl', name: '相手後左' },
+  { id: 'opp_bc', name: '相手後中' },
+  { id: 'opp_br', name: '相手後右' },
+  // 下側コート（自分側）
+  { id: 'own_fl', name: '自分前左' },
+  { id: 'own_fc', name: '自分前中' },
+  { id: 'own_fr', name: '自分前右' },
+  { id: 'own_ml', name: '自分中左' },
+  { id: 'own_mc', name: '自分中央' },
+  { id: 'own_mr', name: '自分中右' },
+  { id: 'own_bl', name: '自分後左' },
+  { id: 'own_bc', name: '自分後中' },
+  { id: 'own_br', name: '自分後右' },
 ];
 
 const PracticeCardViewer: React.FC<PracticeCardViewerProps> = ({ card, className = '' }) => {
