@@ -688,8 +688,8 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             <line x1={SIDE_ALLEY_WIDTH} y1="0" x2={SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" strokeDasharray="5,5" />
             <line x1={COURT_WIDTH - SIDE_ALLEY_WIDTH} y1="0" x2={COURT_WIDTH - SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" strokeDasharray="5,5" />
 
-            {/* エリア選択モード時のガイド表示 */}
-            {inputMode === 'shot' && shotInputMode === 'area' && (
+            {/* エリア選択モード時のみガイド表示 */}
+            {inputMode === 'shot' && shotInputMode === 'area' && isSelectingTargets && (
               <g>
                 {COURT_AREAS.map(area => {
                   const isSelected = selectedAreas.includes(area.id);
@@ -704,7 +704,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                         width={area.w}
                         height={area.h}
                         fill={fillColor}
-                        fillOpacity={isSelected ? 0.3 : 0.1}
+                        fillOpacity={isSelected ? 0.3 : 0}
                         stroke={isSelected ? fillColor : '#9CA3AF'}
                         strokeWidth={isSelected ? "2" : "0.5"}
                         strokeDasharray={isSelected ? "0" : "0"}
@@ -855,43 +855,45 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
           </div>
         </div>
 
-        {/* 入力モード切替 */}
-        <div className="space-y-2">
-          <div className="text-sm font-medium">入力モード</div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setInputMode('setup');
-              }}
-              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                inputMode === 'setup' 
-                  ? 'bg-blue-500 text-white' 
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <MdPerson className="inline w-4 h-4 mr-1" />
-              配置
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setInputMode('shot');
-              }}
-              disabled={playerPositions.length === 0}
-              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                inputMode === 'shot' 
-                  ? 'bg-purple-500 text-white' 
-                  : 'bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed'
-              }`}
-            >
-              <GiShuttlecock className="inline w-4 h-4 mr-1" />
-              ショット
-            </button>
+        {/* 入力モード切替（ショットが入力されていない場合のみ表示） */}
+        {shotTrajectories.length === 0 && (
+          <div className="space-y-2">
+            <div className="text-sm font-medium">入力モード</div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setInputMode('setup');
+                }}
+                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  inputMode === 'setup' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <MdPerson className="inline w-4 h-4 mr-1" />
+                配置
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setInputMode('shot');
+                }}
+                disabled={playerPositions.length === 0}
+                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  inputMode === 'shot' 
+                    ? 'bg-purple-500 text-white' 
+                    : 'bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed'
+                }`}
+              >
+                <GiShuttlecock className="inline w-4 h-4 mr-1" />
+                ショット
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 配置モード */}
         {inputMode === 'setup' && (
@@ -1073,42 +1075,44 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               </button>
             )}
 
-            <div className="space-y-2">
-              <div className="text-sm font-medium">着地点選択</div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIshotInputMode('pinpoint');
-                  }}
-                  className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                    shotInputMode === 'pinpoint' 
-                      ? 'bg-green-500 text-white' 
-                      : 'bg-white text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <FiMapPin className="inline w-4 h-4 mr-1" />
-                  ピンポイント
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIshotInputMode('area');
-                  }}
-                  disabled={practiceType === 'knock_practice' && !isWaitingForPlayer}
-                  className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                    shotInputMode === 'area' 
-                      ? 'bg-orange-500 text-white' 
-                      : 'bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed'
-                  }`}
-                >
-                  <FiTarget className="inline w-4 h-4 mr-1" />
-                  エリア
-                </button>
+            {/* ノッカーの配球選択時は着地点選択を表示しない */}
+            {!(practiceType === 'knock_practice' && !isWaitingForPlayer) && (
+              <div className="space-y-2">
+                <div className="text-sm font-medium">着地点選択</div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIshotInputMode('pinpoint');
+                    }}
+                    className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      shotInputMode === 'pinpoint' 
+                        ? 'bg-green-500 text-white' 
+                        : 'bg-white text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <FiMapPin className="inline w-4 h-4 mr-1" />
+                    ピンポイント
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIshotInputMode('area');
+                    }}
+                    className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      shotInputMode === 'area' 
+                        ? 'bg-orange-500 text-white' 
+                        : 'bg-white text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <FiTarget className="inline w-4 h-4 mr-1" />
+                    エリア
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* ターゲット選択完了ボタン */}
             {isSelectingTargets && (selectedPoints.length > 0 || selectedAreas.length > 0) && (
@@ -1131,9 +1135,9 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                 <div className="text-sm font-medium">
                   各ターゲットのショットタイプを選択
                 </div>
-                
-                {/* ピンポイントモード */}
-                {shotInputMode === 'pinpoint' && selectedPoints.map((point, index) => {
+                <div className="max-h-60 overflow-y-auto space-y-2">
+                  {/* ピンポイントモード */}
+                  {shotInputMode === 'pinpoint' && selectedPoints.map((point, index) => {
                   const pointId = `point_${index}`;
                   const currentType = shotTypeSelections[pointId] || 'clear';
                   return (
@@ -1209,6 +1213,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                     </div>
                   );
                 })}
+                </div>
                 
                 {/* ショット確定ボタン */}
                 <button
