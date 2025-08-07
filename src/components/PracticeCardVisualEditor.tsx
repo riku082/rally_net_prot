@@ -605,26 +605,41 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
         shotGroups[shotType].push(areaId);
       });
 
-      // グループごとにショットを作成
+      // グループごとにショットを作成（同じショットタイプのエリアは1本の矢印に統合）
       let shotIndex = 0;
       Object.entries(shotGroups).forEach(([shotType, areaIds]) => {
+        const fromPos = currentShot.from ? { x: currentShot.from.x, y: currentShot.from.y } : { x: 0, y: 0 };
+        
+        // 複数エリアの中心点を計算
+        let centerX = 0;
+        let centerY = 0;
+        let validAreas = 0;
+        
         areaIds.forEach(areaId => {
           const area = COURT_AREAS.find(a => a.id === areaId);
           if (area) {
-            const fromPos = currentShot.from ? { x: currentShot.from.x, y: currentShot.from.y } : { x: 0, y: 0 };
-            const newShot: ShotTrajectory = {
-              id: `shot_${Date.now()}_${shotIndex}`,
-              from: fromPos,
-              to: { x: area.x + area.w/2, y: area.y + area.h/2 },
-              shotType,
-              shotBy: currentShot.from?.role || 'player',
-              order: currentShotNumber + shotIndex,
-              targetArea: area.id
-            };
-            setShotTrajectories(prev => [...prev, newShot]);
-            shotIndex++;
+            centerX += area.x + area.w/2;
+            centerY += area.y + area.h/2;
+            validAreas++;
           }
         });
+        
+        if (validAreas > 0) {
+          centerX /= validAreas;
+          centerY /= validAreas;
+          
+          const newShot: ShotTrajectory = {
+            id: `shot_${Date.now()}_${shotIndex}`,
+            from: fromPos,
+            to: { x: centerX, y: centerY },
+            shotType,
+            shotBy: currentShot.from?.role || 'player',
+            order: currentShotNumber + shotIndex,
+            targetArea: areaIds.join(',')
+          };
+          setShotTrajectories(prev => [...prev, newShot]);
+          shotIndex++;
+        }
       });
       
       setCurrentShotNumber(currentShotNumber + selectedAreas.length);
@@ -689,7 +704,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             <line x1={COURT_WIDTH - SIDE_ALLEY_WIDTH} y1="0" x2={COURT_WIDTH - SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" strokeDasharray="5,5" />
 
             {/* エリア選択モード時のみガイド表示 */}
-            {inputMode === 'shot' && shotInputMode === 'area' && (
+            {inputMode === 'shot' && shotInputMode === 'area' && currentShot.from && (
               <g>
                 {COURT_AREAS.map(area => {
                   const isSelected = selectedAreas.includes(area.id);
@@ -740,6 +755,9 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             const shotType = SHOT_TYPES.find(t => t.id === shot.shotType);
             const color = shot.shotBy === 'knocker' ? '#000000' : (shotType?.color || '#10B981');
             
+            // エリアターゲットの場合、複数エリアを塗りつぶす
+            const targetAreaIds = shot.targetArea ? shot.targetArea.split(',') : [];
+            
             return (
               <svg
                 key={shot.id}
@@ -763,6 +781,27 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                     <path d="M0,0 L0,6 L9,3 z" fill={color} />
                   </marker>
                 </defs>
+                
+                {/* エリアを塗りつぶす */}
+                {targetAreaIds.map(areaId => {
+                  const area = COURT_AREAS.find(a => a.id === areaId);
+                  if (area) {
+                    return (
+                      <rect
+                        key={areaId}
+                        x={area.x}
+                        y={area.y}
+                        width={area.w}
+                        height={area.h}
+                        fill={color}
+                        fillOpacity={0.3}
+                        stroke={color}
+                        strokeWidth="2"
+                      />
+                    );
+                  }
+                  return null;
+                })}
                 
                 <line
                   x1={shot.from.x}
