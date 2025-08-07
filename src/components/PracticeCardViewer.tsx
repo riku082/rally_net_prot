@@ -358,6 +358,11 @@ const PracticeCardViewer: React.FC<PracticeCardViewerProps> = ({ card, className
                           {shot.description}
                         </div>
                       )}
+                      {shot.memo && (
+                        <div className="text-sm text-gray-700 mt-1 bg-gray-100 px-2 py-1 rounded">
+                          📝 {shot.memo}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

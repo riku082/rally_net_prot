@@ -287,6 +287,7 @@ export interface ShotTrajectory {
   order?: number; // 練習手順での順序
   description?: string;
   targetArea?: string; // エリア選択時のターゲットエリアID
+  memo?: string; // ユーザーがつけるメモ
 }
 
 // 移動パターン

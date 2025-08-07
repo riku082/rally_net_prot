@@ -7,7 +7,7 @@ import {
   PracticeVisualInfo,
   PracticeMenuType 
 } from '@/types/practice';
-import { FiChevronLeft, FiTarget, FiMapPin } from 'react-icons/fi';
+import { FiChevronLeft, FiTarget, FiMapPin, FiEdit2 } from 'react-icons/fi';
 import { GiShuttlecock } from 'react-icons/gi';
 import { MdSportsBaseball, MdPerson } from 'react-icons/md';
 import { FaUndo, FaCheck, FaTrash } from 'react-icons/fa';
@@ -178,7 +178,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   const [isSelectingTargets, setIsSelectingTargets] = useState(false);
   const [currentShotNumber, setCurrentShotNumber] = useState(1);
   const [history, setHistory] = useState<{
-    action: 'addShot' | 'selectTarget' | 'movePlayer' | 'addPosition' | 'removePosition';
+    action: 'addShot' | 'selectTarget' | 'movePlayer' | 'addPosition' | 'removePosition' | 'editMemo';
     state: {
       shotTrajectories: ShotTrajectory[];
       playerPositions: PlayerPosition[];
@@ -198,6 +198,8 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   const [coneCounter, setConeCounter] = useState(1);
   const [selectedKnocker, setSelectedKnocker] = useState<PlayerPosition | null>(null);
   const [latestShotLanding, setLatestShotLanding] = useState<{x: number, y: number} | null>(null);
+  const [editingMemoId, setEditingMemoId] = useState<string | null>(null);
+  const [memoText, setMemoText] = useState<string>('');
   const courtRef = useRef<HTMLDivElement>(null);
 
   // 初期配置
@@ -421,7 +423,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   };
 
   // 履歴保存
-  const saveToHistory = (action: 'addShot' | 'selectTarget' | 'movePlayer' | 'addPosition' | 'removePosition') => {
+  const saveToHistory = (action: 'addShot' | 'selectTarget' | 'movePlayer' | 'addPosition' | 'removePosition' | 'editMemo') => {
     setHistory([...history, {
       action,
       state: {
@@ -736,7 +738,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
           {/* ショット軌道 */}
           {shotTrajectories.map((shot) => {
             const shotType = SHOT_TYPES.find(t => t.id === shot.shotType);
-            const color = shot.shotBy === 'knocker' ? '#3B82F6' : (shotType?.color || '#10B981');
+            const color = shot.shotBy === 'knocker' ? '#000000' : (shotType?.color || '#10B981');
             
             return (
               <svg
@@ -1277,9 +1279,9 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                 const targetArea = shot.targetArea ? COURT_AREAS.find(a => a.id === shot.targetArea) : null;
                 const shotByLabel = shot.shotBy === 'knocker' ? 'ノック' : 
                                   shot.shotBy === 'opponent' ? '相手' : 'プレイヤー';
-                const bgColor = shot.shotBy === 'knocker' ? 'bg-blue-50' : 
+                const bgColor = shot.shotBy === 'knocker' ? 'bg-gray-50' : 
                               shot.shotBy === 'opponent' ? 'bg-red-50' : 'bg-green-50';
-                const borderColor = shot.shotBy === 'knocker' ? 'border-blue-200' : 
+                const borderColor = shot.shotBy === 'knocker' ? 'border-gray-300' : 
                                   shot.shotBy === 'opponent' ? 'border-red-200' : 'border-green-200';
                 
                 return (
@@ -1291,7 +1293,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                       <div 
                         className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
                         style={{ 
-                          backgroundColor: shot.shotBy === 'knocker' ? '#3B82F6' : 
+                          backgroundColor: shot.shotBy === 'knocker' ? '#000000' : 
                                          (shotType?.color || '#10B981') 
                         }}
                       >
@@ -1322,6 +1324,64 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                             {shot.description}
                           </div>
                         )}
+                        {/* メモ表示・編集 */}
+                        <div className="mt-2">
+                          {editingMemoId === shot.id ? (
+                            <div className="flex gap-1">
+                              <input
+                                type="text"
+                                value={memoText}
+                                onChange={(e) => setMemoText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    saveToHistory('editMemo');
+                                    setShotTrajectories(prev => 
+                                      prev.map(s => s.id === shot.id ? { ...s, memo: memoText } : s)
+                                    );
+                                    setEditingMemoId(null);
+                                    setMemoText('');
+                                  } else if (e.key === 'Escape') {
+                                    setEditingMemoId(null);
+                                    setMemoText('');
+                                  }
+                                }}
+                                className="flex-1 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                placeholder="メモを入力..."
+                                autoFocus
+                              />
+                              <button
+                                onClick={() => {
+                                  saveToHistory('editMemo');
+                                  setShotTrajectories(prev => 
+                                    prev.map(s => s.id === shot.id ? { ...s, memo: memoText } : s)
+                                  );
+                                  setEditingMemoId(null);
+                                  setMemoText('');
+                                }}
+                                className="text-green-600 hover:text-green-800"
+                              >
+                                <FaCheck className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-start gap-1">
+                              {shot.memo ? (
+                                <div className="flex-1 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                                  {shot.memo}
+                                </div>
+                              ) : null}
+                              <button
+                                onClick={() => {
+                                  setEditingMemoId(shot.id);
+                                  setMemoText(shot.memo || '');
+                                }}
+                                className="text-gray-400 hover:text-gray-600 flex-shrink-0"
+                              >
+                                <FiEdit2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
