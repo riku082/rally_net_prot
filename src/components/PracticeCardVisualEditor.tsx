@@ -504,35 +504,37 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
         }
         setIsWaitingForPlayer(false); // ノッカーからの配球に戻る
       } else {
-      
-      // 同じショットタイプごとにグループ化
-      const shotGroups: {[key: string]: {x: number, y: number}[]} = {};
-      selectedPoints.forEach((point, index) => {
-        const shotType = shotTypeSelections[`point_${index}`] || 'clear';
-        if (!shotGroups[shotType]) {
-          shotGroups[shotType] = [];
-        }
-        shotGroups[shotType].push(point);
-      });
-
-      // グループごとにショットを作成
-      let shotIndex = 0;
-      Object.entries(shotGroups).forEach(([shotType, points]) => {
-        points.forEach(point => {
-          const newShot: ShotTrajectory = {
-            id: `shot_${Date.now()}_${shotIndex}`,
-            from: currentShot.from ? { x: currentShot.from.x, y: currentShot.from.y } : { x: 0, y: 0 },
-            to: point,
-            shotType,
-            shotBy: currentShot.from?.role || 'player' as const,
-            order: currentShotNumber + shotIndex
-          };
-          setShotTrajectories(prev => [...prev, newShot]);
-          shotIndex++;
+        // 通常のショット
+        // 同じショットタイプごとにグループ化
+        const shotGroups: {[key: string]: {x: number, y: number}[]} = {};
+        selectedPoints.forEach((point, index) => {
+          const shotType = shotTypeSelections[`point_${index}`] || 'clear';
+          if (!shotGroups[shotType]) {
+            shotGroups[shotType] = [];
+          }
+          shotGroups[shotType].push(point);
         });
-      });
+
+        // グループごとにショットを作成
+        let shotIndex = 0;
+        Object.entries(shotGroups).forEach(([shotType, points]) => {
+          points.forEach(point => {
+            const newShot: ShotTrajectory = {
+              id: `shot_${Date.now()}_${shotIndex}`,
+              from: currentShot.from ? { x: currentShot.from.x, y: currentShot.from.y } : { x: 0, y: 0 },
+              to: point,
+              shotType,
+              shotBy: currentShot.from?.role || 'player' as const,
+              order: currentShotNumber + shotIndex
+            };
+            setShotTrajectories(prev => [...prev, newShot]);
+            shotIndex++;
+          });
+        });
+        
+        setCurrentShotNumber(currentShotNumber + selectedPoints.length);
+      }
       
-      setCurrentShotNumber(currentShotNumber + selectedPoints.length);
       setSelectedPoints([]);
       setShotTypeSelections({});
       setCurrentShot({});
