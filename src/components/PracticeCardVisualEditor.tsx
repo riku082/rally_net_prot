@@ -177,7 +177,19 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   const [shotTypeSelections, setShotTypeSelections] = useState<{[key: string]: string}>({});
   const [isSelectingTargets, setIsSelectingTargets] = useState(false);
   const [currentShotNumber, setCurrentShotNumber] = useState(1);
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<{
+    action: 'addShot' | 'selectTarget' | 'movePlayer' | 'addPosition' | 'removePosition';
+    state: {
+      shotTrajectories: ShotTrajectory[];
+      playerPositions: PlayerPosition[];
+      selectedPoints: {x: number, y: number}[];
+      selectedAreas: string[];
+      currentShotNumber: number;
+      isWaitingForPlayer: boolean;
+      isSelectingTargets: boolean;
+      latestShotLanding: {x: number, y: number} | null;
+    };
+  }[]>([]);
   const [isWaitingForPlayer, setIsWaitingForPlayer] = useState(false);
   const [continuousMode, setContinuousMode] = useState(true); // 連続入力モード
   const [selectedShotType, setSelectedShotType] = useState<string>('clear'); // デフォルトでクリアを選択
@@ -257,6 +269,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
 
     if (x < 0 || x > COURT_WIDTH || y < 0 || y > COURT_HEIGHT) return;
 
+    saveToHistory('addPosition');
     setPlayerPositions(prev => 
       prev.map(p => p.id === playerId ? { ...p, x, y } : p)
     );
@@ -277,19 +290,34 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
         if (!isWaitingForPlayer) {
           // ノック練習: ノッカーからの配球（ショットタイプ選択なし）
           if (selectedKnocker) {
-            saveToHistory();
-            const newShot: ShotTrajectory = {
-              id: `shot_${Date.now()}`,
-              from: { x: selectedKnocker.x, y: selectedKnocker.y },
-              to: { x, y },
-              shotType: '',
-              shotBy: 'knocker',
-              order: currentShotNumber
-            };
-            setShotTrajectories([...shotTrajectories, newShot]);
-            setCurrentShotNumber(currentShotNumber + 1);
-            setLatestShotLanding({ x, y });
-            setIsWaitingForPlayer(true);
+            // 既存の最新ショットがノッカーからでプレイヤーがまだ移動していない場合は更新
+            const lastShot = shotTrajectories[shotTrajectories.length - 1];
+            if (lastShot && lastShot.shotBy === 'knocker' && isWaitingForPlayer && latestShotLanding) {
+              // 最新のノッカーショットを更新
+              saveToHistory('addShot');
+              const updatedShots = [...shotTrajectories];
+              updatedShots[updatedShots.length - 1] = {
+                ...lastShot,
+                to: { x, y }
+              };
+              setShotTrajectories(updatedShots);
+              setLatestShotLanding({ x, y });
+            } else {
+              // 新規ショットを追加
+              saveToHistory('addShot');
+              const newShot: ShotTrajectory = {
+                id: `shot_${Date.now()}`,
+                from: { x: selectedKnocker.x, y: selectedKnocker.y },
+                to: { x, y },
+                shotType: '',
+                shotBy: 'knocker',
+                order: currentShotNumber
+              };
+              setShotTrajectories([...shotTrajectories, newShot]);
+              setCurrentShotNumber(currentShotNumber + 1);
+              setLatestShotLanding({ x, y });
+              setIsWaitingForPlayer(true);
+            }
           }
         } else {
           // プレイヤーからの返球を設定
@@ -298,10 +326,12 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             setCurrentShot({ from: player });
           }
           if (!isSelectingTargets) {
+            saveToHistory('selectTarget');
             setIsSelectingTargets(true);
             setSelectedPoints([{x, y}]);
           } else {
             // ターゲット追加
+            saveToHistory('selectTarget');
             setSelectedPoints([...selectedPoints, {x, y}]);
           }
         }
@@ -327,10 +357,12 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
         } else {
           // ターゲット選択中
           if (!isSelectingTargets) {
+            saveToHistory('selectTarget');
             setIsSelectingTargets(true);
             setSelectedPoints([{x, y}]);
           } else {
             // ターゲット追加
+            saveToHistory('selectTarget');
             setSelectedPoints([...selectedPoints, {x, y}]);
           }
         }
@@ -360,10 +392,12 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
 
     if (!isSelectingTargets) {
       // ターゲット選択開始
+      saveToHistory('selectTarget');
       setIsSelectingTargets(true);
       setSelectedAreas([areaId]);
     } else {
       // エリアの追加/削除
+      saveToHistory('selectTarget');
       if (selectedAreas.includes(areaId)) {
         setSelectedAreas(selectedAreas.filter(a => a !== areaId));
       } else {
@@ -376,17 +410,32 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   const undoLastAction = () => {
     if (history.length === 0) return;
     
-    const lastState = history[history.length - 1];
-    setShotTrajectories(lastState.shots);
-    setCurrentShotNumber(lastState.shotNumber);
+    const lastState = history[history.length - 1].state;
+    setShotTrajectories(lastState.shotTrajectories);
+    setPlayerPositions(lastState.playerPositions);
+    setSelectedPoints(lastState.selectedPoints);
+    setSelectedAreas(lastState.selectedAreas);
+    setCurrentShotNumber(lastState.currentShotNumber);
+    setIsWaitingForPlayer(lastState.isWaitingForPlayer);
+    setIsSelectingTargets(lastState.isSelectingTargets);
+    setLatestShotLanding(lastState.latestShotLanding);
     setHistory(history.slice(0, -1));
   };
 
   // 履歴保存
-  const saveToHistory = () => {
+  const saveToHistory = (action: 'addShot' | 'selectTarget' | 'movePlayer' | 'addPosition' | 'removePosition') => {
     setHistory([...history, {
-      shots: [...shotTrajectories],
-      shotNumber: currentShotNumber
+      action,
+      state: {
+        shotTrajectories: [...shotTrajectories],
+        playerPositions: [...playerPositions],
+        selectedPoints: [...selectedPoints],
+        selectedAreas: [...selectedAreas],
+        currentShotNumber,
+        isWaitingForPlayer,
+        isSelectingTargets,
+        latestShotLanding
+      }
     }]);
   };
 
@@ -433,11 +482,13 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
         break;
     }
     
+    saveToHistory('addPosition');
     setPlayerPositions([...playerPositions, newItem]);
   };
 
   // アイテムの削除
   const removeItem = (itemId: string) => {
+    saveToHistory('removePosition');
     setPlayerPositions(playerPositions.filter(p => p.id !== itemId));
   };
 
@@ -447,6 +498,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
     
     const player = playerPositions.find(p => p.role === 'player');
     if (player) {
+      saveToHistory('movePlayer');
       setPlayerPositions(prev => 
         prev.map(p => p.id === player.id ? { ...p, x: latestShotLanding.x, y: latestShotLanding.y } : p)
       );
@@ -465,7 +517,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
 
   // ショット確定処理
   const confirmShots = () => {
-    saveToHistory();
+    saveToHistory('addShot');
     
     if (selectedPoints.length > 0) {
       // ピンポイントモードでのショット追加
