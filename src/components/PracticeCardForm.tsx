@@ -236,7 +236,6 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
                     setUseVisualEditor(e.target.checked);
                     if (!e.target.checked) {
                       setFormData(prev => ({ ...prev, practiceType: undefined, visualInfo: undefined }));
-                      setCurrentStep(1);
                     }
                   }}
                   className="mr-3 h-6 w-6 text-purple-600 rounded focus:ring-purple-500 focus:ring-2"
