@@ -39,37 +39,31 @@ const PracticeCardItem: React.FC<{
       {/* ビジュアルプレビューセクション */}
       {card.visualInfo && card.visualInfo.playerPositions && card.visualInfo.playerPositions.length > 0 && (
         <div className="bg-gradient-to-b from-green-50 to-green-100 p-4 border-b border-green-200">
-          <svg viewBox="0 0 183 402" className="w-full h-48">
+          <svg viewBox="0 0 305 670" className="w-full h-48">
             {/* コート背景 */}
-            <rect x="0" y="0" width="183" height="402" fill="#4CAF50" />
+            <rect x="0" y="0" width="305" height="670" fill="#4CAF50" />
             
-            {/* サービスエリア（サービスコート） */}
-            {/* 上側（相手コート） */}
-            <rect x="13" y="23" width="78.5" height="119" fill="#66BB6A" opacity="0.3" />
-            <rect x="91.5" y="23" width="78.5" height="119" fill="#66BB6A" opacity="0.3" />
-            {/* 下側（自分コート） */}
-            <rect x="13" y="260" width="78.5" height="119" fill="#66BB6A" opacity="0.3" />
-            <rect x="91.5" y="260" width="78.5" height="119" fill="#66BB6A" opacity="0.3" />
-            
-            {/* コートライン */}
+            {/* バドミントンコートの正確なライン（簡略版） */}
             {/* 外枠 */}
-            <rect x="0" y="0" width="183" height="402" fill="none" stroke="white" strokeWidth="2" />
+            <rect x="0" y="0" width="305" height="670" fill="none" stroke="white" strokeWidth="2" />
             
-            {/* シングルスサイドライン */}
-            <line x1="13" y1="0" x2="13" y2="402" stroke="white" strokeWidth="2" />
-            <line x1="170" y1="0" x2="170" y2="402" stroke="white" strokeWidth="2" />
+            {/* ネット */}
+            <line x1="0" y1="335" x2="305" y2="335" stroke="white" strokeWidth="3" />
             
             {/* ショートサービスライン */}
-            <line x1="0" y1="142" x2="183" y2="142" stroke="white" strokeWidth="2" />
-            <line x1="0" y1="260" x2="183" y2="260" stroke="white" strokeWidth="2" />
+            <line x1="0" y1="236" x2="305" y2="236" stroke="white" strokeWidth="1.5" />
+            <line x1="0" y1="434" x2="305" y2="434" stroke="white" strokeWidth="1.5" />
             
             {/* ロングサービスライン（ダブルス） */}
-            <line x1="0" y1="23" x2="183" y2="23" stroke="white" strokeWidth="2" />
-            <line x1="0" y1="379" x2="183" y2="379" stroke="white" strokeWidth="2" />
+            <line x1="0" y1="137" x2="305" y2="137" stroke="white" strokeWidth="1.5" />
+            <line x1="0" y1="533" x2="305" y2="533" stroke="white" strokeWidth="1.5" />
             
             {/* センターライン */}
-            <line x1="91.5" y1="23" x2="91.5" y2="142" stroke="white" strokeWidth="2" />
-            <line x1="91.5" y1="260" x2="91.5" y2="379" stroke="white" strokeWidth="2" />
+            <line x1="152.5" y1="236" x2="152.5" y2="434" stroke="white" strokeWidth="1.5" />
+            
+            {/* シングルスサイドライン */}
+            <line x1="21" y1="0" x2="21" y2="670" stroke="white" strokeWidth="1.5" />
+            <line x1="284" y1="0" x2="284" y2="670" stroke="white" strokeWidth="1.5" />
             
             {/* ネット */}
             <line x1="0" y1="201" x2="183" y2="201" stroke="white" strokeWidth="3" />

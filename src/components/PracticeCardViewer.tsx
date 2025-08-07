@@ -73,16 +73,36 @@ const PracticeCardViewer: React.FC<PracticeCardViewerProps> = ({ card, className
         <div className="p-6 bg-gradient-to-b from-green-50 to-green-100">
           <h4 className="text-lg font-semibold text-gray-800 mb-4">コート図</h4>
           <div className="bg-white rounded-lg p-4 shadow-inner">
-            <svg viewBox="0 0 400 600" className="w-full h-auto max-h-96">
+            <svg viewBox="0 0 305 670" className="w-full h-auto max-h-96">
               {/* コート背景 */}
-              <rect x="0" y="0" width="400" height="600" fill="#00897B" />
+              <rect x="0" y="0" width="305" height="670" fill="#00897B" />
               
-              {/* コートライン */}
-              <rect x="0" y="0" width="400" height="600" fill="none" stroke="white" strokeWidth="3" />
-              <line x1="0" y1="300" x2="400" y2="300" stroke="white" strokeWidth="4" />
-              <line x1="0" y1="155" x2="400" y2="155" stroke="white" strokeWidth="2" />
-              <line x1="0" y1="445" x2="400" y2="445" stroke="white" strokeWidth="2" />
-              <line x1="200" y1="155" x2="200" y2="445" stroke="white" strokeWidth="2" />
+              {/* バドミントンコートの正確なライン */}
+              {/* 外枠（ダブルスコート） */}
+              <rect x="0" y="0" width="305" height="670" fill="none" stroke="white" strokeWidth="3" />
+              
+              {/* ネット */}
+              <line x1="0" y1="335" x2="305" y2="335" stroke="white" strokeWidth="4" />
+              
+              {/* ショートサービスライン（前サービスライン） */}
+              <line x1="0" y1="236" x2="305" y2="236" stroke="white" strokeWidth="2" />
+              <line x1="0" y1="434" x2="305" y2="434" stroke="white" strokeWidth="2" />
+              
+              {/* ロングサービスライン（ダブルス） */}
+              <line x1="0" y1="137" x2="305" y2="137" stroke="white" strokeWidth="2" />
+              <line x1="0" y1="533" x2="305" y2="533" stroke="white" strokeWidth="2" />
+              
+              {/* バックバウンダリーライン（シングルス） */}
+              <line x1="0" y1="38" x2="305" y2="38" stroke="white" strokeWidth="2" strokeDasharray="5,5" />
+              <line x1="0" y1="632" x2="305" y2="632" stroke="white" strokeWidth="2" strokeDasharray="5,5" />
+              
+              {/* センターライン（サービスコートのみ） */}
+              <line x1="152.5" y1="236" x2="152.5" y2="335" stroke="white" strokeWidth="2" />
+              <line x1="152.5" y1="335" x2="152.5" y2="434" stroke="white" strokeWidth="2" />
+              
+              {/* サイドライン（シングルス） */}
+              <line x1="21" y1="0" x2="21" y2="670" stroke="white" strokeWidth="2" />
+              <line x1="284" y1="0" x2="284" y2="670" stroke="white" strokeWidth="2" />
               
               {/* プレイヤー位置 */}
               {card.visualInfo.playerPositions?.map((player) => (
