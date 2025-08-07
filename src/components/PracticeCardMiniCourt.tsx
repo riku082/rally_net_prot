@@ -23,11 +23,11 @@ const PracticeCardMiniCourt: React.FC<PracticeCardMiniCourtProps> = ({
   const scaledWidth = COURT_WIDTH * scale;
   const scaledHeight = COURT_HEIGHT * scale;
   
-  // ライン位置の計算
-  const HALF_COURT_HEIGHT = scaledHeight / 2;
-  const SERVICE_LINE = scaledHeight * 0.24; // 前から24%の位置
-  const BACK_SERVICE_LINE = scaledHeight * 0.76; // 前から76%の位置
-  const SIDE_ALLEY_WIDTH = scaledWidth * 0.15; // 両サイド15%
+  // ライン位置の計算（編集モードと同じ値を使用）
+  const NET_POSITION = scaledHeight / 2;
+  const SHORT_SERVICE_LINE = 79 * scale; // ネットから1.98m
+  const BACK_BOUNDARY_LINE_SINGLES = 30 * scale; // エンドラインから0.76m内側
+  const SIDE_ALLEY_WIDTH = 17 * scale; // サイドアレー幅0.42m
   const CENTER_LINE = scaledWidth / 2;
 
   // 色の定義
@@ -43,9 +43,10 @@ const PracticeCardMiniCourt: React.FC<PracticeCardMiniCourtProps> = ({
     { id: 'other', color: '#6B7280' } // グレー
   ];
 
-  // エリア定義（18エリア）
+  // エリア定義（18エリア）- 編集モードと同じ定義を使用
+  const HALF_COURT_HEIGHT = scaledHeight / 2;
   const COURT_AREAS = [
-    // 相手側コート（上半分）
+    // 上側コート（相手側）
     { id: 'opp_fl', x: 0, y: 0, w: scaledWidth/3, h: HALF_COURT_HEIGHT/3 },
     { id: 'opp_fc', x: scaledWidth/3, y: 0, w: scaledWidth/3, h: HALF_COURT_HEIGHT/3 },
     { id: 'opp_fr', x: scaledWidth*2/3, y: 0, w: scaledWidth/3, h: HALF_COURT_HEIGHT/3 },
@@ -55,7 +56,7 @@ const PracticeCardMiniCourt: React.FC<PracticeCardMiniCourtProps> = ({
     { id: 'opp_bl', x: 0, y: HALF_COURT_HEIGHT*2/3, w: scaledWidth/3, h: HALF_COURT_HEIGHT/3 },
     { id: 'opp_bc', x: scaledWidth/3, y: HALF_COURT_HEIGHT*2/3, w: scaledWidth/3, h: HALF_COURT_HEIGHT/3 },
     { id: 'opp_br', x: scaledWidth*2/3, y: HALF_COURT_HEIGHT*2/3, w: scaledWidth/3, h: HALF_COURT_HEIGHT/3 },
-    // 自分側コート（下半分）
+    // 下側コート（自分側）
     { id: 'own_fl', x: 0, y: HALF_COURT_HEIGHT, w: scaledWidth/3, h: HALF_COURT_HEIGHT/3 },
     { id: 'own_fc', x: scaledWidth/3, y: HALF_COURT_HEIGHT, w: scaledWidth/3, h: HALF_COURT_HEIGHT/3 },
     { id: 'own_fr', x: scaledWidth*2/3, y: HALF_COURT_HEIGHT, w: scaledWidth/3, h: HALF_COURT_HEIGHT/3 },
@@ -72,30 +73,33 @@ const PracticeCardMiniCourt: React.FC<PracticeCardMiniCourtProps> = ({
       <svg
         width={scaledWidth}
         height={scaledHeight}
-        className="bg-green-600 rounded"
+        className="rounded"
       >
+        {/* コート背景 */}
+        <rect x="0" y="0" width={scaledWidth} height={scaledHeight} fill="#00897B" />
+        
         {/* コートライン */}
-        <g stroke="white" strokeWidth="1" fill="none">
+        <g stroke="white" strokeWidth={scale * 2} fill="none">
           {/* 外枠 */}
           <rect x="0" y="0" width={scaledWidth} height={scaledHeight} />
           
-          {/* ネット（センターライン） */}
-          <line x1="0" y1={HALF_COURT_HEIGHT} x2={scaledWidth} y2={HALF_COURT_HEIGHT} strokeWidth="2" />
+          {/* ネット */}
+          <line x1="0" y1={NET_POSITION} x2={scaledWidth} y2={NET_POSITION} stroke="#424242" strokeWidth={scale * 3} />
           
-          {/* 前サービスライン */}
-          <line x1="0" y1={SERVICE_LINE} x2={scaledWidth} y2={SERVICE_LINE} />
-          <line x1="0" y1={scaledHeight - SERVICE_LINE} x2={scaledWidth} y2={scaledHeight - SERVICE_LINE} />
+          {/* サービスライン */}
+          <line x1="0" y1={NET_POSITION - SHORT_SERVICE_LINE} x2={scaledWidth} y2={NET_POSITION - SHORT_SERVICE_LINE} strokeWidth={scale * 1.5} />
+          <line x1="0" y1={NET_POSITION + SHORT_SERVICE_LINE} x2={scaledWidth} y2={NET_POSITION + SHORT_SERVICE_LINE} strokeWidth={scale * 1.5} />
           
-          {/* 後サービスライン（ダブルス） */}
-          <line x1="0" y1={BACK_SERVICE_LINE} x2={scaledWidth} y2={BACK_SERVICE_LINE} strokeDasharray="2,2" />
-          <line x1="0" y1={scaledHeight - BACK_SERVICE_LINE} x2={scaledWidth} y2={scaledHeight - BACK_SERVICE_LINE} strokeDasharray="2,2" />
+          {/* バックバウンダリーライン */}
+          <line x1="0" y1={BACK_BOUNDARY_LINE_SINGLES} x2={scaledWidth} y2={BACK_BOUNDARY_LINE_SINGLES} strokeWidth={scale * 1.5} />
+          <line x1="0" y1={scaledHeight - BACK_BOUNDARY_LINE_SINGLES} x2={scaledWidth} y2={scaledHeight - BACK_BOUNDARY_LINE_SINGLES} strokeWidth={scale * 1.5} />
           
           {/* センターライン */}
-          <line x1={CENTER_LINE} y1="0" x2={CENTER_LINE} y2={scaledHeight} />
+          <line x1={CENTER_LINE} y1="0" x2={CENTER_LINE} y2={scaledHeight} strokeWidth={scale * 1.5} />
           
           {/* サイドライン */}
-          <line x1={SIDE_ALLEY_WIDTH} y1="0" x2={SIDE_ALLEY_WIDTH} y2={scaledHeight} strokeDasharray="2,2" />
-          <line x1={scaledWidth - SIDE_ALLEY_WIDTH} y1="0" x2={scaledWidth - SIDE_ALLEY_WIDTH} y2={scaledHeight} strokeDasharray="2,2" />
+          <line x1={SIDE_ALLEY_WIDTH} y1="0" x2={SIDE_ALLEY_WIDTH} y2={scaledHeight} strokeWidth={scale * 1.5} strokeDasharray="5,5" />
+          <line x1={scaledWidth - SIDE_ALLEY_WIDTH} y1="0" x2={scaledWidth - SIDE_ALLEY_WIDTH} y2={scaledHeight} strokeWidth={scale * 1.5} strokeDasharray="5,5" />
         </g>
 
         {/* ショット軌道 */}
@@ -155,6 +159,27 @@ const PracticeCardMiniCourt: React.FC<PracticeCardMiniCourtProps> = ({
                 strokeWidth="1.5"
                 markerEnd={`url(#arrow-mini-${index})`}
               />
+              
+              {/* ショット番号 */}
+              <circle
+                cx={fromX + (toX - fromX) / 2}
+                cy={fromY + (toY - fromY) / 2}
+                r={Math.min(8, scaledWidth * 0.06)}
+                fill="white"
+                stroke={color}
+                strokeWidth="1"
+              />
+              <text
+                x={fromX + (toX - fromX) / 2}
+                y={fromY + (toY - fromY) / 2}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize={Math.min(10, scaledWidth * 0.08)}
+                fontWeight="bold"
+                fill={color}
+              >
+                {shot.order || index + 1}
+              </text>
             </g>
           );
         })}

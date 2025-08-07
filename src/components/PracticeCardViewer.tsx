@@ -192,36 +192,71 @@ const PracticeCardViewer: React.FC<PracticeCardViewerProps> = ({ card, className
                 <line x1="227" y1="0" x2="227" y2="536" stroke="white" strokeWidth="1.5" strokeDasharray="5,5" />
                 
                 {/* プレイヤー位置 */}
-                {card.visualInfo.playerPositions?.map((player) => (
-                  <g key={player.id}>
-                    <circle 
-                      cx={player.x} 
-                      cy={player.y} 
-                      r="15" 
-                      fill={player.color || '#10B981'} 
-                      stroke="white" 
-                      strokeWidth="2"
-                    />
-                    {player.role === 'knocker' ? (
-                      <MdSportsBaseball x={player.x - 10} y={player.y - 10} className="w-5 h-5" fill="white" />
-                    ) : (
-                      <MdPerson x={player.x - 10} y={player.y - 10} className="w-5 h-5" fill="white" />
-                    )}
+                {card.visualInfo.playerPositions?.map((player) => {
+                  const icon = player.role === 'knocker' ? (
                     <text 
                       x={player.x} 
-                      y={player.y + 25} 
+                      y={player.y + 5} 
                       textAnchor="middle" 
-                      fill="black" 
-                      fontSize="10" 
+                      fill="white" 
+                      fontSize="20" 
                       fontWeight="bold"
                     >
-                      {player.label}
+                      N
                     </text>
-                  </g>
-                ))}
+                  ) : player.role === 'player' ? (
+                    <text 
+                      x={player.x} 
+                      y={player.y + 5} 
+                      textAnchor="middle" 
+                      fill="white" 
+                      fontSize="20" 
+                      fontWeight="bold"
+                    >
+                      P
+                    </text>
+                  ) : (
+                    <text 
+                      x={player.x} 
+                      y={player.y + 5} 
+                      textAnchor="middle" 
+                      fill="white" 
+                      fontSize="20" 
+                      fontWeight="bold"
+                    >
+                      {player.label?.substring(0, 1) || 'O'}
+                    </text>
+                  );
+                  
+                  return (
+                    <g key={player.id}>
+                      <circle 
+                        cx={player.x} 
+                        cy={player.y} 
+                        r="15" 
+                        fill={player.color || '#10B981'} 
+                        stroke="white" 
+                        strokeWidth="2"
+                      />
+                      {icon}
+                      {player.label && (
+                        <text 
+                          x={player.x} 
+                          y={player.y + 30} 
+                          textAnchor="middle" 
+                          fill="#374151" 
+                          fontSize="12" 
+                          fontWeight="600"
+                        >
+                          {player.label}
+                        </text>
+                      )}
+                    </g>
+                  );
+                })}
                 
                 {/* ショット軌道 */}
-                {sortedShots.map((shot) => {
+                {sortedShots.map((shot, index) => {
                   const shotType = SHOT_TYPES.find(t => t.id === shot.shotType);
                   const color = shot.shotBy === 'knocker' ? '#3B82F6' : (shotType?.color || '#10B981');
                   
@@ -261,11 +296,11 @@ const PracticeCardViewer: React.FC<PracticeCardViewerProps> = ({ card, className
                         x={shot.from.x + (shot.to.x - shot.from.x) / 2}
                         y={shot.from.y + (shot.to.y - shot.from.y) / 2 + 3}
                         textAnchor="middle"
-                        fontSize="10"
+                        fontSize="12"
                         fontWeight="bold"
                         fill={color}
                       >
-                        {shot.order}
+                        {shot.order || (index + 1)}
                       </text>
                     </g>
                   );

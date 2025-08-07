@@ -7,7 +7,7 @@ import {
   PracticeVisualInfo,
   PracticeMenuType 
 } from '@/types/practice';
-import { FiChevronLeft, FiTarget, FiMapPin } from 'react-icons/fi';
+import { FiChevronLeft } from 'react-icons/fi';
 import { GiShuttlecock } from 'react-icons/gi';
 import { MdSportsBaseball, MdPerson } from 'react-icons/md';
 import { FaUndo, FaCheck, FaTrash } from 'react-icons/fa';
@@ -927,7 +927,11 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               {player.role === 'knocker' ? (
                 <MdSportsBaseball className="w-5 h-5" />
               ) : player.role === 'feeder' ? (
-                <FiTarget className="w-5 h-5" />
+                <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+                  <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
+                  <circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                  <circle cx="12" cy="12" r="2" fill="currentColor" />
+                </svg>
               ) : (
                 <MdPerson className="w-5 h-5" />
               )}
@@ -1030,7 +1034,12 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                   className="p-3 bg-white border-2 border-orange-300 rounded-lg hover:bg-orange-50 transition-all flex flex-col items-center gap-1"
                 >
                   <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                    <FiTarget className="w-5 h-5 text-white" />
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="8" r="2" />
+                      <path d="M12 10v12" />
+                      <path d="M8 14l8 8" />
+                      <path d="M16 14l-8 8" />
+                    </svg>
                   </div>
                   <span className="text-[10px] font-medium whitespace-nowrap">コーン</span>
                 </button>
@@ -1055,7 +1064,11 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                             {item.role === 'knocker' ? (
                               <MdSportsBaseball className="w-4 h-4" />
                             ) : item.role === 'feeder' ? (
-                              <FiTarget className="w-4 h-4" />
+                              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
+                                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
+                                <circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                                <circle cx="12" cy="12" r="2" fill="currentColor" />
+                              </svg>
                             ) : (
                               <MdPerson className="w-4 h-4" />
                             )}
@@ -1173,20 +1186,32 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             {!(practiceType === 'knock_practice' && !isWaitingForPlayer) && (
               <div className="space-y-2">
                 <div className="text-sm font-medium">着地点選択</div>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       setIshotInputMode('pinpoint');
                     }}
-                    className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all flex flex-col items-center gap-1 min-h-[65px] border-2 ${
                       shotInputMode === 'pinpoint' 
-                        ? 'bg-green-500 text-white' 
-                        : 'bg-white text-gray-700 hover:bg-gray-100'
+                        ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/25' 
+                        : 'bg-gradient-to-br from-gray-50 to-gray-100 text-gray-700 hover:from-blue-50 hover:to-blue-100 hover:text-blue-700 border-gray-200 hover:border-blue-300'
                     }`}
                   >
-                    <FiMapPin className="inline w-4 h-4 mr-1" />
+                    <svg viewBox="0 0 32 32" className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      {/* 矢印 */}
+                      <path d="M10 10 L20 20" strokeWidth="1.8" markerEnd="url(#arrowhead-pinpoint)" />
+                      {/* 的 */}
+                      <circle cx="20" cy="20" r="4" fill="none" strokeWidth="1.2" />
+                      <circle cx="20" cy="20" r="2" fill="none" strokeWidth="1" />
+                      <circle cx="20" cy="20" r="0.8" fill="currentColor" />
+                      <defs>
+                        <marker id="arrowhead-pinpoint" markerWidth="6" markerHeight="6" refX="5" refY="2" orient="auto">
+                          <path d="M0,0 L0,4 L5,2 z" fill="currentColor" />
+                        </marker>
+                      </defs>
+                    </svg>
                     ピンポイント
                   </button>
                   <button
@@ -1207,13 +1232,25 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                         }
                       }
                     }}
-                    className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all flex flex-col items-center gap-1 min-h-[65px] border-2 ${
                       shotInputMode === 'area' 
-                        ? 'bg-orange-500 text-white' 
-                        : 'bg-white text-gray-700 hover:bg-gray-100'
+                        ? 'bg-gradient-to-br from-purple-500 to-purple-600 text-white border-purple-500 shadow-lg shadow-purple-500/25' 
+                        : 'bg-gradient-to-br from-gray-50 to-gray-100 text-gray-700 hover:from-purple-50 hover:to-purple-100 hover:text-purple-700 border-gray-200 hover:border-purple-300'
                     }`}
                   >
-                    <FiTarget className="inline w-4 h-4 mr-1" />
+                    <svg viewBox="0 0 32 32" className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      {/* 矢印 */}
+                      <path d="M8 8 L20 20" strokeWidth="1.8" markerEnd="url(#arrowhead-area)" />
+                      {/* エリア選択範囲 */}
+                      <rect x="18" y="18" width="8" height="8" rx="1" strokeDasharray="1.5,1" strokeWidth="1" />
+                      <rect x="19.5" y="19.5" width="5" height="5" rx="0.5" strokeDasharray="1,0.5" strokeWidth="0.8" />
+                      <rect x="20.5" y="20.5" width="3" height="3" rx="0.5" fill="currentColor" fillOpacity="0.4" strokeWidth="0.5" />
+                      <defs>
+                        <marker id="arrowhead-area" markerWidth="6" markerHeight="6" refX="5" refY="2" orient="auto">
+                          <path d="M0,0 L0,4 L5,2 z" fill="currentColor" />
+                        </marker>
+                      </defs>
+                    </svg>
                     エリア
                   </button>
                 </div>
