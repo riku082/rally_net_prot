@@ -1100,6 +1100,10 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                     onClick={(e) => {
                       e.stopPropagation();
                       setIshotInputMode('area');
+                      // エリアモードに切り替えた時、currentShot.fromが設定されていれば選択モードを開始
+                      if (currentShot.from) {
+                        setIsSelectingTargets(true);
+                      }
                     }}
                     className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                       shotInputMode === 'area' 
