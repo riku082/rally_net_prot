@@ -645,13 +645,14 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
       setCurrentShotNumber(currentShotNumber + 1); // 複数エリアでも1つのショットとしてカウント
       setSelectedAreas([]);
       setShotTypeSelections({});
-      setCurrentShot({});
       setIsSelectingTargets(false);
       
       // ノック練習の場合は、プレイヤーの返球後はノッカーからの配球に戻る
       if (practiceType === 'knock_practice' && isWaitingForPlayer) {
         setIsWaitingForPlayer(false);
+        setCurrentShot({}); // ノック練習では次はノッカーからなのでリセット
       }
+      // パターン練習の場合は、currentShotを維持して連続入力を可能にする
     }
   };
 

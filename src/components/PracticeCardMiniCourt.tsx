@@ -16,9 +16,9 @@ const PracticeCardMiniCourt: React.FC<PracticeCardMiniCourtProps> = ({
   width = 120,
   height = 210
 }) => {
-  // コート寸法（実際のコートの比率を維持）
-  const COURT_WIDTH = 122; // 6.1m
-  const COURT_HEIGHT = 268; // 13.4m
+  // コート寸法（PracticeCardVisualEditorと同じ値を使用）
+  const COURT_WIDTH = 244; // 6.1m
+  const COURT_HEIGHT = 536; // 13.4m
   const scale = Math.min(width / COURT_WIDTH, height / COURT_HEIGHT);
   const scaledWidth = COURT_WIDTH * scale;
   const scaledHeight = COURT_HEIGHT * scale;
