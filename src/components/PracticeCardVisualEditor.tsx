@@ -595,19 +595,23 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
       
     } else if (selectedAreas.length > 0) {
       // エリアモードでのショット追加
-      const shotGroups: {[key: string]: string[]} = {};
-      selectedAreas.forEach((areaId) => {
-        const shotType = shotTypeSelections[areaId] || 'clear';
-        if (!shotGroups[shotType]) {
-          shotGroups[shotType] = [];
-        }
-        shotGroups[shotType].push(areaId);
-      });
+      if (isWaitingForPlayer) {
+        // プレイヤーからの返球
+        const player = playerPositions.find(p => p.role === 'player');
+        if (player) {
+          const shotGroups: {[key: string]: string[]} = {};
+          selectedAreas.forEach((areaId) => {
+            const shotType = shotTypeSelections[areaId] || 'clear';
+            if (!shotGroups[shotType]) {
+              shotGroups[shotType] = [];
+            }
+            shotGroups[shotType].push(areaId);
+          });
 
-      // グループごとにショットを作成（同じショットタイプのエリアは1本の矢印に統合）
-      let shotIndex = 0;
-      Object.entries(shotGroups).forEach(([shotType, areaIds]) => {
-        const fromPos = currentShot.from ? { x: currentShot.from.x, y: currentShot.from.y } : { x: 0, y: 0 };
+          // グループごとにショットを作成（同じショットタイプのエリアは1本の矢印に統合）
+          let shotIndex = 0;
+          Object.entries(shotGroups).forEach(([shotType, areaIds]) => {
+            const fromPos = { x: player.x, y: player.y };
         
         // 複数エリアの中心点を計算
         let centerX = 0;
@@ -636,22 +640,69 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             order: currentShotNumber + shotIndex,
             targetArea: areaIds.join(',')
           };
-          setShotTrajectories(prev => [...prev, newShot]);
-          shotIndex++;
+            setShotTrajectories(prev => [...prev, newShot]);
+            shotIndex++;
+          }
+        });
+        
+        setCurrentShotNumber(currentShotNumber + 1);
         }
-      });
+        setIsWaitingForPlayer(false); // ノッカーからの配球に戻る
+      } else {
+        // 通常のショット
+        const shotGroups: {[key: string]: string[]} = {};
+        selectedAreas.forEach((areaId) => {
+          const shotType = shotTypeSelections[areaId] || 'clear';
+          if (!shotGroups[shotType]) {
+            shotGroups[shotType] = [];
+          }
+          shotGroups[shotType].push(areaId);
+        });
+
+        // グループごとにショットを作成
+        let shotIndex = 0;
+        Object.entries(shotGroups).forEach(([shotType, areaIds]) => {
+          const fromPos = currentShot.from ? { x: currentShot.from.x, y: currentShot.from.y } : { x: 0, y: 0 };
+          
+          // 複数エリアの中心点を計算
+          let centerX = 0;
+          let centerY = 0;
+          let validAreas = 0;
+          
+          areaIds.forEach(areaId => {
+            const area = COURT_AREAS.find(a => a.id === areaId);
+            if (area) {
+              centerX += area.x + area.w/2;
+              centerY += area.y + area.h/2;
+              validAreas++;
+            }
+          });
+          
+          if (validAreas > 0) {
+            centerX /= validAreas;
+            centerY /= validAreas;
+            
+            const newShot: ShotTrajectory = {
+              id: `shot_${Date.now()}_${shotIndex}`,
+              from: fromPos,
+              to: { x: centerX, y: centerY },
+              shotType,
+              shotBy: currentShot.from?.role || 'player',
+              order: currentShotNumber + shotIndex,
+              targetArea: areaIds.join(',')
+            };
+            setShotTrajectories(prev => [...prev, newShot]);
+            shotIndex++;
+          }
+        });
+        
+        setCurrentShotNumber(currentShotNumber + 1);
+      }
       
-      setCurrentShotNumber(currentShotNumber + 1); // 複数エリアでも1つのショットとしてカウント
       setSelectedAreas([]);
       setShotTypeSelections({});
+      setCurrentShot({});
       setIsSelectingTargets(false);
-      
-      // ノック練習の場合は、プレイヤーの返球後はノッカーからの配球に戻る
-      if (practiceType === 'knock_practice' && isWaitingForPlayer) {
-        setIsWaitingForPlayer(false);
-        setCurrentShot({}); // ノック練習では次はノッカーからなのでリセット
-      }
-      // パターン練習の場合は、currentShotを維持して連続入力を可能にする
     }
   };
 
