@@ -139,6 +139,7 @@ function PracticeManagementContent() {
             reps: 20
           },
           difficulty: 'beginner',
+          equipment: ['シャトル', 'ラケット'],
           courtInfo: {
             targetAreas: ['service_box_left', 'service_box_right', 'backcourt_left', 'backcourt_center'],
             focusArea: 'backcourt_center',
@@ -169,6 +170,7 @@ function PracticeManagementContent() {
             reps: 15
           },
           difficulty: 'intermediate',
+          equipment: ['シャトル', 'ラケット'],
           courtInfo: {
             targetAreas: ['backcourt_center', 'backcourt_left', 'backcourt_right'],
             focusArea: 'backcourt_center',
@@ -199,6 +201,7 @@ function PracticeManagementContent() {
             reps: 10
           },
           difficulty: 'advanced',
+          equipment: ['シャトル', 'ラケット'],
           courtInfo: {
             targetAreas: ['frontcourt_left_own', 'frontcourt_center_own', 'frontcourt_right_own'],
             focusArea: 'frontcourt_center_own',
@@ -476,11 +479,11 @@ function PracticeManagementContent() {
                       ))}
                     </div>
                     
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-3">
                       {activeView === 'records' && (
                         <button
                           onClick={() => handleCreatePractice()}
-                          className="flex items-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
+                          className="hidden sm:flex items-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
                         >
                           <FaPlus className="w-4 h-4 mr-1 sm:mr-2" />
                           <span className="hidden xs:inline">練習</span>記録
@@ -489,7 +492,7 @@ function PracticeManagementContent() {
                       {activeView === 'cards' && (
                         <button
                           onClick={() => setShowCardForm(true)}
-                          className="flex items-center px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base font-medium shadow-lg"
+                          className="hidden sm:flex items-center px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base font-medium shadow-lg"
                         >
                           <FaPlus className="w-4 h-4 mr-1 sm:mr-2" />
                           <span className="hidden xs:inline">練習</span>カード
@@ -552,7 +555,6 @@ function PracticeManagementContent() {
                       </div>
                     </div>
                   )}
-
                 </div>
               </div>
             </div>
@@ -593,19 +595,26 @@ function PracticeManagementContent() {
       )}
 
       {showCardForm && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 overflow-y-auto">
-          <div className="min-h-screen flex items-start justify-center p-4 pt-20 pb-20" onClick={(e) => e.stopPropagation()}>
-            <div className="max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
-              <PracticeCardForm
-                card={editingCard || undefined}
-                onSave={handleSavePracticeCard}
-                onCancel={() => {
-                  setShowCardForm(false);
-                  setEditingCard(null);
-                }}
-                isLoading={isSaving}
-              />
-            </div>
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setShowCardForm(false);
+            setEditingCard(null);
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <PracticeCardForm
+              card={editingCard || undefined}
+              onSave={handleSavePracticeCard}
+              onCancel={() => {
+                setShowCardForm(false);
+                setEditingCard(null);
+              }}
+              isLoading={isSaving}
+            />
           </div>
         </div>
       )}

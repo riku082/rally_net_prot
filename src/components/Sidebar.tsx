@@ -14,6 +14,7 @@ const navItems = [
   { label: 'ニュース', icon: <FaRss />, path: '/news' },
   { label: 'フレンド', icon: <FaUserFriends />, path: '/friends' },
   { label: 'BPSI診断', icon: <FaBrain />, path: '/mbti' },
+  { label: 'ガイド', icon: <FaQuestionCircle />, path: '/guide' },
   { label: '目安箱', icon: <FaMailBulk />, path: '/feedback' },
   { label: '選手管理', icon: <FaUser />, path: '/players', disabled: true },
   { label: '試合記録', icon: <GiShuttlecock />, path: '/matches', badge: 'ヨシダシステム', disabled: true }, // GiShuttlecockを使用

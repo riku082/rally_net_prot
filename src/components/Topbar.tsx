@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FaBell, FaCog, FaUserCircle, FaSignOutAlt, FaFile, FaInfoCircle, FaQuestionCircle } from 'react-icons/fa';
+import { FaBell, FaCog, FaUserCircle, FaSignOutAlt, FaFile, FaInfoCircle } from 'react-icons/fa';
 import { useAuth } from '@/context/AuthContext';
 import { signOutUser } from '@/utils/auth';
 import { useRouter } from 'next/navigation';
@@ -86,14 +86,6 @@ const Topbar: React.FC = () => {
               >
                 <FaInfoCircle className="mr-2" />
                 アドミッションポリシー
-              </Link>
-              <Link
-                href="/guide"
-                onClick={() => setShowDropdown(false)}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-              >
-                <FaQuestionCircle className="mr-2" />
-                ガイド
               </Link>
               <div className="border-t my-1"></div>
               <button

@@ -61,6 +61,7 @@ const PlayersPage: React.FC = () => {
           <Topbar />
           <main className="flex-1 p-6 lg:p-8">
             <div className="max-w-7xl mx-auto space-y-8">
+              <h2 className="text-3xl font-bold text-gray-800">選手管理</h2>
               
               {/* 新規選手登録フォーム */}
               <div className="max-w-2xl mx-auto space-y-6">

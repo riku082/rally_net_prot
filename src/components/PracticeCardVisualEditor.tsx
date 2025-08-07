@@ -4,506 +4,375 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   PlayerPosition, 
   ShotTrajectory, 
-  MovementPattern, 
-  EquipmentPosition, 
   PracticeVisualInfo,
   PracticeMenuType 
 } from '@/types/practice';
-import { FiUser, FiTarget, FiMove, FiMoreVertical } from 'react-icons/fi';
+import { FiChevronLeft, FiTarget, FiMapPin } from 'react-icons/fi';
 import { GiShuttlecock } from 'react-icons/gi';
-import { MdSportsBaseball } from 'react-icons/md';
+import { MdSportsBaseball, MdPerson } from 'react-icons/md';
+import { FaUndo, FaCheck, FaTrash } from 'react-icons/fa';
 
 interface PracticeCardVisualEditorProps {
   visualInfo: PracticeVisualInfo;
   practiceType?: PracticeMenuType;
   onUpdate: (visualInfo: PracticeVisualInfo) => void;
   courtType?: 'singles' | 'doubles';
+  currentStep?: number;
 }
 
-interface DragItem {
-  type: 'player' | 'equipment' | 'shuttle';
-  data: PlayerPosition | EquipmentPosition;
-}
+// コート寸法（ピクセル）- 実際の比率に基づく
+const COURT_WIDTH = 244;  // 6.1m (縮小サイズ)
+const COURT_HEIGHT = 536; // 13.4m (縮小サイズ)
+const COURT_PADDING = 30;
 
-// コート寸法（ピクセル）
-const COURT_WIDTH = 400;
-const COURT_HEIGHT = 600;
-const COURT_PADDING = 40;
+// バドミントンコートの正確な寸法（縮小版）
+const NET_POSITION = COURT_HEIGHT / 2;
+const SHORT_SERVICE_LINE = 79; // ネットから1.98m
+const BACK_BOUNDARY_LINE_SINGLES = 30; // エンドラインから0.76m内側
+const SIDE_ALLEY_WIDTH = 17; // サイドアレー幅0.42m
 
-// グリッドサイズ
-const GRID_SIZE = 20;
+// コートエリアの9分割定義
+const COURT_AREAS = [
+  { id: 'fl', name: '前左', x: 0, y: 0, w: COURT_WIDTH/3, h: COURT_HEIGHT/3 },
+  { id: 'fc', name: '前中', x: COURT_WIDTH/3, y: 0, w: COURT_WIDTH/3, h: COURT_HEIGHT/3 },
+  { id: 'fr', name: '前右', x: 2*COURT_WIDTH/3, y: 0, w: COURT_WIDTH/3, h: COURT_HEIGHT/3 },
+  { id: 'ml', name: '中左', x: 0, y: COURT_HEIGHT/3, w: COURT_WIDTH/3, h: COURT_HEIGHT/3 },
+  { id: 'mc', name: '中央', x: COURT_WIDTH/3, y: COURT_HEIGHT/3, w: COURT_WIDTH/3, h: COURT_HEIGHT/3 },
+  { id: 'mr', name: '中右', x: 2*COURT_WIDTH/3, y: COURT_HEIGHT/3, w: COURT_WIDTH/3, h: COURT_HEIGHT/3 },
+  { id: 'bl', name: '後左', x: 0, y: 2*COURT_HEIGHT/3, w: COURT_WIDTH/3, h: COURT_HEIGHT/3 },
+  { id: 'bc', name: '後中', x: COURT_WIDTH/3, y: 2*COURT_HEIGHT/3, w: COURT_WIDTH/3, h: COURT_HEIGHT/3 },
+  { id: 'br', name: '後右', x: 2*COURT_WIDTH/3, y: 2*COURT_HEIGHT/3, w: COURT_WIDTH/3, h: COURT_HEIGHT/3 },
+];
 
-// コートエリアの色
-const COURT_COLORS = {
-  court: '#00897B',
-  lines: '#FFFFFF',
-  service: '#006D5B',
-  alley: '#00695C',
-  net: '#424242',
-  label: '#E0F2F1'
-};
+// ショットタイプ定義
+const SHOT_TYPES = [
+  { id: 'clear', name: 'クリア', color: '#3B82F6' },
+  { id: 'smash', name: 'スマッシュ', color: '#EF4444' },
+  { id: 'drop', name: 'ドロップ', color: '#10B981' },
+  { id: 'hairpin', name: 'ヘアピン', color: '#8B5CF6' },
+  { id: 'drive', name: 'ドライブ', color: '#F59E0B' },
+  { id: 'push', name: 'プッシュ', color: '#EC4899' },
+  { id: 'receive', name: 'レシーブ', color: '#06B6D4' },
+  { id: 'other', name: 'その他', color: '#6B7280' },
+];
 
 const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   visualInfo,
-  practiceType,
+  practiceType = 'knock_practice',
   onUpdate,
-  courtType = 'singles'
+  courtType = 'singles',
+  currentStep
 }) => {
-  const [selectedItem, setSelectedItem] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [draggedItem, setDraggedItem] = useState<DragItem | null>(null);
-  const [showGrid, setShowGrid] = useState(true);
   const [playerPositions, setPlayerPositions] = useState<PlayerPosition[]>(visualInfo.playerPositions || []);
-  const [equipmentPositions, setEquipmentPositions] = useState<EquipmentPosition[]>(visualInfo.equipmentPositions || []);
   const [shotTrajectories, setShotTrajectories] = useState<ShotTrajectory[]>(visualInfo.shotTrajectories || []);
-  const [movementPatterns, setMovementPatterns] = useState<MovementPattern[]>(visualInfo.movementPatterns || []);
-  const [isDrawingPath, setIsDrawingPath] = useState(false);
-  const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
-  const [drawMode, setDrawMode] = useState<'select' | 'shot' | 'movement'>('select');
+  const [inputMode, setInputMode] = useState<'setup' | 'shot'>('setup');
+  const [shotInputMode, setIshotInputMode] = useState<'pinpoint' | 'area'>('pinpoint');
+  const [currentShot, setCurrentShot] = useState<{ from?: PlayerPosition; areas?: string[]; points?: {x: number, y: number}[] }>({});
+  const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
+  const [selectedPoints, setSelectedPoints] = useState<{x: number, y: number}[]>([]);
+  const [currentShotNumber, setCurrentShotNumber] = useState(1);
+  const [history, setHistory] = useState<any[]>([]);
+  const [isWaitingForPlayer, setIsWaitingForPlayer] = useState(false);
+  const [continuousMode, setContinuousMode] = useState(true); // 連続入力モード
+  const [selectedShotType, setSelectedShotType] = useState<string>('clear'); // デフォルトでクリアを選択
+  const [playerCounter, setPlayerCounter] = useState(1);
+  const [knockerCounter, setKnockerCounter] = useState(1);
+  const [coneCounter, setConeCounter] = useState(1);
   const courtRef = useRef<HTMLDivElement>(null);
-
-  // 練習タイプ別のデフォルト設定
-  const getDefaultMarkers = (type: PracticeMenuType) => {
-    switch (type) {
-      case 'knock_practice':
-        return {
-          players: [
-            { id: 'knocker', x: 200, y: 100, label: 'ノッカー', role: 'knocker' as const, color: '#3B82F6', icon: 'knocker' },
-            { id: 'player1', x: 200, y: 500, label: 'プレイヤー', role: 'player' as const, color: '#10B981' }
-          ],
-          equipment: []
-        };
-      case 'pattern_practice':
-        return {
-          players: [
-            { id: 'player1', x: 100, y: 500, label: 'P1', role: 'player' as const, color: '#10B981' },
-            { id: 'player2', x: 300, y: 500, label: 'P2', role: 'player' as const, color: '#10B981' },
-            { id: 'opponent1', x: 100, y: 100, label: 'O1', role: 'opponent' as const, color: '#EF4444' },
-            { id: 'opponent2', x: 300, y: 100, label: 'O2', role: 'opponent' as const, color: '#EF4444' }
-          ],
-          equipment: []
-        };
-      case 'footwork_practice':
-        return {
-          players: [
-            { id: 'player1', x: 200, y: 300, label: 'プレイヤー', role: 'player' as const, color: '#10B981' }
-          ],
-          equipment: [
-            { id: 'cone1', x: 100, y: 200, type: 'cone', label: '1', color: '#F59E0B' },
-            { id: 'cone2', x: 300, y: 200, type: 'cone', label: '2', color: '#F59E0B' },
-            { id: 'cone3', x: 100, y: 400, type: 'cone', label: '3', color: '#F59E0B' },
-            { id: 'cone4', x: 300, y: 400, type: 'cone', label: '4', color: '#F59E0B' }
-          ]
-        };
-      default:
-        return { players: [], equipment: [] };
-    }
-  };
 
   // 初期配置
   useEffect(() => {
-    if (practiceType && playerPositions.length === 0 && equipmentPositions.length === 0) {
-      const defaults = getDefaultMarkers(practiceType);
-      setPlayerPositions(defaults.players);
-      setEquipmentPositions(defaults.equipment);
+    if (practiceType && playerPositions.length === 0) {
+      const defaults = getDefaultPositions(practiceType);
+      setPlayerPositions(defaults);
     }
   }, [practiceType]);
+  
 
-  // グリッドスナップ
-  const snapToGrid = (value: number) => {
-    return Math.round(value / GRID_SIZE) * GRID_SIZE;
+  // プレイヤー位置とショット軌道の変更を監視して更新
+  useEffect(() => {
+    // 実際に値が変更された場合のみ更新
+    const hasPlayerChanges = JSON.stringify(playerPositions) !== JSON.stringify(visualInfo.playerPositions || []);
+    const hasShotChanges = JSON.stringify(shotTrajectories) !== JSON.stringify(visualInfo.shotTrajectories || []);
+    
+    if ((playerPositions.length > 0 || shotTrajectories.length > 0) && (hasPlayerChanges || hasShotChanges)) {
+      onUpdate({
+        ...visualInfo,
+        playerPositions,
+        shotTrajectories
+      });
+    }
+  }, [playerPositions, shotTrajectories]);
+
+  // デフォルトポジション取得
+  const getDefaultPositions = (type: PracticeMenuType): PlayerPosition[] => {
+    if (type === 'knock_practice') {
+      return [
+        { id: 'knocker', x: COURT_WIDTH/2, y: 50, label: 'ノッカー', role: 'knocker', color: '#3B82F6' },
+        { id: 'player1', x: COURT_WIDTH/2, y: COURT_HEIGHT - 50, label: 'プレイヤー', role: 'player', color: '#10B981' }
+      ];
+    } else {
+      return [
+        { id: 'player1', x: COURT_WIDTH/2 - 40, y: COURT_HEIGHT - 50, label: 'P1', role: 'player', color: '#10B981' },
+        { id: 'player2', x: COURT_WIDTH/2 + 40, y: COURT_HEIGHT - 50, label: 'P2', role: 'player', color: '#10B981' },
+        { id: 'opponent1', x: COURT_WIDTH/2 - 40, y: 50, label: 'O1', role: 'opponent', color: '#EF4444' },
+        { id: 'opponent2', x: COURT_WIDTH/2 + 40, y: 50, label: 'O2', role: 'opponent', color: '#EF4444' }
+      ];
+    }
   };
 
-  // ドラッグ開始
-  const handleDragStart = (e: React.DragEvent, item: DragItem) => {
-    setDraggedItem(item);
-    setIsDragging(true);
+
+  // プレイヤー位置のドラッグ処理
+  const handlePlayerDrag = (e: React.DragEvent, player: PlayerPosition) => {
     e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('playerId', player.id);
   };
 
-  // ドラッグ終了
-  const handleDragEnd = () => {
-    setIsDragging(false);
-    setDraggedItem(null);
-  };
-
-  // ドロップ処理
-  const handleDrop = (e: React.DragEvent) => {
+  const handlePlayerDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    if (!draggedItem || !courtRef.current) return;
+    const playerId = e.dataTransfer.getData('playerId');
+    if (!playerId || !courtRef.current) return;
 
     const rect = courtRef.current.getBoundingClientRect();
-    const x = snapToGrid(e.clientX - rect.left - COURT_PADDING);
-    const y = snapToGrid(e.clientY - rect.top - COURT_PADDING);
+    const x = e.clientX - rect.left - COURT_PADDING;
+    const y = e.clientY - rect.top - COURT_PADDING;
 
-    // 範囲チェック
     if (x < 0 || x > COURT_WIDTH || y < 0 || y > COURT_HEIGHT) return;
 
-    if (draggedItem.type === 'player') {
-      const updatedPosition = { ...(draggedItem.data as PlayerPosition), x, y };
-      setPlayerPositions(prev => 
-        prev.map(p => p.id === updatedPosition.id ? updatedPosition : p)
-      );
-    } else if (draggedItem.type === 'equipment') {
-      const updatedPosition = { ...(draggedItem.data as EquipmentPosition), x, y };
-      setEquipmentPositions(prev => 
-        prev.map(e => e.id === updatedPosition.id ? updatedPosition : e)
-      );
-    }
-
-    updateVisualInfo();
-  };
-
-  // ビジュアル情報を更新
-  const updateVisualInfo = () => {
-    onUpdate({
-      ...visualInfo,
-      playerPositions,
-      equipmentPositions,
-      shotTrajectories,
-      movementPatterns
-    });
-  };
-
-  // アイテムを追加
-  const addItem = (type: 'player' | 'equipment' | 'shuttle') => {
-    const id = `${type}_${Date.now()}`;
-    const x = snapToGrid(COURT_WIDTH / 2);
-    const y = snapToGrid(COURT_HEIGHT / 2);
-
-    if (type === 'player') {
-      const newPlayer: PlayerPosition = {
-        id,
-        x,
-        y,
-        label: `P${playerPositions.length + 1}`,
-        role: 'player',
-        color: '#10B981'
-      };
-      setPlayerPositions([...playerPositions, newPlayer]);
-    } else if (type === 'equipment') {
-      const newEquipment: EquipmentPosition = {
-        id,
-        x,
-        y,
-        type: 'cone',
-        label: `${equipmentPositions.length + 1}`,
-        color: '#F59E0B'
-      };
-      setEquipmentPositions([...equipmentPositions, newEquipment]);
-    }
-
-    updateVisualInfo();
-  };
-
-  // アイテムを削除
-  const deleteItem = (id: string) => {
-    setPlayerPositions(prev => prev.filter(p => p.id !== id));
-    setEquipmentPositions(prev => prev.filter(e => e.id !== id));
-    updateVisualInfo();
-  };
-
-  // プレイヤーマーカーのレンダリング
-  const renderPlayerMarker = (player: PlayerPosition) => {
-    const getIcon = () => {
-      if (player.role === 'knocker') {
-        return <MdSportsBaseball className="w-6 h-6" />;
-      } else if (player.role === 'coach' || player.role === 'feeder') {
-        return <FiUser className="w-6 h-6" />;
-      }
-      return <FiUser className="w-6 h-6" />;
-    };
-
-    const getDirectionRotation = () => {
-      const directions: { [key: string]: number } = {
-        'north': 0,
-        'northeast': 45,
-        'east': 90,
-        'southeast': 135,
-        'south': 180,
-        'southwest': 225,
-        'west': 270,
-        'northwest': 315
-      };
-      return directions[player.direction || 'north'] || 0;
-    };
-
-    return (
-      <div
-        key={player.id}
-        draggable={drawMode === 'select'}
-        onDragStart={(e) => handleDragStart(e, { type: 'player', data: player })}
-        onDragEnd={handleDragEnd}
-        className={`absolute cursor-move ${selectedItem === player.id ? 'ring-2 ring-blue-500' : ''} ${
-          drawMode === 'movement' ? 'cursor-pointer' : ''
-        }`}
-        style={{
-          left: player.x + COURT_PADDING - 20,
-          top: player.y + COURT_PADDING - 20,
-          width: 40,
-          height: 40
-        }}
-        onClick={() => {
-          setSelectedItem(player.id);
-          if (drawMode === 'movement') {
-            setSelectedPlayerId(player.id);
-          }
-        }}
-      >
-        <div 
-          className="w-full h-full rounded-full flex items-center justify-center text-white relative"
-          style={{ backgroundColor: player.color || '#10B981' }}
-        >
-          {getIcon()}
-          {/* 方向矢印 */}
-          {player.direction && (
-            <div
-              className="absolute -top-2 left-1/2 transform -translate-x-1/2"
-              style={{ transform: `translateX(-50%) rotate(${getDirectionRotation()}deg)` }}
-            >
-              <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[10px] border-b-white" />
-            </div>
-          )}
-        </div>
-        <span className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-xs font-medium whitespace-nowrap bg-white px-1 rounded shadow">
-          {player.label}
-        </span>
-        {selectedPlayerId === player.id && drawMode === 'movement' && (
-          <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
-            移動経路を描画中
-          </div>
-        )}
-      </div>
+    setPlayerPositions(prev => 
+      prev.map(p => p.id === playerId ? { ...p, x, y } : p)
     );
-  };
-
-  // 装備マーカーのレンダリング
-  const renderEquipmentMarker = (equipment: EquipmentPosition) => {
-    const getIcon = () => {
-      switch (equipment.type) {
-        case 'cone':
-          return <FiTarget className="w-5 h-5" />;
-        case 'shuttle':
-          return <GiShuttlecock className="w-5 h-5" />;
-        default:
-          return <FiMoreVertical className="w-5 h-5" />;
-      }
-    };
-
-    return (
-      <div
-        key={equipment.id}
-        draggable
-        onDragStart={(e) => handleDragStart(e, { type: 'equipment', data: equipment })}
-        onDragEnd={handleDragEnd}
-        className={`absolute cursor-move ${selectedItem === equipment.id ? 'ring-2 ring-blue-500' : ''}`}
-        style={{
-          left: equipment.x + COURT_PADDING - 15,
-          top: equipment.y + COURT_PADDING - 15,
-          backgroundColor: equipment.color || '#F59E0B',
-          width: 30,
-          height: 30
-        }}
-        onClick={() => setSelectedItem(equipment.id)}
-      >
-        <div className="w-full h-full rounded-full flex items-center justify-center text-white">
-          {getIcon()}
-        </div>
-        {equipment.label && (
-          <span className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-xs font-medium whitespace-nowrap">
-            {equipment.label}
-          </span>
-        )}
-      </div>
-    );
-  };
-
-  // ショット軌道を追加
-  const addShotTrajectory = (from: { x: number; y: number }, to: { x: number; y: number }) => {
-    const newTrajectory: ShotTrajectory = {
-      id: `shot_${Date.now()}`,
-      from,
-      to,
-      shotType: 'clear',
-      order: shotTrajectories.length + 1
-    };
-    setShotTrajectories([...shotTrajectories, newTrajectory]);
-    setSelectedItem(newTrajectory.id);
-    updateVisualInfo();
-  };
-
-  // ショット描画用の状態
-  const [shotStart, setShotStart] = useState<{ x: number; y: number } | null>(null);
-
-  // 移動パターンを追加
-  const addMovementPattern = (playerId: string, path: { x: number; y: number }[]) => {
-    const newPattern: MovementPattern = {
-      id: `movement_${Date.now()}`,
-      playerId,
-      path,
-      timing: movementPatterns.length + 1
-    };
-    setMovementPatterns([...movementPatterns, newPattern]);
-    updateVisualInfo();
   };
 
   // コート上のクリック処理
   const handleCourtClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!courtRef.current || drawMode === 'select') return;
+    if (inputMode !== 'shot' || !courtRef.current) return;
 
     const rect = courtRef.current.getBoundingClientRect();
-    const x = snapToGrid(e.clientX - rect.left - COURT_PADDING);
-    const y = snapToGrid(e.clientY - rect.top - COURT_PADDING);
+    const x = e.clientX - rect.left - COURT_PADDING;
+    const y = e.clientY - rect.top - COURT_PADDING;
 
-    if (drawMode === 'movement' && selectedPlayerId) {
-      if (!isDrawingPath) {
-        setIsDrawingPath(true);
-        setCurrentPath([{ x, y }]);
+    if (x < 0 || x > COURT_WIDTH || y < 0 || y > COURT_HEIGHT) return;
+
+    if (shotInputMode === 'pinpoint') {
+      if (practiceType === 'knock_practice') {
+        if (!isWaitingForPlayer) {
+          // ノック練習: ノッカーからの配球
+          const knocker = playerPositions.find(p => p.role === 'knocker');
+          if (knocker) {
+            saveToHistory();
+            const newShot: ShotTrajectory = {
+              id: `shot_${Date.now()}`,
+              from: { x: knocker.x, y: knocker.y },
+              to: { x, y },
+              shotType: '',
+              shotBy: 'knocker',
+              order: currentShotNumber
+            };
+            setShotTrajectories([...shotTrajectories, newShot]);
+            setCurrentShotNumber(currentShotNumber + 1);
+            setIsWaitingForPlayer(true);
+          }
+        } else {
+          // プレイヤーからの返球を設定
+          setSelectedPoints([{x, y}]);
+        }
       } else {
-        setCurrentPath([...currentPath, { x, y }]);
-      }
-    } else if (drawMode === 'shot') {
-      if (!shotStart) {
-        setShotStart({ x, y });
-      } else {
-        addShotTrajectory(shotStart, { x, y });
-        setShotStart(null);
+        // パターン練習
+        if (!currentShot.from) {
+          // 最初にクリックされた位置に最も近いプレイヤーを探す
+          let nearestPlayer = playerPositions[0];
+          let minDistance = Infinity;
+          
+          playerPositions.forEach(player => {
+            const distance = Math.sqrt(Math.pow(player.x - x, 2) + Math.pow(player.y - y, 2));
+            if (distance < minDistance) {
+              minDistance = distance;
+              nearestPlayer = player;
+            }
+          });
+          
+          if (nearestPlayer && minDistance < 50) {
+            setCurrentShot({ from: nearestPlayer });
+          }
+        } else {
+          setSelectedPoints([{x, y}]);
+        }
       }
     }
   };
 
-  // パス描画を終了
-  const finishPath = () => {
-    if (drawMode === 'movement' && selectedPlayerId && currentPath.length > 1) {
-      addMovementPattern(selectedPlayerId, currentPath);
+  // エリアクリック処理
+  const handleAreaClick = (areaId: string) => {
+    if (inputMode !== 'shot' || shotInputMode !== 'area') return;
+
+    if (selectedAreas.includes(areaId)) {
+      setSelectedAreas(selectedAreas.filter(a => a !== areaId));
+    } else {
+      setSelectedAreas([...selectedAreas, areaId]);
     }
-    setIsDrawingPath(false);
-    setCurrentPath([]);
+  };
+
+  // 一つ前に戻る
+  const undoLastAction = () => {
+    if (history.length === 0) return;
+    
+    const lastState = history[history.length - 1];
+    setShotTrajectories(lastState.shots);
+    setCurrentShotNumber(lastState.shotNumber);
+    setHistory(history.slice(0, -1));
+  };
+
+  // 履歴保存
+  const saveToHistory = () => {
+    setHistory([...history, {
+      shots: [...shotTrajectories],
+      shotNumber: currentShotNumber
+    }]);
+  };
+
+  // コート上に新しいアイテムを追加
+  const addItemToCourt = (type: 'player' | 'knocker' | 'cone') => {
+    const centerX = COURT_WIDTH / 2;
+    const centerY = COURT_HEIGHT / 2;
+    
+    let newItem: PlayerPosition;
+    
+    switch (type) {
+      case 'player':
+        newItem = {
+          id: `player${playerCounter + 1}`,
+          x: centerX + (Math.random() - 0.5) * 100,
+          y: COURT_HEIGHT - 100 + (Math.random() - 0.5) * 50,
+          label: `P${playerCounter + 1}`,
+          role: 'player',
+          color: '#10B981'
+        };
+        setPlayerCounter(playerCounter + 1);
+        break;
+      case 'knocker':
+        newItem = {
+          id: `knocker${knockerCounter + 1}`,
+          x: centerX + (Math.random() - 0.5) * 100,
+          y: 100 + (Math.random() - 0.5) * 50,
+          label: `N${knockerCounter + 1}`,
+          role: 'knocker',
+          color: '#3B82F6'
+        };
+        setKnockerCounter(knockerCounter + 1);
+        break;
+      case 'cone':
+        newItem = {
+          id: `cone${coneCounter}`,
+          x: centerX + (Math.random() - 0.5) * 150,
+          y: centerY + (Math.random() - 0.5) * 150,
+          label: `C${coneCounter}`,
+          role: 'feeder',
+          color: '#F59E0B'
+        };
+        setConeCounter(coneCounter + 1);
+        break;
+    }
+    
+    setPlayerPositions([...playerPositions, newItem]);
+  };
+
+  // アイテムの削除
+  const removeItem = (itemId: string) => {
+    setPlayerPositions(playerPositions.filter(p => p.id !== itemId));
+  };
+
+  // ショットタイプ選択後の処理
+  const handleShotTypeSelect = (shotType: string) => {
+    saveToHistory();
+    
+    if (selectedPoints.length > 0) {
+      // ピンポイントモードでのショット追加
+      if (isWaitingForPlayer) {
+        // プレイヤーからの返球
+        const player = playerPositions.find(p => p.role === 'player');
+        if (player) {
+          const newShots = selectedPoints.map((point, index) => ({
+            id: `shot_${Date.now()}_${index}`,
+            from: { x: player.x, y: player.y },
+            to: point,
+            shotType,
+            shotBy: 'player' as const,
+            order: currentShotNumber + index
+          }));
+          setShotTrajectories([...shotTrajectories, ...newShots]);
+          setCurrentShotNumber(currentShotNumber + selectedPoints.length);
+        }
+      } else {
+        // 通常のショット
+        const newShots = selectedPoints.map((point, index) => ({
+          id: `shot_${Date.now()}_${index}`,
+          from: currentShot.from ? { x: currentShot.from.x, y: currentShot.from.y } : { x: 0, y: 0 },
+          to: point,
+          shotType,
+          shotBy: currentShot.from?.role || 'player' as const,
+          order: currentShotNumber + index
+        }));
+        setShotTrajectories([...shotTrajectories, ...newShots]);
+        setCurrentShotNumber(currentShotNumber + selectedPoints.length);
+      }
+      
+      setSelectedPoints([]);
+      setCurrentShot({});
+      setIsWaitingForPlayer(false);
+      
+    } else if (selectedAreas.length > 0) {
+      // エリアモードでのショット追加
+      selectedAreas.forEach((areaId, index) => {
+        const area = COURT_AREAS.find(a => a.id === areaId);
+        if (area) {
+          let fromPos;
+          if (isWaitingForPlayer) {
+            const player = playerPositions.find(p => p.role === 'player');
+            fromPos = player ? { x: player.x, y: player.y } : { x: 0, y: 0 };
+          } else {
+            fromPos = currentShot.from ? { x: currentShot.from.x, y: currentShot.from.y } : { x: 0, y: 0 };
+          }
+          
+          const newShot: ShotTrajectory = {
+            id: `shot_${Date.now()}_${index}`,
+            from: fromPos,
+            to: { x: area.x + area.w/2, y: area.y + area.h/2 },
+            shotType,
+            shotBy: isWaitingForPlayer ? 'player' : (currentShot.from?.role || 'player'),
+            order: currentShotNumber + index,
+            targetArea: area.id
+          };
+          setShotTrajectories([...shotTrajectories, newShot]);
+        }
+      });
+      
+      setCurrentShotNumber(currentShotNumber + selectedAreas.length);
+      setSelectedAreas([]);
+      setCurrentShot({});
+      setIsWaitingForPlayer(false);
+    }
   };
 
   return (
-    <div className="flex gap-6">
-      {/* マーカーパレット */}
-      <div className="w-48 bg-gray-50 rounded-lg p-4">
-        <h3 className="font-bold text-sm mb-4">ツール</h3>
-        
-        {/* モード選択 */}
-        <div className="mb-4">
-          <h4 className="text-xs font-medium text-gray-600 mb-2">モード</h4>
-          <div className="space-y-1">
-            <button
-              onClick={() => setDrawMode('select')}
-              className={`w-full p-2 text-sm rounded-lg transition-colors ${
-                drawMode === 'select' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              選択モード
-            </button>
-            <button
-              onClick={() => {
-                setDrawMode('shot');
-                setShotStart(null);
-              }}
-              className={`w-full p-2 text-sm rounded-lg transition-colors ${
-                drawMode === 'shot' ? 'bg-purple-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              シャトル軌道
-            </button>
-            <button
-              onClick={() => setDrawMode('movement')}
-              className={`w-full p-2 text-sm rounded-lg transition-colors ${
-                drawMode === 'movement' ? 'bg-green-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              移動経路
-            </button>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <h4 className="text-xs font-medium text-gray-600 mb-2">プレイヤー</h4>
-            <button
-              onClick={() => addItem('player')}
-              className="w-full bg-green-500 text-white rounded-lg p-3 hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
-            >
-              <FiUser className="w-5 h-5" />
-              <span className="text-sm">プレイヤー追加</span>
-            </button>
-          </div>
-
-          <div>
-            <h4 className="text-xs font-medium text-gray-600 mb-2">用具</h4>
-            <button
-              onClick={() => addItem('equipment')}
-              className="w-full bg-orange-500 text-white rounded-lg p-3 hover:bg-orange-600 transition-colors flex items-center justify-center gap-2"
-            >
-              <FiTarget className="w-5 h-5" />
-              <span className="text-sm">コーン追加</span>
-            </button>
-          </div>
-
-          {drawMode === 'movement' && (
-            <div>
-              <h4 className="text-xs font-medium text-gray-600 mb-2">移動経路</h4>
-              {isDrawingPath && (
-                <button
-                  onClick={finishPath}
-                  className="w-full bg-green-600 text-white rounded-lg p-2 hover:bg-green-700 transition-colors text-sm"
-                >
-                  経路を確定
-                </button>
-              )}
-            </div>
-          )}
-
-          <div>
-            <h4 className="text-xs font-medium text-gray-600 mb-2">設定</h4>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={showGrid}
-                onChange={(e) => setShowGrid(e.target.checked)}
-                className="rounded"
-              />
-              <span className="text-sm">グリッド表示</span>
-            </label>
-          </div>
-        </div>
-      </div>
-
-      {/* コートエリア */}
-      <div className="flex-1">
+    <div className="flex gap-4 h-full" onClick={(e) => e.stopPropagation()}>
+      {/* コートエリア（左側） */}
+      <div className="flex-1 flex items-center justify-center">
         <div 
           ref={courtRef}
-          className="relative rounded-lg overflow-hidden shadow-lg"
+          className="relative bg-green-50 rounded-lg shadow-lg cursor-crosshair"
           style={{ 
             width: COURT_WIDTH + COURT_PADDING * 2, 
-            height: COURT_HEIGHT + COURT_PADDING * 2,
-            backgroundColor: '#E8F5E9'
+            height: COURT_HEIGHT + COURT_PADDING * 2
           }}
           onDragOver={(e) => e.preventDefault()}
-          onDrop={handleDrop}
-          onClick={handleCourtClick}
+          onDrop={handlePlayerDrop}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleCourtClick(e);
+          }}
         >
-          {/* グリッド */}
-          {showGrid && (
-            <svg 
-              className="absolute inset-0 pointer-events-none"
-              style={{ width: '100%', height: '100%' }}
-            >
-              <defs>
-                <pattern id="grid" width={GRID_SIZE} height={GRID_SIZE} patternUnits="userSpaceOnUse">
-                  <path d={`M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}`} fill="none" stroke="gray" strokeWidth="0.5" opacity="0.3" />
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#grid)" />
-            </svg>
-          )}
-
-          {/* コートライン */}
+          {/* コート */}
           <svg 
             className="absolute"
             style={{ 
@@ -514,130 +383,63 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             }}
           >
             {/* コート背景 */}
-            <rect x="0" y="0" width={COURT_WIDTH} height={COURT_HEIGHT} fill={COURT_COLORS.court} />
+            <rect x="0" y="0" width={COURT_WIDTH} height={COURT_HEIGHT} fill="#00897B" />
             
-            {/* ダブルスアレー */}
-            {courtType === 'doubles' && (
-              <>
-                <rect x="0" y="0" width="20" height={COURT_HEIGHT} fill={COURT_COLORS.alley} opacity="0.5" />
-                <rect x={COURT_WIDTH - 20} y="0" width="20" height={COURT_HEIGHT} fill={COURT_COLORS.alley} opacity="0.5" />
-              </>
-            )}
-            
-            {/* サービスエリア */}
-            <rect x="0" y="155" width={COURT_WIDTH / 2} height="145" fill={COURT_COLORS.service} opacity="0.3" />
-            <rect x={COURT_WIDTH / 2} y="155" width={COURT_WIDTH / 2} height="145" fill={COURT_COLORS.service} opacity="0.3" />
-            <rect x="0" y="300" width={COURT_WIDTH / 2} height="145" fill={COURT_COLORS.service} opacity="0.3" />
-            <rect x={COURT_WIDTH / 2} y="300" width={COURT_WIDTH / 2} height="145" fill={COURT_COLORS.service} opacity="0.3" />
-            
-            {/* 外枠 */}
-            <rect x="0" y="0" width={COURT_WIDTH} height={COURT_HEIGHT} fill="none" stroke={COURT_COLORS.lines} strokeWidth="3" />
+            {/* コートライン */}
+            <rect x="0" y="0" width={COURT_WIDTH} height={COURT_HEIGHT} fill="none" stroke="white" strokeWidth="2" />
             
             {/* ネット */}
-            <line x1="0" y1={COURT_HEIGHT / 2} x2={COURT_WIDTH} y2={COURT_HEIGHT / 2} stroke={COURT_COLORS.net} strokeWidth="4" />
-            <line x1="0" y1={COURT_HEIGHT / 2 - 2} x2={COURT_WIDTH} y2={COURT_HEIGHT / 2 - 2} stroke={COURT_COLORS.lines} strokeWidth="1" />
-            <line x1="0" y1={COURT_HEIGHT / 2 + 2} x2={COURT_WIDTH} y2={COURT_HEIGHT / 2 + 2} stroke={COURT_COLORS.lines} strokeWidth="1" />
+            <line x1="0" y1={NET_POSITION} x2={COURT_WIDTH} y2={NET_POSITION} stroke="#424242" strokeWidth="3" />
             
             {/* サービスライン */}
-            <line x1="0" y1="155" x2={COURT_WIDTH} y2="155" stroke={COURT_COLORS.lines} strokeWidth="2" />
-            <line x1="0" y1="445" x2={COURT_WIDTH} y2="445" stroke={COURT_COLORS.lines} strokeWidth="2" />
+            <line x1="0" y1={NET_POSITION - SHORT_SERVICE_LINE} x2={COURT_WIDTH} y2={NET_POSITION - SHORT_SERVICE_LINE} stroke="white" strokeWidth="1.5" />
+            <line x1="0" y1={NET_POSITION + SHORT_SERVICE_LINE} x2={COURT_WIDTH} y2={NET_POSITION + SHORT_SERVICE_LINE} stroke="white" strokeWidth="1.5" />
             
-            {/* センターサービスライン */}
-            <line x1={COURT_WIDTH / 2} y1="155" x2={COURT_WIDTH / 2} y2="445" stroke={COURT_COLORS.lines} strokeWidth="2" />
+            {/* バックバウンダリーライン */}
+            <line x1="0" y1={BACK_BOUNDARY_LINE_SINGLES} x2={COURT_WIDTH} y2={BACK_BOUNDARY_LINE_SINGLES} stroke="white" strokeWidth="1.5" />
+            <line x1="0" y1={COURT_HEIGHT - BACK_BOUNDARY_LINE_SINGLES} x2={COURT_WIDTH} y2={COURT_HEIGHT - BACK_BOUNDARY_LINE_SINGLES} stroke="white" strokeWidth="1.5" />
             
-            {/* ダブルス用サイドライン */}
-            {courtType === 'doubles' && (
-              <>
-                <line x1="20" y1="0" x2="20" y2={COURT_HEIGHT} stroke={COURT_COLORS.lines} strokeWidth="2" />
-                <line x1={COURT_WIDTH - 20} y1="0" x2={COURT_WIDTH - 20} y2={COURT_HEIGHT} stroke={COURT_COLORS.lines} strokeWidth="2" />
-              </>
+            {/* センターライン */}
+            <line x1={COURT_WIDTH / 2} y1="0" x2={COURT_WIDTH / 2} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" />
+            
+            {/* サイドライン */}
+            <line x1={SIDE_ALLEY_WIDTH} y1="0" x2={SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" strokeDasharray="5,5" />
+            <line x1={COURT_WIDTH - SIDE_ALLEY_WIDTH} y1="0" x2={COURT_WIDTH - SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" strokeDasharray="5,5" />
+
+            {/* エリア選択モード時のガイド表示 */}
+            {inputMode === 'shot' && shotInputMode === 'area' && (
+              <g>
+                {COURT_AREAS.map(area => (
+                  <rect
+                    key={area.id}
+                    x={area.x}
+                    y={area.y}
+                    width={area.w}
+                    height={area.h}
+                    fill={selectedAreas.includes(area.id) ? '#FCD34D' : 'transparent'}
+                    fillOpacity={0.3}
+                    stroke="#FCD34D"
+                    strokeWidth="1"
+                    strokeDasharray="3,3"
+                    className="cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAreaClick(area.id);
+                    }}
+                  />
+                ))}
+              </g>
             )}
-            
-            {/* コートエリアラベル */}
-            <text x="10" y="25" fill={COURT_COLORS.label} fontSize="12" fontWeight="bold">相手コート</text>
-            <text x="10" y={COURT_HEIGHT - 10} fill={COURT_COLORS.label} fontSize="12" fontWeight="bold">自分コート</text>
           </svg>
 
           {/* ショット軌道 */}
-          {shotTrajectories.map((trajectory) => (
-            <svg
-              key={trajectory.id}
-              className="absolute pointer-events-none"
-              style={{
-                left: COURT_PADDING,
-                top: COURT_PADDING,
-                width: COURT_WIDTH,
-                height: COURT_HEIGHT
-              }}
-            >
-              <defs>
-                <marker
-                  id={`arrow-${trajectory.id}`}
-                  markerWidth="10"
-                  markerHeight="10"
-                  refX="8"
-                  refY="3"
-                  orient="auto"
-                  markerUnits="strokeWidth"
-                >
-                  <path d="M0,0 L0,6 L9,3 z" fill="#FF5722" />
-                </marker>
-              </defs>
-              <line
-                x1={trajectory.from.x}
-                y1={trajectory.from.y}
-                x2={trajectory.to.x}
-                y2={trajectory.to.y}
-                stroke="#FF5722"
-                strokeWidth="3"
-                markerEnd={`url(#arrow-${trajectory.id})`}
-                strokeDasharray="5,5"
-              >
-                <animate
-                  attributeName="stroke-dashoffset"
-                  from="10"
-                  to="0"
-                  dur="1s"
-                  repeatCount="indefinite"
-                />
-              </line>
-              <circle cx={trajectory.from.x} cy={trajectory.from.y} r="8" fill="#FFE082" stroke="#F57C00" strokeWidth="2" />
-              <text
-                x={trajectory.from.x + (trajectory.to.x - trajectory.from.x) / 2}
-                y={trajectory.from.y + (trajectory.to.y - trajectory.from.y) / 2 - 10}
-                fill="#D84315"
-                fontSize="12"
-                fontWeight="bold"
-                textAnchor="middle"
-              >
-                {trajectory.shotType}
-              </text>
-            </svg>
-          ))}
-
-          {/* ショット軌道をクリックで選択 */}
-          {shotTrajectories.map((trajectory) => (
-            <div
-              key={`clickable-${trajectory.id}`}
-              className="absolute cursor-pointer"
-              style={{
-                left: Math.min(trajectory.from.x, trajectory.to.x) + COURT_PADDING - 10,
-                top: Math.min(trajectory.from.y, trajectory.to.y) + COURT_PADDING - 10,
-                width: Math.abs(trajectory.to.x - trajectory.from.x) + 20,
-                height: Math.abs(trajectory.to.y - trajectory.from.y) + 20
-              }}
-              onClick={() => setSelectedItem(trajectory.id)}
-            />
-          ))}
-
-          {/* 移動経路 */}
-          {movementPatterns.map((pattern) => {
-            const player = playerPositions.find(p => p.id === pattern.playerId);
-            if (!player || pattern.path.length < 2) return null;
+          {shotTrajectories.map((shot) => {
+            const shotType = SHOT_TYPES.find(t => t.id === shot.shotType);
+            const color = shot.shotBy === 'knocker' ? '#3B82F6' : (shotType?.color || '#10B981');
             
             return (
               <svg
-                key={pattern.id}
+                key={shot.id}
                 className="absolute pointer-events-none"
                 style={{
                   left: COURT_PADDING,
@@ -648,433 +450,387 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               >
                 <defs>
                   <marker
-                    id={`movement-arrow-${pattern.id}`}
+                    id={`arrow-${shot.id}`}
                     markerWidth="10"
                     markerHeight="10"
                     refX="8"
                     refY="3"
                     orient="auto"
-                    markerUnits="strokeWidth"
                   >
-                    <path d="M0,0 L0,6 L9,3 z" fill={player.color || '#10B981'} />
+                    <path d="M0,0 L0,6 L9,3 z" fill={color} />
                   </marker>
                 </defs>
-                <polyline
-                  points={pattern.path.map(p => `${p.x},${p.y}`).join(' ')}
-                  fill="none"
-                  stroke={player.color || '#10B981'}
+                
+                <line
+                  x1={shot.from.x}
+                  y1={shot.from.y}
+                  x2={shot.to.x}
+                  y2={shot.to.y}
+                  stroke={color}
                   strokeWidth="2"
-                  markerEnd={`url(#movement-arrow-${pattern.id})`}
-                  strokeDasharray="3,3"
-                  opacity="0.7"
+                  markerEnd={`url(#arrow-${shot.id})`}
+                />
+                
+                {/* ショット番号 */}
+                <circle
+                  cx={shot.from.x + (shot.to.x - shot.from.x) / 2}
+                  cy={shot.from.y + (shot.to.y - shot.from.y) / 2}
+                  r="12"
+                  fill="white"
+                  stroke={color}
+                  strokeWidth="2"
+                />
+                <text
+                  x={shot.from.x + (shot.to.x - shot.from.x) / 2}
+                  y={shot.from.y + (shot.to.y - shot.from.y) / 2 + 4}
+                  textAnchor="middle"
+                  fontSize="12"
+                  fontWeight="bold"
+                  fill={color}
                 >
-                  <animate
-                    attributeName="stroke-dashoffset"
-                    from="6"
-                    to="0"
-                    dur="0.5s"
-                    repeatCount="indefinite"
-                  />
-                </polyline>
-                {pattern.path.map((point, index) => (
-                  <circle
-                    key={index}
-                    cx={point.x}
-                    cy={point.y}
-                    r="3"
-                    fill={player.color || '#10B981'}
-                    opacity="0.5"
-                  />
-                ))}
+                  {shot.order}
+                </text>
               </svg>
             );
           })}
 
-          {/* 描画中のパス */}
-          {isDrawingPath && currentPath.length > 0 && (
-            <svg
-              className="absolute pointer-events-none"
+          {/* 選択中のポイント表示 */}
+          {selectedPoints.map((point, index) => (
+            <div
+              key={index}
+              className="absolute w-4 h-4 bg-yellow-400 rounded-full border-2 border-white"
               style={{
-                left: COURT_PADDING,
-                top: COURT_PADDING,
-                width: COURT_WIDTH,
-                height: COURT_HEIGHT
+                left: point.x + COURT_PADDING - 8,
+                top: point.y + COURT_PADDING - 8
               }}
-            >
-              <polyline
-                points={currentPath.map(p => `${p.x},${p.y}`).join(' ')}
-                fill="none"
-                stroke="#3B82F6"
-                strokeWidth="2"
-                strokeDasharray="5,5"
-                opacity="0.7"
-              />
-              {currentPath.map((point, index) => (
-                <circle
-                  key={index}
-                  cx={point.x}
-                  cy={point.y}
-                  r="3"
-                  fill="#3B82F6"
-                />
-              ))}
-            </svg>
-          )}
+            />
+          ))}
 
-          {/* ショット描画中のライン */}
-          {shotStart && drawMode === 'shot' && (
-            <svg
-              className="absolute pointer-events-none"
+          {/* プレイヤー表示 */}
+          {playerPositions.map(player => (
+            <div
+              key={player.id}
+              draggable={inputMode === 'setup'}
+              onDragStart={(e) => handlePlayerDrag(e, player)}
+              className={`absolute w-10 h-10 rounded-full flex items-center justify-center text-white cursor-move shadow-lg ${
+                inputMode !== 'setup' ? 'cursor-default' : ''
+              }`}
               style={{
-                left: COURT_PADDING,
-                top: COURT_PADDING,
-                width: COURT_WIDTH,
-                height: COURT_HEIGHT
+                left: player.x + COURT_PADDING - 20,
+                top: player.y + COURT_PADDING - 20,
+                backgroundColor: player.color || '#10B981'
               }}
-            >
-              <circle cx={shotStart.x} cy={shotStart.y} r="8" fill="#FFE082" stroke="#F57C00" strokeWidth="2" />
-              <text
-                x={shotStart.x}
-                y={shotStart.y - 15}
-                fill="#D84315"
-                fontSize="12"
-                fontWeight="bold"
-                textAnchor="middle"
-              >
-                開始点
-              </text>
-            </svg>
-          )}
-
-          {/* プレイヤーマーカー */}
-          {playerPositions.map(renderPlayerMarker)}
-
-          {/* 装備マーカー */}
-          {equipmentPositions.map(renderEquipmentMarker)}
-        </div>
-      </div>
-
-      {/* 詳細設定パネル */}
-      {selectedItem && (
-        <div className="w-64 bg-gray-50 rounded-lg p-4">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-sm">詳細設定</h3>
-            <button
-              onClick={() => {
-                deleteItem(selectedItem);
-                const shot = shotTrajectories.find(s => s.id === selectedItem);
-                if (shot) {
-                  setShotTrajectories(prev => prev.filter(s => s.id !== selectedItem));
-                  updateVisualInfo();
+              onClick={(e) => {
+                e.stopPropagation();
+                if (inputMode === 'shot' && shotInputMode === 'pinpoint' && !currentShot.from && player.role !== 'feeder') {
+                  setCurrentShot({ from: player });
                 }
               }}
-              className="text-red-500 hover:text-red-700 text-sm"
             >
-              削除
+              {player.role === 'knocker' ? (
+                <MdSportsBaseball className="w-5 h-5" />
+              ) : player.role === 'feeder' ? (
+                <FiTarget className="w-5 h-5" />
+              ) : (
+                <MdPerson className="w-5 h-5" />
+              )}
+              <div className="absolute -bottom-6 text-xs font-medium text-gray-700 whitespace-nowrap">
+                {player.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ツールボックス（右側） */}
+      <div className="w-80 bg-gray-50 rounded-lg p-4 flex flex-col gap-4 overflow-y-auto">
+        {/* ヘッダー */}
+        <div>
+          <h3 className="text-lg font-bold mb-2">練習カード作成</h3>
+          <div className="text-sm text-gray-600">
+            {practiceType === 'knock_practice' ? 'ノック練習' : 'パターン練習'}
+          </div>
+        </div>
+
+        {/* 入力モード切替 */}
+        <div className="space-y-2">
+          <div className="text-sm font-medium">入力モード</div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setInputMode('setup');
+              }}
+              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                inputMode === 'setup' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <MdPerson className="inline w-4 h-4 mr-1" />
+              配置
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setInputMode('shot');
+              }}
+              disabled={playerPositions.length === 0}
+              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                inputMode === 'shot' 
+                  ? 'bg-purple-500 text-white' 
+                  : 'bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed'
+              }`}
+            >
+              <GiShuttlecock className="inline w-4 h-4 mr-1" />
+              ショット
             </button>
           </div>
-
-          {/* 選択されたアイテムの詳細設定フォーム */}
-          <SelectedItemSettings
-            selectedItem={selectedItem}
-            playerPositions={playerPositions}
-            equipmentPositions={equipmentPositions}
-            shotTrajectories={shotTrajectories}
-            onUpdatePlayer={(id, updates) => {
-              setPlayerPositions(prev => 
-                prev.map(p => p.id === id ? { ...p, ...updates } : p)
-              );
-              updateVisualInfo();
-            }}
-            onUpdateEquipment={(id, updates) => {
-              setEquipmentPositions(prev => 
-                prev.map(e => e.id === id ? { ...e, ...updates } : e)
-              );
-              updateVisualInfo();
-            }}
-            onUpdateShot={(id, updates) => {
-              setShotTrajectories(prev => 
-                prev.map(s => s.id === id ? { ...s, ...updates } : s)
-              );
-              updateVisualInfo();
-            }}
-            onDeleteShot={(id) => {
-              setShotTrajectories(prev => prev.filter(s => s.id !== id));
-              updateVisualInfo();
-            }}
-          />
         </div>
-      )}
+
+        {/* 配置モード */}
+        {inputMode === 'setup' && (
+          <>
+            <div className="space-y-2">
+              <div className="text-sm font-medium">コートに追加するアイテム</div>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addItemToCourt('player');
+                  }}
+                  className="p-4 bg-white border-2 border-green-300 rounded-lg hover:bg-green-50 transition-all flex flex-col items-center gap-2"
+                >
+                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                    <MdPerson className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xs font-medium">プレイヤー</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addItemToCourt('knocker');
+                  }}
+                  className="p-4 bg-white border-2 border-blue-300 rounded-lg hover:bg-blue-50 transition-all flex flex-col items-center gap-2"
+                >
+                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                    <MdSportsBaseball className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xs font-medium">ノッカー</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addItemToCourt('cone');
+                  }}
+                  className="p-4 bg-white border-2 border-orange-300 rounded-lg hover:bg-orange-50 transition-all flex flex-col items-center gap-2"
+                >
+                  <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
+                    <FiTarget className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xs font-medium">コーン</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 配置済みアイテム */}
+            <div className="space-y-2">
+              <div className="text-sm font-medium">配置済みアイテム</div>
+              <div className="bg-white rounded-lg p-3 max-h-40 overflow-y-auto">
+                {playerPositions.length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-2">アイテムを追加してください</p>
+                ) : (
+                  <div className="space-y-2">
+                    {playerPositions.map(item => (
+                      <div key={item.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-white" 
+                            style={{ backgroundColor: item.color }}
+                          >
+                            {item.role === 'knocker' ? (
+                              <MdSportsBaseball className="w-4 h-4" />
+                            ) : item.role === 'feeder' ? (
+                              <FiTarget className="w-4 h-4" />
+                            ) : (
+                              <MdPerson className="w-4 h-4" />
+                            )}
+                          </div>
+                          <span className="text-sm font-medium">{item.label}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeItem(item.id);
+                          }}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <FaTrash className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 配置完了ボタン */}
+            {playerPositions.length > 0 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setInputMode('shot');
+                }}
+                className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all font-medium"
+              >
+                配置完了してショット入力へ →
+              </button>
+            )}
+          </>
+        )}
+
+        {/* ショット入力モード */}
+        {inputMode === 'shot' && (
+          <>
+            {/* 現在の状態表示 */}
+            <div className="bg-blue-50 p-3 rounded-lg text-sm">
+              <div className="font-medium text-blue-800 mb-1">現在の入力状態</div>
+              <div className="text-blue-600">
+                {practiceType === 'knock_practice' ? (
+                  isWaitingForPlayer ? 
+                    '🎾 プレイヤーからの返球を設定してください' :
+                    '🏸 ノッカーからの配球位置をクリック'
+                ) : (
+                  currentShot.from ? 
+                    `👤 ${currentShot.from.label}からのショット着地点を選択` :
+                    '👤 ショットを打つプレイヤーを選択'
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-sm font-medium">着地点選択</div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIshotInputMode('pinpoint');
+                  }}
+                  className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    shotInputMode === 'pinpoint' 
+                      ? 'bg-green-500 text-white' 
+                      : 'bg-white text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <FiMapPin className="inline w-4 h-4 mr-1" />
+                  ピンポイント
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIshotInputMode('area');
+                  }}
+                  disabled={practiceType === 'knock_practice' && !isWaitingForPlayer}
+                  className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    shotInputMode === 'area' 
+                      ? 'bg-orange-500 text-white' 
+                      : 'bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed'
+                  }`}
+                >
+                  <FiTarget className="inline w-4 h-4 mr-1" />
+                  エリア
+                </button>
+              </div>
+            </div>
+
+            {/* ショットタイプ選択 */}
+            {(selectedPoints.length > 0 || selectedAreas.length > 0) && (
+              <div className="space-y-2">
+                <div className="text-sm font-medium">
+                  ショットタイプ
+                  {isWaitingForPlayer && <span className="text-xs text-purple-600 ml-2">(プレイヤー返球)</span>}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {practiceType === 'knock_practice' && isWaitingForPlayer ? (
+                    // ノック練習でプレイヤー返球時はショットタイプ選択必須
+                    SHOT_TYPES.map(type => (
+                      <button
+                        type="button"
+                        key={type.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShotTypeSelect(type.id);
+                        }}
+                        className="px-3 py-2 bg-white rounded-lg hover:bg-gray-100 text-sm font-medium border-2 transition-all"
+                        style={{ borderColor: type.color }}
+                      >
+                        {type.name}
+                      </button>
+                    ))
+                  ) : (
+                    // その他の場合
+                    <>
+                      {SHOT_TYPES.map(type => (
+                        <button
+                          type="button"
+                          key={type.id}
+                          onClick={(e) => {
+                          e.stopPropagation();
+                          handleShotTypeSelect(type.id);
+                        }}
+                          className="px-3 py-2 bg-white rounded-lg hover:bg-gray-100 text-sm font-medium border"
+                          style={{ borderColor: type.color }}
+                        >
+                          {type.name}
+                        </button>
+                      ))}
+                      {practiceType === 'knock_practice' && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleShotTypeSelect('');
+                          }}
+                          className="col-span-2 px-3 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 text-sm font-medium"
+                        >
+                          ショットタイプなし
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* アクションボタン */}
+        <div className="flex gap-2 mt-auto">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              undoLastAction();
+            }}
+            disabled={history.length === 0}
+            className="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            <FaUndo className="inline w-4 h-4 mr-2" />
+            一つ前に戻る
+          </button>
+        </div>
+      </div>
     </div>
   );
-};
-
-// 選択されたアイテムの設定コンポーネント
-interface SelectedItemSettingsProps {
-  selectedItem: string;
-  playerPositions: PlayerPosition[];
-  equipmentPositions: EquipmentPosition[];
-  shotTrajectories: ShotTrajectory[];
-  onUpdatePlayer: (id: string, updates: Partial<PlayerPosition>) => void;
-  onUpdateEquipment: (id: string, updates: Partial<EquipmentPosition>) => void;
-  onUpdateShot: (id: string, updates: Partial<ShotTrajectory>) => void;
-  onDeleteShot: (id: string) => void;
-}
-
-const SelectedItemSettings: React.FC<SelectedItemSettingsProps> = ({
-  selectedItem,
-  playerPositions,
-  equipmentPositions,
-  shotTrajectories,
-  onUpdatePlayer,
-  onUpdateEquipment,
-  onUpdateShot,
-  onDeleteShot
-}) => {
-  const player = playerPositions.find(p => p.id === selectedItem);
-  const equipment = equipmentPositions.find(e => e.id === selectedItem);
-  const shot = shotTrajectories.find(s => s.id === selectedItem);
-
-  if (player) {
-    return (
-      <div className="space-y-4">
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">ラベル</label>
-          <input
-            type="text"
-            value={player.label}
-            onChange={(e) => onUpdatePlayer(player.id, { label: e.target.value })}
-            className="w-full px-3 py-2 border rounded-md text-sm"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">役割</label>
-          <select
-            value={player.role || 'player'}
-            onChange={(e) => onUpdatePlayer(player.id, { role: e.target.value as any })}
-            className="w-full px-3 py-2 border rounded-md text-sm"
-          >
-            <option value="player">プレイヤー</option>
-            <option value="opponent">相手</option>
-            <option value="coach">コーチ</option>
-            <option value="feeder">フィーダー</option>
-            <option value="knocker">ノッカー</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">色</label>
-          <input
-            type="color"
-            value={player.color || '#10B981'}
-            onChange={(e) => onUpdatePlayer(player.id, { color: e.target.value })}
-            className="w-full h-10 rounded-md cursor-pointer"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">X座標</label>
-            <input
-              type="number"
-              value={player.x}
-              onChange={(e) => onUpdatePlayer(player.id, { x: Number(e.target.value) })}
-              min={0}
-              max={COURT_WIDTH}
-              step={GRID_SIZE}
-              className="w-full px-3 py-2 border rounded-md text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Y座標</label>
-            <input
-              type="number"
-              value={player.y}
-              onChange={(e) => onUpdatePlayer(player.id, { y: Number(e.target.value) })}
-              min={0}
-              max={COURT_HEIGHT}
-              step={GRID_SIZE}
-              className="w-full px-3 py-2 border rounded-md text-sm"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">向き</label>
-          <select
-            value={player.direction || 'north'}
-            onChange={(e) => onUpdatePlayer(player.id, { direction: e.target.value as any })}
-            className="w-full px-3 py-2 border rounded-md text-sm"
-          >
-            <option value="north">北（↑）</option>
-            <option value="northeast">北東（↗）</option>
-            <option value="east">東（→）</option>
-            <option value="southeast">南東（↘）</option>
-            <option value="south">南（↓）</option>
-            <option value="southwest">南西（↙）</option>
-            <option value="west">西（←）</option>
-            <option value="northwest">北西（↖）</option>
-          </select>
-        </div>
-      </div>
-    );
-  }
-
-  if (equipment) {
-    return (
-      <div className="space-y-4">
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">ラベル</label>
-          <input
-            type="text"
-            value={equipment.label || ''}
-            onChange={(e) => onUpdateEquipment(equipment.id, { label: e.target.value })}
-            className="w-full px-3 py-2 border rounded-md text-sm"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">タイプ</label>
-          <select
-            value={equipment.type}
-            onChange={(e) => onUpdateEquipment(equipment.id, { type: e.target.value })}
-            className="w-full px-3 py-2 border rounded-md text-sm"
-          >
-            <option value="cone">コーン</option>
-            <option value="shuttle">シャトル</option>
-            <option value="target">ターゲット</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">色</label>
-          <input
-            type="color"
-            value={equipment.color || '#F59E0B'}
-            onChange={(e) => onUpdateEquipment(equipment.id, { color: e.target.value })}
-            className="w-full h-10 rounded-md cursor-pointer"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">X座標</label>
-            <input
-              type="number"
-              value={equipment.x}
-              onChange={(e) => onUpdateEquipment(equipment.id, { x: Number(e.target.value) })}
-              min={0}
-              max={COURT_WIDTH}
-              step={GRID_SIZE}
-              className="w-full px-3 py-2 border rounded-md text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Y座標</label>
-            <input
-              type="number"
-              value={equipment.y}
-              onChange={(e) => onUpdateEquipment(equipment.id, { y: Number(e.target.value) })}
-              min={0}
-              max={COURT_HEIGHT}
-              step={GRID_SIZE}
-              className="w-full px-3 py-2 border rounded-md text-sm"
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (shot) {
-    return (
-      <div className="space-y-4">
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">ショットタイプ</label>
-          <select
-            value={shot.shotType}
-            onChange={(e) => onUpdateShot(shot.id, { shotType: e.target.value })}
-            className="w-full px-3 py-2 border rounded-md text-sm"
-          >
-            <option value="clear">クリア</option>
-            <option value="smash">スマッシュ</option>
-            <option value="drop">ドロップ</option>
-            <option value="drive">ドライブ</option>
-            <option value="net">ネット</option>
-            <option value="lift">ロブ</option>
-          </select>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">開始X</label>
-            <input
-              type="number"
-              value={shot.from.x}
-              onChange={(e) => onUpdateShot(shot.id, { from: { ...shot.from, x: Number(e.target.value) } })}
-              min={0}
-              max={COURT_WIDTH}
-              step={GRID_SIZE}
-              className="w-full px-3 py-2 border rounded-md text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">開始Y</label>
-            <input
-              type="number"
-              value={shot.from.y}
-              onChange={(e) => onUpdateShot(shot.id, { from: { ...shot.from, y: Number(e.target.value) } })}
-              min={0}
-              max={COURT_HEIGHT}
-              step={GRID_SIZE}
-              className="w-full px-3 py-2 border rounded-md text-sm"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">終了X</label>
-            <input
-              type="number"
-              value={shot.to.x}
-              onChange={(e) => onUpdateShot(shot.id, { to: { ...shot.to, x: Number(e.target.value) } })}
-              min={0}
-              max={COURT_WIDTH}
-              step={GRID_SIZE}
-              className="w-full px-3 py-2 border rounded-md text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">終了Y</label>
-            <input
-              type="number"
-              value={shot.to.y}
-              onChange={(e) => onUpdateShot(shot.id, { to: { ...shot.to, y: Number(e.target.value) } })}
-              min={0}
-              max={COURT_HEIGHT}
-              step={GRID_SIZE}
-              className="w-full px-3 py-2 border rounded-md text-sm"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">説明（オプション）</label>
-          <input
-            type="text"
-            value={shot.description || ''}
-            onChange={(e) => onUpdateShot(shot.id, { description: e.target.value })}
-            className="w-full px-3 py-2 border rounded-md text-sm"
-            placeholder="例: 深いクリアで相手を後方に押し込む"
-          />
-        </div>
-      </div>
-    );
-  }
-
-  return null;
 };
 
 export default PracticeCardVisualEditor;
