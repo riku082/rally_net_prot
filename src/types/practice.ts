@@ -122,7 +122,6 @@ export interface PracticeCard {
   practiceType?: PracticeMenuType; // 練習メニュータイプ
   drill: PracticeDrill; // 単一の練習メニュー
   difficulty: 'beginner' | 'intermediate' | 'advanced';
-  equipment: string[]; // 必要な用具
   courtInfo?: PracticeCourtInfo; // コート情報
   visualInfo?: PracticeVisualInfo; // ビジュアル情報（新規追加）
   notes?: string;
@@ -282,8 +281,9 @@ export interface ShotTrajectory {
   id: string;
   from: { x: number; y: number };
   to: { x: number; y: number };
-  shotType: string; // 'smash', 'clear', 'drop' など
+  shotType: string; // 'smash', 'clear', 'drop' など。複数の場合はカンマ区切り
   order?: number; // 練習手順での順序
+  sequenceNumber?: number; // シーケンス番号（複数ショットをグループ化）
   description?: string;
 }
 

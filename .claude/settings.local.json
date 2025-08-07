@@ -1,21 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx next lint:*)",
-      "Bash(grep:*)",
-      "Bash(npm run build:*)",
-      "Bash(npm run lint)",
-      "Bash(rm:*)",
-      "Bash(npm run dev:*)",
-      "Bash(vercel:*)",
+      "Bash(ls:*)",
       "Bash(find:*)",
-      "Bash(git commit:*)",
-      "Bash(git add:*)",
-      "Bash(git push:*)",
-      "Bash(node:*)",
       "Bash(npx tsc:*)",
-      "Bash(mkdir:*)",
-      "Bash(touch:*)"
+      "Bash(npm run lint)",
+      "Bash(pkill:*)",
+      "Bash(true)",
+      "Bash(npm run dev:*)",
+      "Bash(rm:*)",
+      "Bash(grep:*)",
+      "Bash(npx eslint:*)",
+      "Bash(awk:*)",
+      "Bash(sed:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": []
   }

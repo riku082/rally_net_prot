@@ -10,15 +10,14 @@ import PracticeDayDetail from '@/components/PracticeDayDetail';
 import PracticeList from '@/components/PracticeList';
 import PracticeForm from '@/components/PracticeForm';
 import PracticeCardList from '@/components/PracticeCardList';
-import PracticeCardCreationSelector from '@/components/PracticeCardCreationSelector';
-import PracticeAnalyticsCharts from '@/components/PracticeAnalyticsCharts';
+import PracticeCardForm from '@/components/PracticeCardForm';
 import { Practice, PracticeCard } from '@/types/practice';
 import { firestoreDb } from '@/utils/db';
 import { useAuth } from '@/context/AuthContext';
 import { useSearchParams } from 'next/navigation';
-import { FaCalendarAlt, FaBook, FaLayerGroup, FaPlus, FaChartLine } from 'react-icons/fa';
+import { FaCalendarAlt, FaBook, FaLayerGroup, FaPlus } from 'react-icons/fa';
 
-type ViewMode = 'calendar' | 'records' | 'cards' | 'analytics';
+type ViewMode = 'calendar' | 'records' | 'cards';
 
 function PracticeManagementContent() {
   const { user } = useAuth();
@@ -34,7 +33,7 @@ function PracticeManagementContent() {
   // UI状態  
   const [activeView, setActiveView] = useState<ViewMode>(() => {
     const tab = searchParams.get('tab');
-    if (tab === 'cards' || tab === 'records' || tab === 'calendar' || tab === 'analytics') {
+    if (tab === 'cards' || tab === 'records' || tab === 'calendar') {
       return tab as ViewMode;
     }
     return 'calendar';
@@ -140,7 +139,6 @@ function PracticeManagementContent() {
             reps: 20
           },
           difficulty: 'beginner',
-          equipment: ['シャトル', 'ラケット'],
           courtInfo: {
             targetAreas: ['service_box_left', 'service_box_right', 'backcourt_left', 'backcourt_center'],
             focusArea: 'backcourt_center',
@@ -171,7 +169,6 @@ function PracticeManagementContent() {
             reps: 15
           },
           difficulty: 'intermediate',
-          equipment: ['シャトル', 'ラケット'],
           courtInfo: {
             targetAreas: ['backcourt_center', 'backcourt_left', 'backcourt_right'],
             focusArea: 'backcourt_center',
@@ -202,7 +199,6 @@ function PracticeManagementContent() {
             reps: 10
           },
           difficulty: 'advanced',
-          equipment: ['シャトル', 'ラケット'],
           courtInfo: {
             targetAreas: ['frontcourt_left_own', 'frontcourt_center_own', 'frontcourt_right_own'],
             focusArea: 'frontcourt_center_own',
@@ -424,7 +420,6 @@ function PracticeManagementContent() {
     { id: 'calendar', label: 'カレンダー', icon: <FaCalendarAlt className="w-4 h-4" /> },
     { id: 'records', label: '記録一覧', icon: <FaBook className="w-4 h-4" /> },
     { id: 'cards', label: 'カード管理', icon: <FaLayerGroup className="w-4 h-4" /> },
-    { id: 'analytics', label: '練習分析', icon: <FaChartLine className="w-4 h-4" /> },
   ];
 
   if (isLoading) {
@@ -458,21 +453,30 @@ function PracticeManagementContent() {
           <Topbar />
           <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8">
             <div className="max-w-7xl mx-auto space-y-6">
-              {/* ヘッダーセクション */}
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl sm:rounded-3xl opacity-5"></div>
-                <div className="relative p-4 sm:p-6 md:p-8">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-                    <div>
-                      <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                        練習管理
-                      </h1>
-                      <p className="text-gray-600 text-sm sm:text-base md:text-lg">
-                        練習記録、カード、スケジュールを一元管理して効率的な練習を実現
-                      </p>
+
+
+              {/* タブナビゲーション */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20">
+                <div className="border-b border-gray-200">
+                  <div className="flex justify-between items-center px-3 sm:px-6">
+                    <div className="flex space-x-2 sm:space-x-4 md:space-x-8 overflow-x-auto">
+                      {tabs.map(tab => (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveView(tab.id as ViewMode)}
+                          className={`flex items-center space-x-1 sm:space-x-2 py-3 sm:py-4 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
+                            activeView === tab.id
+                              ? 'border-blue-500 text-blue-600'
+                              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                          }`}
+                        >
+                          <span className="w-3 h-3 sm:w-4 sm:h-4">{tab.icon}</span>
+                          <span className="text-xs sm:text-sm">{tab.label}</span>
+                        </button>
+                      ))}
                     </div>
                     
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2">
                       {activeView === 'records' && (
                         <button
                           onClick={() => handleCreatePractice()}
@@ -492,29 +496,6 @@ function PracticeManagementContent() {
                         </button>
                       )}
                     </div>
-                  </div>
-                </div>
-              </div>
-
-
-              {/* タブナビゲーション */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20">
-                <div className="border-b border-gray-200">
-                  <div className="flex space-x-2 sm:space-x-4 md:space-x-8 px-3 sm:px-6 overflow-x-auto">
-                    {tabs.map(tab => (
-                      <button
-                        key={tab.id}
-                        onClick={() => setActiveView(tab.id as ViewMode)}
-                        className={`flex items-center space-x-1 sm:space-x-2 py-3 sm:py-4 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
-                          activeView === tab.id
-                            ? 'border-blue-500 text-blue-600'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        }`}
-                      >
-                        <span className="w-3 h-3 sm:w-4 sm:h-4">{tab.icon}</span>
-                        <span className="text-xs sm:text-sm">{tab.label}</span>
-                      </button>
-                    ))}
                   </div>
                 </div>
 
@@ -572,9 +553,6 @@ function PracticeManagementContent() {
                     </div>
                   )}
 
-                  {activeView === 'analytics' && (
-                    <PracticeAnalyticsCharts practices={practices} />
-                  )}
                 </div>
               </div>
             </div>
@@ -615,15 +593,21 @@ function PracticeManagementContent() {
       )}
 
       {showCardForm && (
-        <PracticeCardCreationSelector
-          card={editingCard || undefined}
-          onSave={handleSavePracticeCard}
-          onCancel={() => {
-            setShowCardForm(false);
-            setEditingCard(null);
-          }}
-          isLoading={isSaving}
-        />
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 overflow-y-auto">
+          <div className="min-h-screen flex items-start justify-center p-4 pt-20 pb-20" onClick={(e) => e.stopPropagation()}>
+            <div className="max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
+              <PracticeCardForm
+                card={editingCard || undefined}
+                onSave={handleSavePracticeCard}
+                onCancel={() => {
+                  setShowCardForm(false);
+                  setEditingCard(null);
+                }}
+                isLoading={isSaving}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </AuthGuard>
   );

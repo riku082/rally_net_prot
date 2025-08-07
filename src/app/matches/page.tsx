@@ -131,9 +131,8 @@ const MatchesPage: React.FC = () => {
           <Topbar />
           <main className="flex-1 p-6 lg:p-8">
             <div className="max-w-7xl mx-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-bold text-gray-800">試合記録</h2>
-                {matchRequests.length > 0 && (
+              {matchRequests.length > 0 && (
+                <div className="flex justify-end mb-6">
                   <button
                     onClick={() => setShowNotifications(!showNotifications)}
                     className="relative flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -144,8 +143,8 @@ const MatchesPage: React.FC = () => {
                       {matchRequests.length}
                     </span>
                   </button>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* 試合リクエスト通知パネル */}
               {showNotifications && matchRequests.length > 0 && (

@@ -825,16 +825,6 @@ export default function DashboardPage() {
           <Topbar />
           <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8">
             <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
-              {/* ヘッダーセクション */}
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl sm:rounded-3xl opacity-5"></div>
-                <div className="relative p-4 sm:p-6 md:p-8">
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                    ダッシュボード
-                  </h1>
-                  <p className="text-gray-600 text-sm sm:text-base md:text-lg">システムの概要と最新情報を確認できます</p>
-                </div>
-              </div>
 
               {/* BPSI診断誘導カード（初回ユーザーまたは未診断の場合） */}
               {showBPSIIntro && (
