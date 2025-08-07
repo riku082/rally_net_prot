@@ -951,12 +951,12 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                     e.stopPropagation();
                     addItemToCourt('player');
                   }}
-                  className="p-4 bg-white border-2 border-green-300 rounded-lg hover:bg-green-50 transition-all flex flex-col items-center gap-2"
+                  className="p-3 bg-white border-2 border-green-300 rounded-lg hover:bg-green-50 transition-all flex flex-col items-center gap-1"
                 >
-                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                    <MdPerson className="w-6 h-6 text-white" />
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                    <MdPerson className="w-5 h-5 text-white" />
                   </div>
-                  <span className="text-xs font-medium">プレイヤー</span>
+                  <span className="text-[10px] font-medium whitespace-nowrap">プレイヤー</span>
                 </button>
                 <button
                   type="button"
@@ -964,12 +964,12 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                     e.stopPropagation();
                     addItemToCourt('knocker');
                   }}
-                  className="p-4 bg-white border-2 border-blue-300 rounded-lg hover:bg-blue-50 transition-all flex flex-col items-center gap-2"
+                  className="p-3 bg-white border-2 border-blue-300 rounded-lg hover:bg-blue-50 transition-all flex flex-col items-center gap-1"
                 >
-                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                    <MdSportsBaseball className="w-6 h-6 text-white" />
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                    <MdSportsBaseball className="w-5 h-5 text-white" />
                   </div>
-                  <span className="text-xs font-medium">ノッカー</span>
+                  <span className="text-[10px] font-medium whitespace-nowrap">ノッカー</span>
                 </button>
                 <button
                   type="button"
@@ -977,12 +977,12 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                     e.stopPropagation();
                     addItemToCourt('cone');
                   }}
-                  className="p-4 bg-white border-2 border-orange-300 rounded-lg hover:bg-orange-50 transition-all flex flex-col items-center gap-2"
+                  className="p-3 bg-white border-2 border-orange-300 rounded-lg hover:bg-orange-50 transition-all flex flex-col items-center gap-1"
                 >
-                  <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
-                    <FiTarget className="w-6 h-6 text-white" />
+                  <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                    <FiTarget className="w-5 h-5 text-white" />
                   </div>
-                  <span className="text-xs font-medium">コーン</span>
+                  <span className="text-[10px] font-medium whitespace-nowrap">コーン</span>
                 </button>
               </div>
             </div>
@@ -1039,7 +1039,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                 }}
                 className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all font-medium"
               >
-                配置完了してショット入力へ →
+                <span className="whitespace-nowrap">配置完了してショット入力へ →</span>
               </button>
             )}
           </>
@@ -1115,7 +1115,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                 className="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg hover:from-green-600 hover:to-blue-600 transition-all font-medium flex items-center justify-center gap-2"
               >
                 <MdPerson className="w-5 h-5" />
-                プレイヤーをシャトル着地点に移動
+                <span className="whitespace-nowrap">プレイヤーをシャトル着地点に移動</span>
               </button>
             )}
 
@@ -1181,7 +1181,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                 className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-medium flex items-center justify-center gap-2"
               >
                 <FaCheck className="w-4 h-4" />
-                ターゲット選択完了
+                <span className="whitespace-nowrap">ターゲット選択完了</span>
               </button>
             )}
 
