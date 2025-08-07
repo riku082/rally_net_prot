@@ -78,6 +78,8 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   const [playerCounter, setPlayerCounter] = useState(1);
   const [knockerCounter, setKnockerCounter] = useState(1);
   const [coneCounter, setConeCounter] = useState(1);
+  const [selectedKnocker, setSelectedKnocker] = useState<PlayerPosition | null>(null);
+  const [latestShotLanding, setLatestShotLanding] = useState<{x: number, y: number} | null>(null);
   const courtRef = useRef<HTMLDivElement>(null);
 
   // 初期配置
@@ -103,6 +105,16 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
       });
     }
   }, [playerPositions, shotTrajectories]);
+
+  // ノック練習でショットモードに入った時、ノッカーを自動選択
+  useEffect(() => {
+    if (inputMode === 'shot' && practiceType === 'knock_practice' && !selectedKnocker) {
+      const knockers = playerPositions.filter(p => p.role === 'knocker');
+      if (knockers.length === 1) {
+        setSelectedKnocker(knockers[0]);
+      }
+    }
+  }, [inputMode, practiceType, playerPositions]);
 
   // デフォルトポジション取得
   const getDefaultPositions = (type: PracticeMenuType): PlayerPosition[] => {
@@ -157,13 +169,12 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
     if (shotInputMode === 'pinpoint') {
       if (practiceType === 'knock_practice') {
         if (!isWaitingForPlayer) {
-          // ノック練習: ノッカーからの配球
-          const knocker = playerPositions.find(p => p.role === 'knocker');
-          if (knocker) {
+          // ノック練習: ノッカーからの配球（ショットタイプ選択なし）
+          if (selectedKnocker) {
             saveToHistory();
             const newShot: ShotTrajectory = {
               id: `shot_${Date.now()}`,
-              from: { x: knocker.x, y: knocker.y },
+              from: { x: selectedKnocker.x, y: selectedKnocker.y },
               to: { x, y },
               shotType: '',
               shotBy: 'knocker',
@@ -171,6 +182,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             };
             setShotTrajectories([...shotTrajectories, newShot]);
             setCurrentShotNumber(currentShotNumber + 1);
+            setLatestShotLanding({ x, y });
             setIsWaitingForPlayer(true);
           }
         } else {
@@ -282,6 +294,20 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
     setPlayerPositions(playerPositions.filter(p => p.id !== itemId));
   };
 
+  // プレイヤーを最新のショット着地点に移動
+  const movePlayerToShotLanding = () => {
+    if (!latestShotLanding) return;
+    
+    const player = playerPositions.find(p => p.role === 'player');
+    if (player) {
+      setPlayerPositions(prev => 
+        prev.map(p => p.id === player.id ? { ...p, x: latestShotLanding.x, y: latestShotLanding.y } : p)
+      );
+      // 移動後、着地点をクリア
+      setLatestShotLanding(null);
+    }
+  };
+
   // ショットタイプ選択後の処理
   const handleShotTypeSelect = (shotType: string) => {
     saveToHistory();
@@ -303,6 +329,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
           setShotTrajectories([...shotTrajectories, ...newShots]);
           setCurrentShotNumber(currentShotNumber + selectedPoints.length);
         }
+        setIsWaitingForPlayer(false); // ノッカーからの配球に戻る
       } else {
         // 通常のショット
         const newShots = selectedPoints.map((point, index) => ({
@@ -319,7 +346,6 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
       
       setSelectedPoints([]);
       setCurrentShot({});
-      setIsWaitingForPlayer(false);
       
     } else if (selectedAreas.length > 0) {
       // エリアモードでのショット追加
@@ -699,6 +725,44 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
         {/* ショット入力モード */}
         {inputMode === 'shot' && (
           <>
+            {/* ノック練習のノッカー選択 */}
+            {practiceType === 'knock_practice' && (
+              <div className="space-y-2">
+                <div className="text-sm font-medium">使用するノッカー</div>
+                {playerPositions.filter(p => p.role === 'knocker').length > 1 ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {playerPositions.filter(p => p.role === 'knocker').map(knocker => (
+                      <button
+                        key={knocker.id}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedKnocker(knocker);
+                        }}
+                        className={`p-3 border-2 rounded-lg transition-all flex items-center gap-2 ${
+                          selectedKnocker?.id === knocker.id 
+                            ? 'border-blue-500 bg-blue-50' 
+                            : 'border-gray-300 bg-white hover:border-blue-300'
+                        }`}
+                      >
+                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                          <MdSportsBaseball className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="text-sm font-medium">{knocker.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-blue-50 p-3 rounded-lg flex items-center gap-2">
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                      <MdSportsBaseball className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-sm">{selectedKnocker?.label || 'ノッカー'}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* 現在の状態表示 */}
             <div className="bg-blue-50 p-3 rounded-lg text-sm">
               <div className="font-medium text-blue-800 mb-1">現在の入力状態</div>
@@ -714,6 +778,21 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                 )}
               </div>
             </div>
+
+            {/* プレイヤー移動ボタン */}
+            {practiceType === 'knock_practice' && isWaitingForPlayer && latestShotLanding && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  movePlayerToShotLanding();
+                }}
+                className="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg hover:from-green-600 hover:to-blue-600 transition-all font-medium flex items-center justify-center gap-2"
+              >
+                <MdPerson className="w-5 h-5" />
+                プレイヤーをシャトル着地点に移動
+              </button>
+            )}
 
             <div className="space-y-2">
               <div className="text-sm font-medium">着地点選択</div>
@@ -827,6 +906,84 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             <FaUndo className="inline w-4 h-4 mr-2" />
             一つ前に戻る
           </button>
+        </div>
+      </div>
+
+      {/* ショット履歴（右側） */}
+      <div className="w-80 bg-white rounded-lg p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <GiShuttlecock className="w-5 h-5 text-gray-600" />
+            ショット履歴
+          </h3>
+          <span className="text-sm text-gray-500">
+            {shotTrajectories.length}球
+          </span>
+        </div>
+        
+        <div className="space-y-2 max-h-[600px] overflow-y-auto">
+          {shotTrajectories.length === 0 ? (
+            <p className="text-gray-400 text-sm text-center py-8">
+              ショットを入力してください
+            </p>
+          ) : (
+            shotTrajectories
+              .sort((a, b) => (a.order || 0) - (b.order || 0))
+              .map((shot) => {
+                const shotType = SHOT_TYPES.find(t => t.id === shot.shotType);
+                const targetArea = shot.targetArea ? COURT_AREAS.find(a => a.id === shot.targetArea) : null;
+                const shotByLabel = shot.shotBy === 'knocker' ? 'ノック' : 
+                                  shot.shotBy === 'opponent' ? '相手' : 'プレイヤー';
+                const bgColor = shot.shotBy === 'knocker' ? 'bg-blue-50' : 
+                              shot.shotBy === 'opponent' ? 'bg-red-50' : 'bg-green-50';
+                const borderColor = shot.shotBy === 'knocker' ? 'border-blue-200' : 
+                                  shot.shotBy === 'opponent' ? 'border-red-200' : 'border-green-200';
+                
+                return (
+                  <div 
+                    key={shot.id} 
+                    className={`p-3 rounded-lg border ${bgColor} ${borderColor} transition-all hover:shadow-sm`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div 
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                        style={{ 
+                          backgroundColor: shot.shotBy === 'knocker' ? '#3B82F6' : 
+                                         (shotType?.color || '#10B981') 
+                        }}
+                      >
+                        {shot.order}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-medium text-gray-800">
+                            {shotByLabel}
+                          </span>
+                          {shotType && (
+                            <span 
+                              className="text-xs px-2 py-0.5 rounded-full text-white"
+                              style={{ backgroundColor: shotType.color }}
+                            >
+                              {shotType.name}
+                            </span>
+                          )}
+                        </div>
+                        {targetArea && (
+                          <div className="text-xs text-gray-600">
+                            着地: {targetArea.name}
+                          </div>
+                        )}
+                        {shot.description && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {shot.description}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+          )}
         </div>
       </div>
     </div>
