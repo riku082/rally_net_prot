@@ -44,16 +44,96 @@ const COURT_AREAS = [
   { id: 'br', name: '後右', x: 2*COURT_WIDTH/3, y: 2*COURT_HEIGHT/3, w: COURT_WIDTH/3, h: COURT_HEIGHT/3 },
 ];
 
-// ショットタイプ定義
+// ショットタイプ定義（イラスト付き）
 const SHOT_TYPES = [
-  { id: 'clear', name: 'クリア', color: '#3B82F6' },
-  { id: 'smash', name: 'スマッシュ', color: '#EF4444' },
-  { id: 'drop', name: 'ドロップ', color: '#10B981' },
-  { id: 'hairpin', name: 'ヘアピン', color: '#8B5CF6' },
-  { id: 'drive', name: 'ドライブ', color: '#F59E0B' },
-  { id: 'push', name: 'プッシュ', color: '#EC4899' },
-  { id: 'receive', name: 'レシーブ', color: '#06B6D4' },
-  { id: 'other', name: 'その他', color: '#6B7280' },
+  { 
+    id: 'clear', 
+    name: 'クリア', 
+    color: '#3B82F6',
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
+        <path d="M12 20 L12 4 M12 4 L8 8 M12 4 L16 8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="12" cy="4" r="1.5" fill="currentColor"/>
+      </svg>
+    )
+  },
+  { 
+    id: 'smash', 
+    name: 'スマッシュ', 
+    color: '#EF4444',
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
+        <path d="M4 4 L20 20 M20 20 L16 19 M20 20 L19 16" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="4" cy="4" r="1.5" fill="currentColor"/>
+      </svg>
+    )
+  },
+  { 
+    id: 'drop', 
+    name: 'ドロップ', 
+    color: '#10B981',
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
+        <path d="M6 6 Q12 12 12 20 M12 20 L10 18 M12 20 L14 18" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="6" cy="6" r="1.5" fill="currentColor"/>
+      </svg>
+    )
+  },
+  { 
+    id: 'hairpin', 
+    name: 'ヘアピン', 
+    color: '#8B5CF6',
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
+        <path d="M8 8 Q12 4 16 8 Q12 12 16 16" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="8" cy="8" r="1.5" fill="currentColor"/>
+      </svg>
+    )
+  },
+  { 
+    id: 'drive', 
+    name: 'ドライブ', 
+    color: '#F59E0B',
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
+        <path d="M4 12 L20 12 M20 12 L16 8 M20 12 L16 16" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="4" cy="12" r="1.5" fill="currentColor"/>
+      </svg>
+    )
+  },
+  { 
+    id: 'push', 
+    name: 'プッシュ', 
+    color: '#EC4899',
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
+        <path d="M6 10 L18 14 M18 14 L14 12 M18 14 L16 10" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="6" cy="10" r="1.5" fill="currentColor"/>
+      </svg>
+    )
+  },
+  { 
+    id: 'receive', 
+    name: 'レシーブ', 
+    color: '#06B6D4',
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
+        <path d="M20 8 L4 16 M4 16 L8 14 M4 16 L6 12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="20" cy="8" r="1.5" fill="currentColor"/>
+      </svg>
+    )
+  },
+  { 
+    id: 'other', 
+    name: 'その他', 
+    color: '#6B7280',
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
+        <circle cx="12" cy="12" r="8" strokeWidth="2"/>
+        <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+      </svg>
+    )
+  },
 ];
 
 const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
@@ -852,7 +932,10 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                         className="px-3 py-2 bg-white rounded-lg hover:bg-gray-100 text-sm font-medium border-2 transition-all"
                         style={{ borderColor: type.color }}
                       >
-                        {type.name}
+                        <span className="flex items-center gap-2">
+                          {type.icon}
+                          <span>{type.name}</span>
+                        </span>
                       </button>
                     ))
                   ) : (
@@ -869,7 +952,10 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                           className="px-3 py-2 bg-white rounded-lg hover:bg-gray-100 text-sm font-medium border"
                           style={{ borderColor: type.color }}
                         >
-                          {type.name}
+                          <span className="flex items-center gap-2">
+                            {type.icon}
+                            <span>{type.name}</span>
+                          </span>
                         </button>
                       ))}
                       {practiceType === 'knock_practice' && (
@@ -961,10 +1047,11 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                           </span>
                           {shotType && (
                             <span 
-                              className="text-xs px-2 py-0.5 rounded-full text-white"
+                              className="text-xs px-2 py-1 rounded-full text-white flex items-center gap-1"
                               style={{ backgroundColor: shotType.color }}
                             >
-                              {shotType.name}
+                              {React.cloneElement(shotType.icon, { className: 'w-3 h-3' })}
+                              <span>{shotType.name}</span>
                             </span>
                           )}
                         </div>
