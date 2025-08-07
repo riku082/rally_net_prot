@@ -1320,7 +1320,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
       </div>
 
       {/* ショット履歴（右側） */}
-      <div className="w-80 bg-white rounded-lg p-4">
+      <div className="w-80 bg-white rounded-lg p-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <GiShuttlecock className="w-5 h-5 text-gray-600" />
@@ -1353,6 +1353,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                   <div 
                     key={shot.id} 
                     className={`p-3 rounded-lg border ${bgColor} ${borderColor} transition-all hover:shadow-sm`}
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <div className="flex items-start gap-3">
                       <div 
