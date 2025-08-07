@@ -7,10 +7,11 @@ import {
   PracticeVisualInfo,
   PracticeMenuType 
 } from '@/types/practice';
-import { FiChevronLeft, FiTarget, FiMapPin, FiEdit2 } from 'react-icons/fi';
+import { FiChevronLeft, FiTarget, FiMapPin } from 'react-icons/fi';
 import { GiShuttlecock } from 'react-icons/gi';
 import { MdSportsBaseball, MdPerson } from 'react-icons/md';
 import { FaUndo, FaCheck, FaTrash } from 'react-icons/fa';
+import ShotMemo from './ShotMemo';
 
 interface PracticeCardVisualEditorProps {
   visualInfo: PracticeVisualInfo;
@@ -198,8 +199,6 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   const [coneCounter, setConeCounter] = useState(1);
   const [selectedKnocker, setSelectedKnocker] = useState<PlayerPosition | null>(null);
   const [latestShotLanding, setLatestShotLanding] = useState<{x: number, y: number} | null>(null);
-  const [editingMemoId, setEditingMemoId] = useState<string | null>(null);
-  const [memoText, setMemoText] = useState<string>('');
   const courtRef = useRef<HTMLDivElement>(null);
 
   // 初期配置
@@ -1390,71 +1389,16 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                             {shot.description}
                           </div>
                         )}
-                        {/* メモ表示・編集 */}
-                        <div className="mt-2">
-                          {editingMemoId === shot.id ? (
-                            <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                              <input
-                                type="text"
-                                value={memoText}
-                                onChange={(e) => {
-                                  e.stopPropagation();
-                                  setMemoText(e.target.value);
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                                onKeyDown={(e) => {
-                                  e.stopPropagation();
-                                  if (e.key === 'Enter') {
-                                    saveToHistory('editMemo');
-                                    setShotTrajectories(prev => 
-                                      prev.map(s => s.id === shot.id ? { ...s, memo: memoText } : s)
-                                    );
-                                    setEditingMemoId(null);
-                                    setMemoText('');
-                                  } else if (e.key === 'Escape') {
-                                    setEditingMemoId(null);
-                                    setMemoText('');
-                                  }
-                                }}
-                                className="flex-1 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="メモを入力..."
-                                autoFocus
-                              />
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  saveToHistory('editMemo');
-                                  setShotTrajectories(prev => 
-                                    prev.map(s => s.id === shot.id ? { ...s, memo: memoText } : s)
-                                  );
-                                  setEditingMemoId(null);
-                                  setMemoText('');
-                                }}
-                                className="text-green-600 hover:text-green-800"
-                              >
-                                <FaCheck className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex items-start gap-1">
-                              {shot.memo ? (
-                                <div className="flex-1 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                                  {shot.memo}
-                                </div>
-                              ) : null}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingMemoId(shot.id);
-                                  setMemoText(shot.memo || '');
-                                }}
-                                className="text-gray-400 hover:text-gray-600 flex-shrink-0"
-                              >
-                                <FiEdit2 className="w-3 h-3" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                        <ShotMemo
+                          shotId={shot.id}
+                          memo={shot.memo}
+                          onUpdateMemo={(shotId, memo) => {
+                            saveToHistory('editMemo');
+                            setShotTrajectories(prev => 
+                              prev.map(s => s.id === shotId ? { ...s, memo } : s)
+                            );
+                          }}
+                        />
                       </div>
                     </div>
                   </div>
