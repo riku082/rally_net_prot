@@ -113,6 +113,18 @@ const SHOT_TYPES = [
     )
   },
   { 
+    id: 'lob', 
+    name: 'ロブ', 
+    color: '#14B8A6',
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
+        <path d="M8 16 Q12 4 16 16" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="8" cy="16" r="1.5" fill="currentColor"/>
+        <circle cx="16" cy="16" r="1.5" fill="currentColor"/>
+      </svg>
+    )
+  },
+  { 
     id: 'receive', 
     name: 'レシーブ', 
     color: '#06B6D4',
