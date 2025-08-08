@@ -34,6 +34,62 @@ const SIDE_ALLEY_WIDTH = 17; // サイドアレー幅0.42m
 
 // コートエリアの9分割定義（上下コート別々）
 const HALF_COURT_HEIGHT = COURT_HEIGHT / 2;
+
+// エリアが隣接しているかを判定する関数
+const areAreasAdjacent = (area1: { x: number, y: number, w: number, h: number }, area2: { x: number, y: number, w: number, h: number }) => {
+  // 水平方向で隣接
+  const horizontallyAdjacent = 
+    (area1.x + area1.w === area2.x || area2.x + area2.w === area1.x) &&
+    !(area1.y + area1.h <= area2.y || area2.y + area2.h <= area1.y);
+  
+  // 垂直方向で隣接
+  const verticallyAdjacent = 
+    (area1.y + area1.h === area2.y || area2.y + area2.h === area1.y) &&
+    !(area1.x + area1.w <= area2.x || area2.x + area2.w <= area1.x);
+  
+  return horizontallyAdjacent || verticallyAdjacent;
+};
+
+// 接しているエリアをグループ化する関数
+const groupAdjacentAreas = (areaIds: string[]) => {
+  const groups: string[][] = [];
+  const processed = new Set<string>();
+  
+  for (const areaId of areaIds) {
+    if (processed.has(areaId)) continue;
+    
+    const currentGroup = [areaId];
+    processed.add(areaId);
+    
+    // 現在のグループに隣接するエリアを再帰的に追加
+    let addedNew = true;
+    while (addedNew) {
+      addedNew = false;
+      for (const remainingAreaId of areaIds) {
+        if (processed.has(remainingAreaId)) continue;
+        
+        const remainingArea = COURT_AREAS.find(a => a.id === remainingAreaId);
+        if (!remainingArea) continue;
+        
+        // 現在のグループのいずれかのエリアと隣接するかチェック
+        for (const groupAreaId of currentGroup) {
+          const groupArea = COURT_AREAS.find(a => a.id === groupAreaId);
+          if (groupArea && areAreasAdjacent(groupArea, remainingArea)) {
+            currentGroup.push(remainingAreaId);
+            processed.add(remainingAreaId);
+            addedNew = true;
+            break;
+          }
+        }
+      }
+    }
+    
+    groups.push(currentGroup);
+  }
+  
+  return groups;
+};
+
 const COURT_AREAS = [
   // 上側コート（相手側）
   { id: 'opp_fl', name: '相手前左', x: 0, y: 0, w: COURT_WIDTH/3, h: HALF_COURT_HEIGHT/3 },
@@ -175,7 +231,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   const [currentShot, setCurrentShot] = useState<{ from?: PlayerPosition }>({});
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [selectedPoints, setSelectedPoints] = useState<{x: number, y: number}[]>([]);
-  const [shotTypeSelections, setShotTypeSelections] = useState<{[key: string]: string}>({});
+  const [shotTypeSelections, setShotTypeSelections] = useState<{[key: string]: string[]}>({});
   const [isSelectingTargets, setIsSelectingTargets] = useState(false);
   const [currentShotNumber, setCurrentShotNumber] = useState(1);
   const [history, setHistory] = useState<{
@@ -491,15 +547,19 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
     setPlayerPositions(playerPositions.filter(p => p.id !== itemId));
   };
 
-  // プレイヤーを最新のショット着地点に移動
-  const movePlayerToShotLanding = () => {
+  // 指定したプレイヤーを最新のショット着地点に移動
+  const movePlayerToShotLanding = (playerId?: string) => {
     if (!latestShotLanding) return;
     
-    const player = playerPositions.find(p => p.role === 'player');
-    if (player) {
+    // playerIdが指定されている場合はそのプレイヤー、されていない場合はデフォルトのプレイヤー
+    const targetPlayer = playerId 
+      ? playerPositions.find(p => p.id === playerId)
+      : playerPositions.find(p => p.role === 'player');
+    
+    if (targetPlayer) {
       saveToHistory('movePlayer');
       setPlayerPositions(prev => 
-        prev.map(p => p.id === player.id ? { ...p, x: latestShotLanding.x, y: latestShotLanding.y } : p)
+        prev.map(p => p.id === targetPlayer.id ? { ...p, x: latestShotLanding.x, y: latestShotLanding.y } : p)
       );
       // 移動後、着地点をクリア
       setLatestShotLanding(null);
@@ -508,12 +568,26 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
     }
   };
 
-  // ショットタイプの変更
+  // ショットタイプの変更（複数選択対応）
   const handleShotTypeChange = (targetId: string, shotType: string) => {
-    setShotTypeSelections(prev => ({
-      ...prev,
-      [targetId]: shotType
-    }));
+    setShotTypeSelections(prev => {
+      const currentTypes = prev[targetId] || [];
+      const isSelected = currentTypes.includes(shotType);
+      
+      if (isSelected) {
+        // 既に選択されている場合は解除
+        return {
+          ...prev,
+          [targetId]: currentTypes.filter(type => type !== shotType)
+        };
+      } else {
+        // 選択されていない場合は追加
+        return {
+          ...prev,
+          [targetId]: [...currentTypes, shotType]
+        };
+      }
+    });
   };
 
   // ショット確定処理
@@ -526,72 +600,57 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
         // プレイヤーからの返球 - 複数ターゲット対応
         const player = playerPositions.find(p => p.role === 'player');
         if (player) {
-          // 同じショットタイプごとにグループ化
-          const shotGroups: {[key: string]: {x: number, y: number}[]} = {};
-          selectedPoints.forEach((point, index) => {
-            const shotType = shotTypeSelections[`point_${index}`] || 'clear';
-            if (!shotGroups[shotType]) {
-              shotGroups[shotType] = [];
-            }
-            shotGroups[shotType].push(point);
-          });
-
-          // グループごとにショットを作成
+          // 各ポイントに一つの矢印を作成（複数ショットタイプをまとめる）
           let shotIndex = 0;
-          Object.entries(shotGroups).forEach(([shotType, points]) => {
-            points.forEach(point => {
+          selectedPoints.forEach((point, index) => {
+            const shotTypes = shotTypeSelections[`point_${index}`] || ['clear'];
+            if (shotTypes.length > 0) {
               const newShot: ShotTrajectory = {
                 id: `shot_${Date.now()}_${shotIndex}`,
                 from: { x: player.x, y: player.y },
                 to: point,
-                shotType,
+                shotType: shotTypes[0], // 最初のタイプを代表として使用
+                shotTypes: shotTypes.length > 1 ? shotTypes : undefined, // 複数ある場合のみ設定
                 shotBy: 'player' as const,
                 order: currentShotNumber + shotIndex
               };
               setShotTrajectories(prev => [...prev, newShot]);
               shotIndex++;
-            });
+            }
           });
           
-          setCurrentShotNumber(currentShotNumber + selectedPoints.length);
+          setCurrentShotNumber(currentShotNumber + shotIndex);
         }
         setIsWaitingForPlayer(false); // ノッカーからの配球に戻る
       } else {
         // 通常のショット
-        // 同じショットタイプごとにグループ化
-        const shotGroups: {[key: string]: {x: number, y: number}[]} = {};
-        selectedPoints.forEach((point, index) => {
-          const shotType = shotTypeSelections[`point_${index}`] || 'clear';
-          if (!shotGroups[shotType]) {
-            shotGroups[shotType] = [];
-          }
-          shotGroups[shotType].push(point);
-        });
-
-        // グループごとにショットを作成
+        // 各ポイントに一つの矢印を作成（複数ショットタイプをまとめる）
         let shotIndex = 0;
-        Object.entries(shotGroups).forEach(([shotType, points]) => {
-          points.forEach(point => {
+        selectedPoints.forEach((point, index) => {
+          const shotTypes = shotTypeSelections[`point_${index}`] || ['clear'];
+          if (shotTypes.length > 0) {
             const newShot: ShotTrajectory = {
               id: `shot_${Date.now()}_${shotIndex}`,
               from: currentShot.from ? { x: currentShot.from.x, y: currentShot.from.y } : { x: 0, y: 0 },
               to: point,
-              shotType,
+              shotType: shotTypes[0], // 最初のタイプを代表として使用
+              shotTypes: shotTypes.length > 1 ? shotTypes : undefined, // 複数ある場合のみ設定
               shotBy: currentShot.from?.role || 'player' as const,
               order: currentShotNumber + shotIndex
             };
             setShotTrajectories(prev => [...prev, newShot]);
             shotIndex++;
-          });
+          }
         });
         
-        setCurrentShotNumber(currentShotNumber + selectedPoints.length);
+        setCurrentShotNumber(currentShotNumber + shotIndex);
       }
       
       setSelectedPoints([]);
       setShotTypeSelections({});
       setCurrentShot({});
       setIsSelectingTargets(false);
+      setIshotInputMode('pinpoint'); // デフォルトに戻す
       
     } else if (selectedAreas.length > 0) {
       // エリアモードでのショット追加
@@ -599,110 +658,131 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
         // プレイヤーからの返球
         const player = playerPositions.find(p => p.role === 'player');
         if (player) {
-          const shotGroups: {[key: string]: string[]} = {};
-          selectedAreas.forEach((areaId) => {
-            const shotType = shotTypeSelections[areaId] || 'clear';
-            if (!shotGroups[shotType]) {
-              shotGroups[shotType] = [];
-            }
-            shotGroups[shotType].push(areaId);
-          });
-
-          // グループごとにショットを作成（同じショットタイプのエリアは1本の矢印に統合）
+          // 接しているエリアをグループ化して一つの矢印でまとめる
           let shotIndex = 0;
-          Object.entries(shotGroups).forEach(([shotType, areaIds]) => {
-            const fromPos = { x: player.x, y: player.y };
-        
-        // 複数エリアの中心点を計算
-        let centerX = 0;
-        let centerY = 0;
-        let validAreas = 0;
-        
-        areaIds.forEach(areaId => {
-          const area = COURT_AREAS.find(a => a.id === areaId);
-          if (area) {
-            centerX += area.x + area.w/2;
-            centerY += area.y + area.h/2;
-            validAreas++;
-          }
-        });
-        
-        if (validAreas > 0) {
-          centerX /= validAreas;
-          centerY /= validAreas;
+          const areaGroups = groupAdjacentAreas(selectedAreas);
           
-          const newShot: ShotTrajectory = {
-            id: `shot_${Date.now()}_${shotIndex}`,
-            from: fromPos,
-            to: { x: centerX, y: centerY },
-            shotType,
-            shotBy: currentShot.from?.role || 'player',
-            order: currentShotNumber + shotIndex,
-            targetArea: areaIds.join(',')
-          };
-            setShotTrajectories(prev => [...prev, newShot]);
-            shotIndex++;
-          }
-        });
-        
-        setCurrentShotNumber(currentShotNumber + 1);
+          areaGroups.forEach(groupAreaIds => {
+            // グループ内の全エリアのショットタイプを集約
+            const allShotTypes = new Set<string>();
+            groupAreaIds.forEach(areaId => {
+              const areaTypes = shotTypeSelections[areaId] || ['clear'];
+              areaTypes.forEach(type => allShotTypes.add(type));
+            });
+            
+            if (allShotTypes.size > 0) {
+              // グループの中心点を計算
+              let totalX = 0, totalY = 0, validAreas = 0;
+              groupAreaIds.forEach(areaId => {
+                const area = COURT_AREAS.find(a => a.id === areaId);
+                if (area) {
+                  totalX += area.x + area.w/2;
+                  totalY += area.y + area.h/2;
+                  validAreas++;
+                }
+              });
+              
+              if (validAreas > 0) {
+                const centerX = totalX / validAreas;
+                const centerY = totalY / validAreas;
+                const shotTypesArray = Array.from(allShotTypes);
+                
+                const newShot: ShotTrajectory = {
+                  id: `shot_${Date.now()}_${shotIndex}`,
+                  from: { x: player.x, y: player.y },
+                  to: { x: centerX, y: centerY },
+                  shotType: shotTypesArray[0], // 最初のタイプを代表として使用
+                  shotTypes: shotTypesArray.length > 1 ? shotTypesArray : undefined,
+                  shotBy: 'player',
+                  order: currentShotNumber + shotIndex,
+                  targetArea: groupAreaIds.join(',')
+                };
+                setShotTrajectories(prev => [...prev, newShot]);
+                shotIndex++;
+              }
+            }
+          });
+          
+          setCurrentShotNumber(currentShotNumber + shotIndex);
         }
         setIsWaitingForPlayer(false); // ノッカーからの配球に戻る
       } else {
-        // 通常のショット
-        const shotGroups: {[key: string]: string[]} = {};
-        selectedAreas.forEach((areaId) => {
-          const shotType = shotTypeSelections[areaId] || 'clear';
-          if (!shotGroups[shotType]) {
-            shotGroups[shotType] = [];
-          }
-          shotGroups[shotType].push(areaId);
-        });
-
-        // グループごとにショットを作成
+        // 接しているエリアをグループ化して一つの矢印でまとめる
         let shotIndex = 0;
-        Object.entries(shotGroups).forEach(([shotType, areaIds]) => {
-          const fromPos = currentShot.from ? { x: currentShot.from.x, y: currentShot.from.y } : { x: 0, y: 0 };
-          
-          // 複数エリアの中心点を計算
-          let centerX = 0;
-          let centerY = 0;
-          let validAreas = 0;
-          
-          areaIds.forEach(areaId => {
-            const area = COURT_AREAS.find(a => a.id === areaId);
-            if (area) {
-              centerX += area.x + area.w/2;
-              centerY += area.y + area.h/2;
-              validAreas++;
-            }
+        const areaGroups = groupAdjacentAreas(selectedAreas);
+        const fromPos = currentShot.from ? { x: currentShot.from.x, y: currentShot.from.y } : { x: 0, y: 0 };
+        
+        areaGroups.forEach(groupAreaIds => {
+          // グループ内の全エリアのショットタイプを集約
+          const allShotTypes = new Set<string>();
+          groupAreaIds.forEach(areaId => {
+            const areaTypes = shotTypeSelections[areaId] || ['clear'];
+            areaTypes.forEach(type => allShotTypes.add(type));
           });
           
-          if (validAreas > 0) {
-            centerX /= validAreas;
-            centerY /= validAreas;
+          if (allShotTypes.size > 0) {
+            // グループの中心点を計算
+            let totalX = 0, totalY = 0, validAreas = 0;
+            groupAreaIds.forEach(areaId => {
+              const area = COURT_AREAS.find(a => a.id === areaId);
+              if (area) {
+                totalX += area.x + area.w/2;
+                totalY += area.y + area.h/2;
+                validAreas++;
+              }
+            });
             
-            const newShot: ShotTrajectory = {
-              id: `shot_${Date.now()}_${shotIndex}`,
-              from: fromPos,
-              to: { x: centerX, y: centerY },
-              shotType,
-              shotBy: currentShot.from?.role || 'player',
-              order: currentShotNumber + shotIndex,
-              targetArea: areaIds.join(',')
-            };
-            setShotTrajectories(prev => [...prev, newShot]);
-            shotIndex++;
+            if (validAreas > 0) {
+              const centerX = totalX / validAreas;
+              const centerY = totalY / validAreas;
+              const shotTypesArray = Array.from(allShotTypes);
+              
+              const newShot: ShotTrajectory = {
+                id: `shot_${Date.now()}_${shotIndex}`,
+                from: fromPos,
+                to: { x: centerX, y: centerY },
+                shotType: shotTypesArray[0], // 最初のタイプを代表として使用
+                shotTypes: shotTypesArray.length > 1 ? shotTypesArray : undefined,
+                shotBy: currentShot.from?.role || 'player',
+                order: currentShotNumber + shotIndex,
+                targetArea: groupAreaIds.join(',')
+              };
+              setShotTrajectories(prev => [...prev, newShot]);
+              shotIndex++;
+            }
           }
         });
         
-        setCurrentShotNumber(currentShotNumber + 1);
+        setCurrentShotNumber(currentShotNumber + shotIndex);
       }
       
       setSelectedAreas([]);
       setShotTypeSelections({});
-      setCurrentShot({});
-      setIsSelectingTargets(false);
+      setIshotInputMode('pinpoint'); // デフォルトに戻す
+      
+      // ノック練習の場合の次のショット準備
+      if (practiceType === 'knock_practice') {
+        if (isWaitingForPlayer) {
+          // プレイヤーの返球が完了したので、次はノッカーの番
+          const knocker = playerPositions.find(p => p.role === 'knocker');
+          if (knocker) {
+            setCurrentShot({ from: knocker });
+            setIsSelectingTargets(true);
+          } else {
+            setCurrentShot({});
+            setIsSelectingTargets(false);
+          }
+        } else {
+          // ノッカーの配球が完了したので、プレイヤーの番を待つ
+          setCurrentShot({});
+          setIsSelectingTargets(false);
+          // isWaitingForPlayerはhandleCourtClickで設定される
+        }
+      } else {
+        // パターン練習の場合
+        setCurrentShot({});
+        setIsSelectingTargets(false);
+      }
     }
   };
 
@@ -761,10 +841,54 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             {/* エリア選択モード時のみガイド表示 */}
             {inputMode === 'shot' && shotInputMode === 'area' && currentShot.from && (
               <g>
+                {/* 接続エリアグループの背景表示 */}
+                {selectedAreas.length > 0 && groupAdjacentAreas(selectedAreas).map((groupAreaIds, groupIndex) => {
+                  if (groupAreaIds.length <= 1) return null;
+                  
+                  // グループの境界を計算
+                  let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0;
+                  groupAreaIds.forEach(areaId => {
+                    const area = COURT_AREAS.find(a => a.id === areaId);
+                    if (area) {
+                      minX = Math.min(minX, area.x);
+                      minY = Math.min(minY, area.y);
+                      maxX = Math.max(maxX, area.x + area.w);
+                      maxY = Math.max(maxY, area.y + area.h);
+                    }
+                  });
+                  
+                  // グループ全体のショットタイプを集約
+                  const allTypes = new Set<string>();
+                  groupAreaIds.forEach(areaId => {
+                    const types = shotTypeSelections[areaId] || [];
+                    types.forEach(type => allTypes.add(type));
+                  });
+                  const primaryType = allTypes.size > 0 ? SHOT_TYPES.find(t => allTypes.has(t.id)) : null;
+                  const groupColor = primaryType?.color || '#FCD34D';
+                  
+                  return (
+                    <rect
+                      key={`group-${groupIndex}`}
+                      x={minX - 2}
+                      y={minY - 2}
+                      width={maxX - minX + 4}
+                      height={maxY - minY + 4}
+                      fill={groupColor}
+                      fillOpacity={0.15}
+                      stroke={groupColor}
+                      strokeWidth="3"
+                      strokeDasharray="8,4"
+                      rx="4"
+                      className="pointer-events-none"
+                    />
+                  );
+                })}
                 {COURT_AREAS.map(area => {
                   const isSelected = selectedAreas.includes(area.id);
-                  const shotType = isSelected ? SHOT_TYPES.find(t => t.id === (shotTypeSelections[area.id] || 'clear')) : null;
-                  const fillColor = isSelected ? (shotType?.color || '#FCD34D') : 'transparent';
+                  const selectedTypes = shotTypeSelections[area.id] || [];
+                  // 複数選択の場合は最初のタイプの色を使用、未選択の場合はデフォルト色
+                  const primaryShotType = selectedTypes.length > 0 ? SHOT_TYPES.find(t => t.id === selectedTypes[0]) : null;
+                  const fillColor = isSelected ? (primaryShotType?.color || '#FCD34D') : 'transparent';
                   
                   return (
                     <g key={area.id}>
@@ -777,6 +901,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                         fillOpacity={isSelected ? 0.3 : 0}
                         stroke={isSelected ? fillColor : '#9CA3AF'}
                         strokeWidth={isSelected ? "2" : "0.5"}
+                        strokeDasharray={selectedTypes.length > 1 ? "4,2" : "0"}
                         strokeDasharray={isSelected ? "0" : "0"}
                         className="cursor-pointer transition-all"
                         onClick={(e) => {
@@ -785,18 +910,34 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                         }}
                       />
                       {isSelected && (
-                        <text
-                          x={area.x + area.w/2}
-                          y={area.y + area.h/2}
-                          textAnchor="middle"
-                          dominantBaseline="middle"
-                          fill="white"
-                          fontSize="12"
-                          fontWeight="bold"
-                          className="pointer-events-none"
-                        >
-                          {area.name}
-                        </text>
+                        <g>
+                          <text
+                            x={area.x + area.w/2}
+                            y={area.y + area.h/2 - 5}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            fill="white"
+                            fontSize="10"
+                            fontWeight="bold"
+                            className="pointer-events-none"
+                          >
+                            {area.name}
+                          </text>
+                          {selectedTypes.length > 0 && (
+                            <text
+                              x={area.x + area.w/2}
+                              y={area.y + area.h/2 + 8}
+                              textAnchor="middle"
+                              dominantBaseline="middle"
+                              fill="white"
+                              fontSize="9"
+                              fontWeight="bold"
+                              className="pointer-events-none"
+                            >
+                              {selectedTypes.length}種類
+                            </text>
+                          )}
+                        </g>
                       )}
                     </g>
                   );
@@ -868,25 +1009,39 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                   markerEnd={`url(#arrow-${shot.id})`}
                 />
                 
-                {/* ショット番号 */}
+                {/* ショット番号と複数ショットタイプインジケーター */}
                 <circle
                   cx={shot.from.x + (shot.to.x - shot.from.x) / 2}
                   cy={shot.from.y + (shot.to.y - shot.from.y) / 2}
-                  r="12"
+                  r={shot.shotTypes && shot.shotTypes.length > 1 ? "15" : "12"}
                   fill="white"
                   stroke={color}
                   strokeWidth="2"
+                  strokeDasharray={shot.shotTypes && shot.shotTypes.length > 1 ? "3,2" : "0"}
                 />
                 <text
                   x={shot.from.x + (shot.to.x - shot.from.x) / 2}
-                  y={shot.from.y + (shot.to.y - shot.from.y) / 2 + 4}
+                  y={shot.from.y + (shot.to.y - shot.from.y) / 2 + (shot.shotTypes && shot.shotTypes.length > 1 ? -2 : 4)}
                   textAnchor="middle"
-                  fontSize="12"
+                  fontSize="11"
                   fontWeight="bold"
                   fill={color}
                 >
                   {shot.order}
                 </text>
+                {/* 複数ショットタイプ数表示 */}
+                {shot.shotTypes && shot.shotTypes.length > 1 && (
+                  <text
+                    x={shot.from.x + (shot.to.x - shot.from.x) / 2}
+                    y={shot.from.y + (shot.to.y - shot.from.y) / 2 + 10}
+                    textAnchor="middle"
+                    fontSize="8"
+                    fontWeight="bold"
+                    fill={color}
+                  >
+                    {shot.shotTypes.length}種
+                  </text>
+                )}
               </svg>
             );
           })}
@@ -1150,40 +1305,66 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             )}
 
             {/* 現在の状態表示 */}
-            <div className="bg-blue-50 p-3 rounded-lg text-sm">
-              <div className="font-medium text-blue-800 mb-1">現在の入力状態</div>
-              <div className="text-blue-600">
-                {practiceType === 'knock_practice' ? (
-                  isWaitingForPlayer ? 
-                    (latestShotLanding && !currentShot.from ? 
-                      '🏸 ノッカーの配球位置を変更できます（クリックで変更）' :
-                      '🎾 プレイヤーからの返球を設定してください') :
-                    '🏸 ノッカーからの配球位置をクリック'
-                ) : (
-                  currentShot.from ? 
-                    `👤 ${currentShot.from.label}からのショット着地点を選択` :
-                    '👤 ショットを打つプレイヤーを選択'
-                )}
+            <div className="bg-gray-50 border border-gray-200 p-3 rounded-lg">
+              <div className="flex items-start gap-2">
+                <div className="text-gray-400 mt-0.5">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="text-xs text-gray-500 mb-0.5">操作ガイド</div>
+                  <div className="text-sm text-gray-700">
+                    {practiceType === 'knock_practice' ? (
+                      isWaitingForPlayer ? 
+                        (latestShotLanding ? 
+                          'プレイヤーを着地点に移動させてください' :
+                          'プレイヤーからの返球を設定してください') :
+                        'ノッカーからの配球着地点をクリック'
+                    ) : (
+                      currentShot.from ? 
+                        `${currentShot.from.label}からのショット着地点を選択` :
+                        'ショットを打つプレイヤーを選択'
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* プレイヤー移動ボタン */}
+            {/* プレイヤー移動選択 */}
             {practiceType === 'knock_practice' && isWaitingForPlayer && latestShotLanding && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  movePlayerToShotLanding();
-                }}
-                className="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg hover:from-green-600 hover:to-blue-600 transition-all font-medium flex items-center justify-center gap-2"
-              >
-                <MdPerson className="w-5 h-5" />
-                <span className="whitespace-nowrap">プレイヤーをシャトル着地点に移動</span>
-              </button>
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-gray-700">プレイヤー移動選択</div>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {playerPositions
+                    .filter(player => player.role !== 'knocker')
+                    .map((player) => (
+                      <button
+                        key={player.id}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          movePlayerToShotLanding(player.id);
+                        }}
+                        className="w-full px-3 py-2 bg-gradient-to-r from-green-50 to-blue-50 hover:from-green-100 hover:to-blue-100 text-gray-700 rounded-lg transition-all font-medium flex items-center gap-2 border border-gray-200 hover:border-green-300"
+                      >
+                        <div
+                          className="w-4 h-4 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: player.color || '#10B981' }}
+                        />
+                        <MdPerson className="w-4 h-4 flex-shrink-0" />
+                        <span className="text-sm truncate">
+                          {player.label || (player.role === 'player' ? 'プレイヤー' : 'その他')}
+                        </span>
+                        <span className="text-xs text-gray-500 ml-auto">→着地点</span>
+                      </button>
+                    ))}
+                </div>
+              </div>
             )}
 
-            {/* ノッカーの配球選択時は着地点選択を表示しない */}
-            {!(practiceType === 'knock_practice' && !isWaitingForPlayer) && (
+            {/* ノック練習中は着地点選択を表示しない（プレイヤーが着地点に移動するまで） */}
+            {!(practiceType === 'knock_practice' && (!isWaitingForPlayer || (isWaitingForPlayer && latestShotLanding))) && (
               <div className="space-y-2">
                 <div className="text-sm font-medium">着地点選択</div>
                 <div className="grid grid-cols-2 gap-3">
@@ -1282,37 +1463,45 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                   {/* ピンポイントモード */}
                   {shotInputMode === 'pinpoint' && selectedPoints.map((point, index) => {
                   const pointId = `point_${index}`;
-                  const currentType = shotTypeSelections[pointId] || 'clear';
+                  const selectedTypes = shotTypeSelections[pointId] || [];
                   return (
                     <div key={pointId} className="bg-gray-50 p-3 rounded-lg">
                       <div className="text-xs text-gray-600 mb-2">
-                        ターゲット {index + 1}
+                        ターゲット {index + 1} {selectedTypes.length > 0 && <span className="text-blue-600">({selectedTypes.length}種類選択中)</span>}
                       </div>
                       <div className="grid grid-cols-3 gap-1">
-                        {SHOT_TYPES.map(type => (
-                          <button
-                            key={type.id}
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleShotTypeChange(pointId, type.id);
-                            }}
-                            className={`px-2 py-2 rounded text-xs font-medium transition-all flex flex-col items-center justify-center gap-1 ${
-                              currentType === type.id 
-                                ? 'text-white ring-2' 
-                                : 'text-gray-700 hover:bg-opacity-20'
-                            }`}
-                            style={{
-                              backgroundColor: currentType === type.id ? type.color : type.color + '20',
-                              borderColor: type.color,
-                              borderWidth: '1px',
-                              ringColor: currentType === type.id ? type.color : 'transparent'
-                            }}
-                          >
-                            {React.cloneElement(type.icon, { className: 'w-4 h-4 flex-shrink-0' })}
-                            <span className="text-[10px] leading-tight">{type.name}</span>
-                          </button>
-                        ))}
+                        {SHOT_TYPES.map(type => {
+                          const isSelected = selectedTypes.includes(type.id);
+                          return (
+                            <button
+                              key={type.id}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleShotTypeChange(pointId, type.id);
+                              }}
+                              className={`px-2 py-2 rounded text-xs font-medium transition-all flex flex-col items-center justify-center gap-1 relative ${
+                                isSelected 
+                                  ? 'text-white ring-2' 
+                                  : 'text-gray-700 hover:bg-opacity-20'
+                              }`}
+                              style={{
+                                backgroundColor: isSelected ? type.color : type.color + '20',
+                                borderColor: type.color,
+                                borderWidth: '1px',
+                                ringColor: isSelected ? type.color : 'transparent'
+                              }}
+                            >
+                              {React.cloneElement(type.icon, { className: 'w-4 h-4 flex-shrink-0' })}
+                              <span className="text-[10px] leading-tight">{type.name}</span>
+                              {isSelected && (
+                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full flex items-center justify-center">
+                                  <span className="text-white text-[8px] font-bold">✓</span>
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   );
@@ -1321,42 +1510,50 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                 {/* エリアモード */}
                 {shotInputMode === 'area' && selectedAreas.map((areaId) => {
                   const area = COURT_AREAS.find(a => a.id === areaId);
-                  const currentType = shotTypeSelections[areaId] || 'clear';
+                  const selectedTypes = shotTypeSelections[areaId] || [];
                   return (
                     <div key={areaId} className="bg-gray-50 p-3 rounded-lg">
                       <div className="text-xs text-gray-600 mb-2">
-                        エリア: {area?.name}
+                        エリア: {area?.name} {selectedTypes.length > 0 && <span className="text-blue-600">({selectedTypes.length}種類選択中)</span>}
                       </div>
                       <div className="grid grid-cols-3 gap-1">
-                        {SHOT_TYPES.map(type => (
-                          <button
-                            key={type.id}
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleShotTypeChange(areaId, type.id);
-                            }}
-                            className={`px-2 py-2 rounded text-xs font-medium transition-all flex flex-col items-center justify-center gap-1 ${
-                              currentType === type.id 
-                                ? 'text-white ring-2' 
-                                : 'text-gray-700 hover:bg-opacity-20'
-                            }`}
-                            style={{
-                              backgroundColor: currentType === type.id ? type.color : type.color + '20',
-                              borderColor: type.color,
-                              borderWidth: '1px',
-                              ringColor: currentType === type.id ? type.color : 'transparent'
-                            }}
-                          >
-                            {React.cloneElement(type.icon, { className: 'w-4 h-4 flex-shrink-0' })}
-                            <span className="text-[10px] leading-tight">{type.name}</span>
-                          </button>
-                        ))}
+                        {SHOT_TYPES.map(type => {
+                          const isSelected = selectedTypes.includes(type.id);
+                          return (
+                            <button
+                              key={type.id}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleShotTypeChange(areaId, type.id);
+                              }}
+                              className={`px-2 py-2 rounded text-xs font-medium transition-all flex flex-col items-center justify-center gap-1 relative ${
+                                isSelected 
+                                  ? 'text-white ring-2' 
+                                  : 'text-gray-700 hover:bg-opacity-20'
+                              }`}
+                              style={{
+                                backgroundColor: isSelected ? type.color : type.color + '20',
+                                borderColor: type.color,
+                                borderWidth: '1px',
+                                ringColor: isSelected ? type.color : 'transparent'
+                              }}
+                            >
+                              {React.cloneElement(type.icon, { className: 'w-4 h-4 flex-shrink-0' })}
+                              <span className="text-[10px] leading-tight">{type.name}</span>
+                              {isSelected && (
+                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full flex items-center justify-center">
+                                  <span className="text-white text-[8px] font-bold">✓</span>
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   );
                 })}
-                </div>
+              </div>
                 
                 {/* ショット確定ボタン */}
                 <button
@@ -1457,7 +1654,24 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                           <span className="text-sm font-medium text-gray-800">
                             {shotByLabel}
                           </span>
-                          {shotType && (
+                          {shot.shotTypes && shot.shotTypes.length > 1 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {shot.shotTypes.map(typeId => {
+                                const type = SHOT_TYPES.find(t => t.id === typeId);
+                                return type ? (
+                                  <span 
+                                    key={typeId}
+                                    className="text-xs px-1.5 py-0.5 rounded text-white flex items-center gap-0.5"
+                                    style={{ backgroundColor: type.color }}
+                                  >
+                                    {React.cloneElement(type.icon, { className: 'w-2.5 h-2.5' })}
+                                    <span className="text-[10px]">{type.name}</span>
+                                  </span>
+                                ) : null;
+                              })}
+                              <span className="text-xs text-gray-500 ml-1">({shot.shotTypes.length}種類)</span>
+                            </div>
+                          ) : shotType ? (
                             <span 
                               className="text-xs px-2 py-1 rounded-full text-white flex items-center gap-1"
                               style={{ backgroundColor: shotType.color }}
@@ -1465,7 +1679,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                               {React.cloneElement(shotType.icon, { className: 'w-3 h-3' })}
                               <span>{shotType.name}</span>
                             </span>
-                          )}
+                          ) : null}
                         </div>
                         {targetArea && (
                           <div className="text-xs text-gray-600">

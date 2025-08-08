@@ -375,13 +375,27 @@ const PracticeCardViewer: React.FC<PracticeCardViewerProps> = ({ card, className
                     <div className="flex-1">
                       <div className="font-medium text-gray-800 flex items-center gap-2">
                         <span>{shot.shotBy === 'knocker' ? 'ノック' : shot.shotBy === 'opponent' ? '相手' : 'プレイヤー'}</span>
-                        {shotType && (
+                        {shot.shotTypes && shot.shotTypes.length > 1 ? (
+                          <div className="flex flex-wrap items-center gap-1">
+                            <span className="text-gray-400">-</span>
+                            {shot.shotTypes.map(typeId => {
+                              const type = SHOT_TYPES.find(t => t.id === typeId);
+                              return type ? (
+                                <span key={typeId} className="flex items-center gap-0.5">
+                                  {React.cloneElement(type.icon, { className: 'w-3 h-3', style: { color: type.color } })}
+                                  <span className="text-xs">{type.name}</span>
+                                </span>
+                              ) : null;
+                            })}
+                            <span className="text-xs text-gray-500">({shot.shotTypes.length}種類)</span>
+                          </div>
+                        ) : shotType ? (
                           <span className="flex items-center gap-1">
                             <span className="text-gray-400">-</span>
                             {React.cloneElement(shotType.icon, { className: 'w-4 h-4', style: { color: shotType.color } })}
                             <span>{shotType.name}</span>
                           </span>
-                        )}
+                        ) : null}
                       </div>
                       {area && (
                         <div className="text-sm text-gray-600">
