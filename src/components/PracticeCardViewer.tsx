@@ -161,18 +161,18 @@ const PracticeCardViewer: React.FC<PracticeCardViewerProps> = ({ card, className
   return (
     <div className={`bg-white rounded-lg ${className}`}>
       {/* ヘッダー情報 */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-start justify-between mb-4">
+      <div className="p-4 sm:p-6 border-b border-gray-200">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-3 mb-4">
           <div className="flex-1">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">{card.title}</h3>
-            <p className="text-gray-600">{card.description}</p>
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">{card.title}</h3>
+            <p className="text-sm sm:text-base text-gray-600">{card.description}</p>
           </div>
-          <div className="flex flex-col items-end space-y-2">
-            <span className={`px-3 py-1 rounded-full text-sm font-medium border ${config.color}`}>
+          <div className="flex flex-row sm:flex-col items-start sm:items-end gap-2 sm:space-y-2">
+            <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium border ${config.color}`}>
               {config.label}
             </span>
             {practiceType && (
-              <div className="flex items-center text-sm text-gray-600">
+              <div className="flex items-center text-xs sm:text-sm text-gray-600">
                 {practiceType.icon}
                 <span className="ml-1">{practiceType.label}</span>
               </div>
@@ -180,20 +180,20 @@ const PracticeCardViewer: React.FC<PracticeCardViewerProps> = ({ card, className
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
           <div className="flex items-center">
-            <FaClock className="w-4 h-4 mr-1" />
+            <FaClock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
             {card.drill.duration}分
           </div>
           {card.equipment?.length > 0 && (
             <div className="flex items-center">
-              <FaTools className="w-4 h-4 mr-1" />
-              {card.equipment.join('、')}
+              <FaTools className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              <span className="truncate max-w-[150px] sm:max-w-none">{card.equipment.join('、')}</span>
             </div>
           )}
           {card.rating && (
             <div className="flex items-center">
-              <FaStar className="w-4 h-4 mr-1 text-yellow-500" />
+              <FaStar className="w-3 h-3 sm:w-4 sm:h-4 mr-1 text-yellow-500" />
               {card.rating.toFixed(1)}
             </div>
           )}
@@ -203,12 +203,12 @@ const PracticeCardViewer: React.FC<PracticeCardViewerProps> = ({ card, className
       {/* メインコンテンツ（横並び） */}
       <div className="flex flex-col lg:flex-row">
         {/* 左側：コート図 */}
-        <div className="lg:w-1/2 p-6 border-r border-gray-200">
+        <div className="w-full lg:w-1/2 p-4 sm:p-6 lg:border-r border-gray-200">
           {card.visualInfo && (card.visualInfo.playerPositions?.length > 0 || card.visualInfo.shotTrajectories?.length > 0) && (
             <div>
-              <h4 className="text-lg font-semibold text-gray-800 mb-4">練習配置</h4>
-              <div className="bg-gray-100 rounded-lg p-4">
-                <svg viewBox="-10 -10 264 556" className="w-full h-auto max-h-[400px]">
+              <h4 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">練習配置</h4>
+              <div className="bg-gray-100 rounded-lg p-2 sm:p-4 overflow-x-auto">
+                <svg viewBox="-10 -10 264 556" className="w-full h-auto max-h-[300px] sm:max-h-[400px] min-w-[200px]">
                 
                 {/* コート背景 */}
                 <rect x="0" y="0" width="244" height="536" fill="#4ade80" />
@@ -235,7 +235,32 @@ const PracticeCardViewer: React.FC<PracticeCardViewerProps> = ({ card, className
                 <line x1="17" y1="0" x2="17" y2="536" stroke="white" strokeWidth="1.5" />
                 <line x1="227" y1="0" x2="227" y2="536" stroke="white" strokeWidth="1.5" />
                 
-                {/* プレイヤー位置 */}
+                {/* プレイヤーの過去のショット位置 */}
+                {sortedShots.filter(shot => shot.shotBy === 'player').map((shot, index) => (
+                  <g key={`player-shot-${shot.id}`}>
+                    <circle 
+                      cx={shot.from.x} 
+                      cy={shot.from.y} 
+                      r="8" 
+                      fill="#10B981" 
+                      fillOpacity="0.3"
+                      stroke="#10B981" 
+                      strokeWidth="2"
+                    />
+                    <text
+                      x={shot.from.x}
+                      y={shot.from.y + 3}
+                      textAnchor="middle"
+                      fontSize="10"
+                      fontWeight="bold"
+                      fill="#10B981"
+                    >
+                      {shot.order}
+                    </text>
+                  </g>
+                ))}
+                
+                {/* 現在のプレイヤー位置 */}
                 {card.visualInfo.playerPositions?.map((player) => {
                   const icon = player.role === 'knocker' ? (
                     <text 
@@ -376,14 +401,14 @@ const PracticeCardViewer: React.FC<PracticeCardViewerProps> = ({ card, className
       </div>
 
       {/* 右側：ショット詳細 */}
-      <div className="lg:w-1/2 p-6">
+      <div className="w-full lg:w-1/2 p-4 sm:p-6">
         {sortedShots.length > 0 && (
           <div>
-            <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <GiShuttlecock className="w-5 h-5 mr-2" />
+            <h4 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
+              <GiShuttlecock className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
               ショット詳細
             </h4>
-            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+            <div className="space-y-2 max-h-[300px] sm:max-h-[400px] overflow-y-auto pr-2">
               {sortedShots.map((shot, index) => {
                 const shotType = SHOT_TYPES.find(t => t.id === shot.shotType);
                 const targetArea = shot.targetArea ? COURT_AREAS.find(a => a.id === shot.targetArea) : null;

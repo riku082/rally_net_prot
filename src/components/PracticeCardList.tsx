@@ -149,12 +149,12 @@ const PracticeCardList: React.FC<PracticeCardListProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+    <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-4 sm:p-6">
       {/* ヘッダー */}
-      <div className="flex flex-col justify-between items-start mb-6 space-y-4">
+      <div className="flex flex-col justify-between items-start mb-4 sm:mb-6 space-y-4">
         <div className="flex items-center justify-between w-full">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
-            <GiShuttlecock className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-theme-primary-600" />
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 flex items-center">
+            <GiShuttlecock className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 mr-1 sm:mr-2 text-theme-primary-600" />
             練習カード
           </h2>
           <div className="flex items-center space-x-2">
@@ -163,25 +163,26 @@ const PracticeCardList: React.FC<PracticeCardListProps> = ({
                 <button
                   onClick={handleConfirmDeletion}
                   disabled={selectedForDeletion.size === 0}
-                  className="flex items-center px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  className="flex items-center px-2 sm:px-3 py-1.5 sm:py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
                 >
-                  <FaTrash className="w-3 h-3 mr-2" />
-                  削除 ({selectedForDeletion.size})
+                  <FaTrash className="w-3 h-3 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">削除</span> ({selectedForDeletion.size})
                 </button>
                 <button
                   onClick={handleEditMode}
-                  className="flex items-center px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
+                  className="flex items-center px-2 sm:px-3 py-1.5 sm:py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-xs sm:text-sm"
                 >
-                  <FaTimes className="w-3 h-3 mr-2" />
-                  キャンセル
+                  <FaTimes className="w-3 h-3 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">キャンセル</span>
+                  <span className="sm:hidden">×</span>
                 </button>
               </>
             ) : (
               <button
                 onClick={handleEditMode}
-                className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                className="flex items-center px-2 sm:px-3 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm"
               >
-                <FaEdit className="w-3 h-3 mr-2" />
+                <FaEdit className="w-3 h-3 mr-1 sm:mr-2" />
                 編集
               </button>
             )}

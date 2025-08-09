@@ -138,16 +138,16 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">
+    <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-4 sm:p-6 max-w-5xl mx-auto">
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
           {card ? '練習カードを編集' : '新しい練習カード'}
         </h2>
         <button
           onClick={onCancel}
           className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
         >
-          <FiX className="w-6 h-6" />
+          <FiX className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
       </div>
 
@@ -228,7 +228,7 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
 
             {/* ビジュアルエディター使用オプション */}
             <div>
-              <label className="flex items-center cursor-pointer group bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-xl border-2 border-purple-200">
+              <label className="flex items-start sm:items-center cursor-pointer group bg-gradient-to-r from-purple-50 to-blue-50 p-3 sm:p-4 rounded-xl border-2 border-purple-200">
                 <input
                   type="checkbox"
                   checked={useVisualEditor}
@@ -238,19 +238,19 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
                       setFormData(prev => ({ ...prev, practiceType: undefined, visualInfo: undefined }));
                     }
                   }}
-                  className="mr-3 h-6 w-6 text-purple-600 rounded focus:ring-purple-500 focus:ring-2"
+                  className="mr-2 sm:mr-3 h-5 w-5 sm:h-6 sm:w-6 text-purple-600 rounded focus:ring-purple-500 focus:ring-2 flex-shrink-0 mt-0.5 sm:mt-0"
                 />
                 <div className="flex-1">
-                  <span className="text-base font-semibold text-gray-800 group-hover:text-purple-700 transition-colors">
-                    <MdSportsBaseball className="inline w-5 h-5 mr-2 text-purple-600" />
+                  <span className="text-sm sm:text-base font-semibold text-gray-800 group-hover:text-purple-700 transition-colors">
+                    <MdSportsBaseball className="inline w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2 text-purple-600" />
                     ビジュアルエディターを使用する
                   </span>
-                  <p className="text-sm text-gray-600 mt-1">
-                    コート上でプレイヤー配置やショット軌道を視覚的に編集できます
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                    コート上でプレイヤー配置やショット軌道を視覚的に編雈できます
                   </p>
                 </div>
                 {useVisualEditor && (
-                  <span className="text-sm text-purple-600 font-medium animate-pulse ml-4">
+                  <span className="text-xs sm:text-sm text-purple-600 font-medium animate-pulse ml-2 sm:ml-4 flex-shrink-0">
                     ✨ 推奨
                   </span>
                 )}
@@ -265,7 +265,7 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     練習タイプ
                   </label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {[
                       { value: 'knock_practice', label: 'ノック練習', description: 'コーチが球出しをして練習' },
                       { value: 'pattern_practice', label: 'パターン練習', description: '決まった配球パターンを反復' },
@@ -278,21 +278,21 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
                           e.stopPropagation();
                           setFormData(prev => ({ ...prev, practiceType: type.value as PracticeMenuType }));
                         }}
-                        className={`p-4 border-2 rounded-lg transition-all flex flex-col items-center gap-2 ${
+                        className={`p-3 sm:p-4 border-2 rounded-lg transition-all flex flex-col items-center gap-1 sm:gap-2 ${
                           formData.practiceType === type.value
                             ? 'border-purple-500 bg-purple-50 ring-2 ring-purple-400'
                             : 'border-gray-300 hover:border-purple-300 bg-white'
                         }`}
                       >
-                        <MdSportsBaseball className={`w-8 h-8 ${
+                        <MdSportsBaseball className={`w-6 h-6 sm:w-8 sm:h-8 ${
                           formData.practiceType === type.value ? 'text-purple-600' : 'text-gray-600'
                         }`} />
-                        <span className={`font-medium ${
+                        <span className={`text-sm sm:text-base font-medium ${
                           formData.practiceType === type.value ? 'text-purple-700' : 'text-gray-700'
                         }`}>
                           {type.label}
                         </span>
-                        <span className={`text-xs text-center ${
+                        <span className={`text-[10px] sm:text-xs text-center ${
                           formData.practiceType === type.value ? 'text-purple-600' : 'text-gray-500'
                         }`}>
                           {type.description}

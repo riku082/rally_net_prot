@@ -808,16 +808,19 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   };
 
   return (
-    <div className="flex gap-4 h-full" onClick={(e) => e.stopPropagation()}>
-      {/* コートエリア（左側） */}
-      <div className="flex-1 flex items-center justify-center">
-        <div 
-          ref={courtRef}
-          className="relative bg-gray-100 rounded-lg shadow-lg cursor-crosshair"
-          style={{ 
-            width: COURT_WIDTH + COURT_PADDING * 2, 
-            height: COURT_HEIGHT + COURT_PADDING * 2
-          }}
+    <div className="flex flex-col gap-4 h-full" onClick={(e) => e.stopPropagation()}>
+      {/* コートエリア */}
+      <div className="flex-1 flex items-center justify-center overflow-x-auto">
+        <div className="w-full max-w-full overflow-x-auto">
+          <div 
+            ref={courtRef}
+            className="relative bg-gray-100 rounded-lg shadow-lg cursor-crosshair mx-auto scale-[0.7] sm:scale-[0.85] origin-top"
+            style={{ 
+              width: COURT_WIDTH + COURT_PADDING * 2, 
+              height: COURT_HEIGHT + COURT_PADDING * 2,
+              maxWidth: '100%'
+            }}
+            data-mobile-scale="true"
           onDragOver={(e) => e.preventDefault()}
           onDrop={handlePlayerDrop}
           onClick={(e) => {
@@ -1111,13 +1114,19 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
         </div>
       </div>
 
-      {/* ツールボックス（右側） */}
-      <div className="w-80 bg-gray-50 rounded-lg p-4 flex flex-col gap-4 overflow-y-auto">
+      {/* ツールボックス - モバイルでは下部に固定 */}
+      <div className="w-full bg-gray-50 rounded-lg p-3 sm:p-4 flex flex-col gap-3 sm:gap-4 overflow-y-auto">
         {/* ヘッダー */}
-        <div>
-          <h3 className="text-lg font-bold mb-2">練習カード作成</h3>
-          <div className="text-sm text-gray-600">
-            {practiceType === 'knock_practice' ? 'ノック練習' : 'パターン練習'}
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="text-base sm:text-lg font-bold mb-1 sm:mb-2">練習カード作成</h3>
+            <div className="text-xs sm:text-sm text-gray-600">
+              {practiceType === 'knock_practice' ? 'ノック練習' : 'パターン練習'}
+            </div>
+          </div>
+          {/* モバイル用ショット数表示 */}
+          <div className="lg:hidden bg-white px-3 py-1 rounded-full border border-gray-200">
+            <span className="text-sm font-medium text-gray-700">{shotTrajectories.length}球</span>
           </div>
         </div>
 
@@ -1616,8 +1625,8 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
         </div>
       </div>
 
-      {/* ショット履歴（右側） */}
-      <div className="w-80 bg-white rounded-lg p-4" onClick={(e) => e.stopPropagation()}>
+      {/* ショット履歴（右側） - デスクトップのみ表示 */}
+      <div className="hidden lg:block w-80 bg-white rounded-lg p-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <GiShuttlecock className="w-5 h-5 text-gray-600" />

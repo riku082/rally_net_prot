@@ -190,7 +190,28 @@ const PracticeCardMiniCourt: React.FC<PracticeCardMiniCourtProps> = ({
           );
         })}
 
-        {/* プレイヤー位置 */}
+        {/* プレイヤーの過去のショット位置 */}
+        {shotTrajectories.filter(shot => shot.shotBy === 'player').map((shot) => {
+          const x = (shot.from.x / COURT_WIDTH) * scaledWidth;
+          const y = (shot.from.y / COURT_HEIGHT) * scaledHeight;
+          const smallRadius = Math.min(3, scaledWidth * 0.025);
+          
+          return (
+            <g key={`player-shot-${shot.id}`}>
+              <circle 
+                cx={x} 
+                cy={y} 
+                r={smallRadius}
+                fill="#10B981" 
+                fillOpacity="0.4"
+                stroke="#10B981" 
+                strokeWidth={Math.max(1, scaledWidth * 0.005)}
+              />
+            </g>
+          );
+        })}
+        
+        {/* 現在のプレイヤー位置 */}
         {playerPositions.map((player) => {
           const x = (player.x / COURT_WIDTH) * scaledWidth;
           const y = (player.y / COURT_HEIGHT) * scaledHeight;
