@@ -29,6 +29,7 @@ const COURT_PADDING = 30;
 // バドミントンコートの正確な寸法（縮小版）
 const NET_POSITION = COURT_HEIGHT / 2;
 const SHORT_SERVICE_LINE = 79; // ネットから1.98m
+const LONG_SERVICE_LINE = 53; // エンドラインから1.32m内側（ダブルス用）
 const BACK_BOUNDARY_LINE_SINGLES = 30; // エンドラインから0.76m内側
 const SIDE_ALLEY_WIDTH = 17; // サイドアレー幅0.42m
 
@@ -226,14 +227,20 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
 }) => {
   const [playerPositions, setPlayerPositions] = useState<PlayerPosition[]>(visualInfo.playerPositions || []);
   const [shotTrajectories, setShotTrajectories] = useState<ShotTrajectory[]>(visualInfo.shotTrajectories || []);
-  const [inputMode, setInputMode] = useState<'setup' | 'shot'>('setup');
+  const [inputMode, setInputMode] = useState<'setup' | 'shot'>(
+    visualInfo.shotTrajectories && visualInfo.shotTrajectories.length > 0 ? 'shot' : 'setup'
+  );
   const [shotInputMode, setIshotInputMode] = useState<'pinpoint' | 'area'>('pinpoint');
   const [currentShot, setCurrentShot] = useState<{ from?: PlayerPosition }>({});
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [selectedPoints, setSelectedPoints] = useState<{x: number, y: number}[]>([]);
   const [shotTypeSelections, setShotTypeSelections] = useState<{[key: string]: string[]}>({});
   const [isSelectingTargets, setIsSelectingTargets] = useState(false);
-  const [currentShotNumber, setCurrentShotNumber] = useState(1);
+  const [currentShotNumber, setCurrentShotNumber] = useState(
+    visualInfo.shotTrajectories && visualInfo.shotTrajectories.length > 0 
+      ? Math.max(...visualInfo.shotTrajectories.map(s => s.order || 0)) + 1 
+      : 1
+  );
   const [history, setHistory] = useState<{
     action: 'addShot' | 'selectTarget' | 'movePlayer' | 'addPosition' | 'removePosition' | 'editMemo';
     state: {
@@ -247,12 +254,26 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
       latestShotLanding: {x: number, y: number} | null;
     };
   }[]>([]);
-  const [isWaitingForPlayer, setIsWaitingForPlayer] = useState(false);
+  // ノック練習で既存のショットがある場合、最後のショットの状態から判断
+  const initIsWaitingForPlayer = () => {
+    if (practiceType === 'knock_practice' && visualInfo.shotTrajectories && visualInfo.shotTrajectories.length > 0) {
+      const lastShot = visualInfo.shotTrajectories[visualInfo.shotTrajectories.length - 1];
+      // 最後のショットがノッカーからなら、プレイヤーの返球待ち
+      return lastShot.shotBy === 'knocker';
+    }
+    return false;
+  };
+  const [isWaitingForPlayer, setIsWaitingForPlayer] = useState(initIsWaitingForPlayer());
   const [continuousMode, setContinuousMode] = useState(true); // 連続入力モード
   const [selectedShotType, setSelectedShotType] = useState<string>('clear'); // デフォルトでクリアを選択
-  const [playerCounter, setPlayerCounter] = useState(1);
-  const [knockerCounter, setKnockerCounter] = useState(1);
-  const [coneCounter, setConeCounter] = useState(1);
+  // カウンターの初期値を既存のポジションから計算
+  const getInitialCounter = (role: string) => {
+    const existing = (visualInfo.playerPositions || []).filter(p => p.role === role);
+    return existing.length + 1;
+  };
+  const [playerCounter, setPlayerCounter] = useState(getInitialCounter('player'));
+  const [knockerCounter, setKnockerCounter] = useState(getInitialCounter('knocker'));
+  const [coneCounter, setConeCounter] = useState(getInitialCounter('feeder'));
   const [selectedKnocker, setSelectedKnocker] = useState<PlayerPosition | null>(null);
   const [latestShotLanding, setLatestShotLanding] = useState<{x: number, y: number} | null>(null);
   const courtRef = useRef<HTMLDivElement>(null);
@@ -792,7 +813,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
       <div className="flex-1 flex items-center justify-center">
         <div 
           ref={courtRef}
-          className="relative bg-green-50 rounded-lg shadow-lg cursor-crosshair"
+          className="relative bg-gray-100 rounded-lg shadow-lg cursor-crosshair"
           style={{ 
             width: COURT_WIDTH + COURT_PADDING * 2, 
             height: COURT_HEIGHT + COURT_PADDING * 2
@@ -815,7 +836,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             }}
           >
             {/* コート背景 */}
-            <rect x="0" y="0" width={COURT_WIDTH} height={COURT_HEIGHT} fill="#00897B" />
+            <rect x="0" y="0" width={COURT_WIDTH} height={COURT_HEIGHT} fill="#4ade80" />
             
             {/* コートライン */}
             <rect x="0" y="0" width={COURT_WIDTH} height={COURT_HEIGHT} fill="none" stroke="white" strokeWidth="2" />
@@ -823,20 +844,21 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             {/* ネット */}
             <line x1="0" y1={NET_POSITION} x2={COURT_WIDTH} y2={NET_POSITION} stroke="#424242" strokeWidth="3" />
             
-            {/* サービスライン */}
+            {/* サービスライン（ショート） */}
             <line x1="0" y1={NET_POSITION - SHORT_SERVICE_LINE} x2={COURT_WIDTH} y2={NET_POSITION - SHORT_SERVICE_LINE} stroke="white" strokeWidth="1.5" />
             <line x1="0" y1={NET_POSITION + SHORT_SERVICE_LINE} x2={COURT_WIDTH} y2={NET_POSITION + SHORT_SERVICE_LINE} stroke="white" strokeWidth="1.5" />
             
-            {/* バックバウンダリーライン */}
+            {/* バックバウンダリーライン（ダブルス） */}
             <line x1="0" y1={BACK_BOUNDARY_LINE_SINGLES} x2={COURT_WIDTH} y2={BACK_BOUNDARY_LINE_SINGLES} stroke="white" strokeWidth="1.5" />
             <line x1="0" y1={COURT_HEIGHT - BACK_BOUNDARY_LINE_SINGLES} x2={COURT_WIDTH} y2={COURT_HEIGHT - BACK_BOUNDARY_LINE_SINGLES} stroke="white" strokeWidth="1.5" />
             
-            {/* センターライン */}
-            <line x1={COURT_WIDTH / 2} y1="0" x2={COURT_WIDTH / 2} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" />
+            {/* センターライン（サービスコート内のみ） */}
+            <line x1={COURT_WIDTH / 2} y1="0" x2={COURT_WIDTH / 2} y2={NET_POSITION - SHORT_SERVICE_LINE} stroke="white" strokeWidth="1.5" />
+            <line x1={COURT_WIDTH / 2} y1={NET_POSITION + SHORT_SERVICE_LINE} x2={COURT_WIDTH / 2} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" />
             
-            {/* サイドライン */}
-            <line x1={SIDE_ALLEY_WIDTH} y1="0" x2={SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" strokeDasharray="5,5" />
-            <line x1={COURT_WIDTH - SIDE_ALLEY_WIDTH} y1="0" x2={COURT_WIDTH - SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" strokeDasharray="5,5" />
+            {/* サイドライン（シングルス） */}
+            <line x1={SIDE_ALLEY_WIDTH} y1="0" x2={SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" />
+            <line x1={COURT_WIDTH - SIDE_ALLEY_WIDTH} y1="0" x2={COURT_WIDTH - SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" />
 
             {/* エリア選択モード時のみガイド表示 */}
             {inputMode === 'shot' && shotInputMode === 'area' && currentShot.from && (
@@ -901,8 +923,6 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                         fillOpacity={isSelected ? 0.3 : 0}
                         stroke={isSelected ? fillColor : '#9CA3AF'}
                         strokeWidth={isSelected ? "2" : "0.5"}
-                        strokeDasharray={selectedTypes.length > 1 ? "4,2" : "0"}
-                        strokeDasharray={isSelected ? "0" : "0"}
                         className="cursor-pointer transition-all"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -944,27 +964,18 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                 })}
               </g>
             )}
-          </svg>
-
-          {/* ショット軌道 */}
-          {shotTrajectories.map((shot) => {
-            const shotType = SHOT_TYPES.find(t => t.id === shot.shotType);
-            const color = shot.shotBy === 'knocker' ? '#000000' : (shotType?.color || '#10B981');
             
-            // エリアターゲットの場合、複数エリアを塗りつぶす
-            const targetAreaIds = shot.targetArea ? shot.targetArea.split(',') : [];
-            
-            return (
-              <svg
-                key={shot.id}
-                className="absolute pointer-events-none"
-                style={{
-                  left: COURT_PADDING,
-                  top: COURT_PADDING,
-                  width: COURT_WIDTH,
-                  height: COURT_HEIGHT
-                }}
-              >
+            {/* ショット軌道（エリアの上に表示） */}
+            <g>
+              {shotTrajectories.map((shot) => {
+                const shotType = SHOT_TYPES.find(t => t.id === shot.shotType);
+                const color = shot.shotBy === 'knocker' ? '#000000' : (shotType?.color || '#10B981');
+                
+                // エリアターゲットの場合、複数エリアを塗りつぶす
+                const targetAreaIds = shot.targetArea ? shot.targetArea.split(',') : [];
+                
+                return (
+                  <g key={shot.id}>
                 <defs>
                   <marker
                     id={`arrow-${shot.id}`}
@@ -1042,9 +1053,11 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                     {shot.shotTypes.length}種
                   </text>
                 )}
-              </svg>
+              </g>
             );
           })}
+          </g>
+          </svg>
 
           {/* 選択中のポイント表示 */}
           {selectedPoints.map((point, index) => (

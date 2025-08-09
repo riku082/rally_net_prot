@@ -26,6 +26,7 @@ const PracticeCardMiniCourt: React.FC<PracticeCardMiniCourtProps> = ({
   // ライン位置の計算（編集モードと同じ値を使用）
   const NET_POSITION = scaledHeight / 2;
   const SHORT_SERVICE_LINE = 79 * scale; // ネットから1.98m
+  const LONG_SERVICE_LINE = 53 * scale; // エンドラインから1.32m内側（ダブルス用）
   const BACK_BOUNDARY_LINE_SINGLES = 30 * scale; // エンドラインから0.76m内側
   const SIDE_ALLEY_WIDTH = 17 * scale; // サイドアレー幅0.42m
   const CENTER_LINE = scaledWidth / 2;
@@ -68,38 +69,44 @@ const PracticeCardMiniCourt: React.FC<PracticeCardMiniCourtProps> = ({
     { id: 'own_br', x: scaledWidth*2/3, y: HALF_COURT_HEIGHT + HALF_COURT_HEIGHT*2/3, w: scaledWidth/3, h: HALF_COURT_HEIGHT/3 }
   ];
 
+  const padding = 10 * scale;
+  const totalWidth = scaledWidth + padding * 2;
+  const totalHeight = scaledHeight + padding * 2;
+  
   return (
-    <div className="relative" style={{ width: scaledWidth, height: scaledHeight }}>
+    <div className="relative bg-gray-100 rounded" style={{ width: totalWidth, height: totalHeight, padding: `${padding}px` }}>
       <svg
         width={scaledWidth}
         height={scaledHeight}
         className="rounded"
+        viewBox={`0 0 ${scaledWidth} ${scaledHeight}`}
       >
         {/* コート背景 */}
-        <rect x="0" y="0" width={scaledWidth} height={scaledHeight} fill="#00897B" />
+        <rect x="0" y="0" width={scaledWidth} height={scaledHeight} fill="#4ade80" />
         
         {/* コートライン */}
-        <g stroke="white" strokeWidth={scale * 2} fill="none">
+        <g stroke="white" fill="none">
           {/* 外枠 */}
-          <rect x="0" y="0" width={scaledWidth} height={scaledHeight} />
+          <rect x="0" y="0" width={scaledWidth} height={scaledHeight} strokeWidth={scale * 2} />
           
           {/* ネット */}
           <line x1="0" y1={NET_POSITION} x2={scaledWidth} y2={NET_POSITION} stroke="#424242" strokeWidth={scale * 3} />
           
-          {/* サービスライン */}
-          <line x1="0" y1={NET_POSITION - SHORT_SERVICE_LINE} x2={scaledWidth} y2={NET_POSITION - SHORT_SERVICE_LINE} strokeWidth={scale * 1.5} />
-          <line x1="0" y1={NET_POSITION + SHORT_SERVICE_LINE} x2={scaledWidth} y2={NET_POSITION + SHORT_SERVICE_LINE} strokeWidth={scale * 1.5} />
+          {/* サービスライン（ショート） */}
+          <line x1="0" y1={NET_POSITION - SHORT_SERVICE_LINE} x2={scaledWidth} y2={NET_POSITION - SHORT_SERVICE_LINE} stroke="white" strokeWidth={scale * 1.5} />
+          <line x1="0" y1={NET_POSITION + SHORT_SERVICE_LINE} x2={scaledWidth} y2={NET_POSITION + SHORT_SERVICE_LINE} stroke="white" strokeWidth={scale * 1.5} />
           
-          {/* バックバウンダリーライン */}
-          <line x1="0" y1={BACK_BOUNDARY_LINE_SINGLES} x2={scaledWidth} y2={BACK_BOUNDARY_LINE_SINGLES} strokeWidth={scale * 1.5} />
-          <line x1="0" y1={scaledHeight - BACK_BOUNDARY_LINE_SINGLES} x2={scaledWidth} y2={scaledHeight - BACK_BOUNDARY_LINE_SINGLES} strokeWidth={scale * 1.5} />
+          {/* バックバウンダリーライン（ダブルス） */}
+          <line x1="0" y1={BACK_BOUNDARY_LINE_SINGLES} x2={scaledWidth} y2={BACK_BOUNDARY_LINE_SINGLES} stroke="white" strokeWidth={scale * 1.5} />
+          <line x1="0" y1={scaledHeight - BACK_BOUNDARY_LINE_SINGLES} x2={scaledWidth} y2={scaledHeight - BACK_BOUNDARY_LINE_SINGLES} stroke="white" strokeWidth={scale * 1.5} />
           
-          {/* センターライン */}
-          <line x1={CENTER_LINE} y1="0" x2={CENTER_LINE} y2={scaledHeight} strokeWidth={scale * 1.5} />
+          {/* センターライン（サービスコート内のみ） */}
+          <line x1={CENTER_LINE} y1="0" x2={CENTER_LINE} y2={NET_POSITION - SHORT_SERVICE_LINE} stroke="white" strokeWidth={scale * 1.5} />
+          <line x1={CENTER_LINE} y1={NET_POSITION + SHORT_SERVICE_LINE} x2={CENTER_LINE} y2={scaledHeight} stroke="white" strokeWidth={scale * 1.5} />
           
-          {/* サイドライン */}
-          <line x1={SIDE_ALLEY_WIDTH} y1="0" x2={SIDE_ALLEY_WIDTH} y2={scaledHeight} strokeWidth={scale * 1.5} strokeDasharray="5,5" />
-          <line x1={scaledWidth - SIDE_ALLEY_WIDTH} y1="0" x2={scaledWidth - SIDE_ALLEY_WIDTH} y2={scaledHeight} strokeWidth={scale * 1.5} strokeDasharray="5,5" />
+          {/* サイドライン（シングルス） */}
+          <line x1={SIDE_ALLEY_WIDTH} y1="0" x2={SIDE_ALLEY_WIDTH} y2={scaledHeight} stroke="white" strokeWidth={scale * 1.5} />
+          <line x1={scaledWidth - SIDE_ALLEY_WIDTH} y1="0" x2={scaledWidth - SIDE_ALLEY_WIDTH} y2={scaledHeight} stroke="white" strokeWidth={scale * 1.5} />
         </g>
 
         {/* ショット軌道 */}
@@ -129,8 +136,7 @@ const PracticeCardMiniCourt: React.FC<PracticeCardMiniCourtProps> = ({
                       height={area.h}
                       fill={color}
                       fillOpacity={0.3}
-                      stroke={color}
-                      strokeWidth="1"
+                      stroke="none"
                     />
                   );
                 }
@@ -188,17 +194,68 @@ const PracticeCardMiniCourt: React.FC<PracticeCardMiniCourtProps> = ({
         {playerPositions.map((player) => {
           const x = (player.x / COURT_WIDTH) * scaledWidth;
           const y = (player.y / COURT_HEIGHT) * scaledHeight;
+          const radius = Math.min(12, scaledWidth * 0.1);
+          const fontSize = Math.min(11, scaledWidth * 0.09);
+          
+          const icon = player.role === 'knocker' ? (
+            <text 
+              x={x} 
+              y={y + fontSize * 0.3} 
+              textAnchor="middle" 
+              fill="white" 
+              fontSize={fontSize}
+              fontWeight="bold"
+            >
+              N
+            </text>
+          ) : player.role === 'player' ? (
+            <text 
+              x={x} 
+              y={y + fontSize * 0.3} 
+              textAnchor="middle" 
+              fill="white" 
+              fontSize={fontSize}
+              fontWeight="bold"
+            >
+              P
+            </text>
+          ) : (
+            <text 
+              x={x} 
+              y={y + fontSize * 0.3} 
+              textAnchor="middle" 
+              fill="white" 
+              fontSize={fontSize}
+              fontWeight="bold"
+            >
+              {player.label?.substring(0, 1) || 'O'}
+            </text>
+          );
           
           return (
-            <circle
-              key={player.id}
-              cx={x}
-              cy={y}
-              r="4"
-              fill={player.color || '#10B981'}
-              stroke="white"
-              strokeWidth="1"
-            />
+            <g key={player.id}>
+              <circle 
+                cx={x} 
+                cy={y} 
+                r={radius}
+                fill={player.color || '#10B981'} 
+                stroke="white" 
+                strokeWidth={Math.max(1.5, scaledWidth * 0.01)}
+              />
+              {icon}
+              {player.label && (
+                <text 
+                  x={x} 
+                  y={y + radius + fontSize * 0.8} 
+                  textAnchor="middle" 
+                  fill="#374151" 
+                  fontSize={fontSize * 0.7}
+                  fontWeight="600"
+                >
+                  {player.label}
+                </text>
+              )}
+            </g>
           );
         })}
       </svg>
