@@ -809,7 +809,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
 
   return (
     <div className="flex flex-col gap-4 h-full" onClick={(e) => e.stopPropagation()}>
-      {/* コートエリア */}
+      {/* Court Area */}
       <div className="flex-1 flex items-center justify-center overflow-x-auto">
         <div className="w-full max-w-full overflow-x-auto">
           <div 
@@ -828,7 +828,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               handleCourtClick(e);
             }}
         >
-          {/* コート */}
+          {/* Court */}
           <svg 
             className="absolute"
             style={{ 
@@ -838,35 +838,35 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               height: COURT_HEIGHT 
             }}
           >
-            {/* コート背景 */}
+            {/* Court Background */}
             <rect x="0" y="0" width={COURT_WIDTH} height={COURT_HEIGHT} fill="#4ade80" />
             
-            {/* コートライン */}
+            {/* Court Lines */}
             <rect x="0" y="0" width={COURT_WIDTH} height={COURT_HEIGHT} fill="none" stroke="white" strokeWidth="2" />
             
-            {/* ネット */}
+            {/* Net */}
             <line x1="0" y1={NET_POSITION} x2={COURT_WIDTH} y2={NET_POSITION} stroke="#424242" strokeWidth="3" />
             
-            {/* サービスライン（ショート） */}
+            {/* Service Line (Short) */}
             <line x1="0" y1={NET_POSITION - SHORT_SERVICE_LINE} x2={COURT_WIDTH} y2={NET_POSITION - SHORT_SERVICE_LINE} stroke="white" strokeWidth="1.5" />
             <line x1="0" y1={NET_POSITION + SHORT_SERVICE_LINE} x2={COURT_WIDTH} y2={NET_POSITION + SHORT_SERVICE_LINE} stroke="white" strokeWidth="1.5" />
             
-            {/* バックバウンダリーライン（ダブルス） */}
+            {/* Back Boundary Line (Doubles) */}
             <line x1="0" y1={BACK_BOUNDARY_LINE_SINGLES} x2={COURT_WIDTH} y2={BACK_BOUNDARY_LINE_SINGLES} stroke="white" strokeWidth="1.5" />
             <line x1="0" y1={COURT_HEIGHT - BACK_BOUNDARY_LINE_SINGLES} x2={COURT_WIDTH} y2={COURT_HEIGHT - BACK_BOUNDARY_LINE_SINGLES} stroke="white" strokeWidth="1.5" />
             
-            {/* センターライン（サービスコート内のみ） */}
+            {/* Center Line (Service Court Only) */}
             <line x1={COURT_WIDTH / 2} y1="0" x2={COURT_WIDTH / 2} y2={NET_POSITION - SHORT_SERVICE_LINE} stroke="white" strokeWidth="1.5" />
             <line x1={COURT_WIDTH / 2} y1={NET_POSITION + SHORT_SERVICE_LINE} x2={COURT_WIDTH / 2} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" />
             
-            {/* サイドライン（シングルス） */}
+            {/* Side Line (Singles) */}
             <line x1={SIDE_ALLEY_WIDTH} y1="0" x2={SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" />
             <line x1={COURT_WIDTH - SIDE_ALLEY_WIDTH} y1="0" x2={COURT_WIDTH - SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" />
 
-            {/* エリア選択モード時のみガイド表示 */}
+            {/* Show guide only in area selection mode */}
             {inputMode === 'shot' && shotInputMode === 'area' && currentShot.from && (
               <g>
-                {/* 接続エリアグループの背景表示 */}
+                {/* Connected area group background display */}
                 {selectedAreas.length > 0 && groupAdjacentAreas(selectedAreas).map((groupAreaIds, groupIndex) => {
                   if (groupAreaIds.length <= 1) return null;
                   
@@ -968,7 +968,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               </g>
             )}
             
-            {/* ショット軌道（エリアの上に表示） */}
+            {/* Shot trajectories (displayed above areas) */}
             <g>
               {shotTrajectories.map((shot) => {
                 const shotType = SHOT_TYPES.find(t => t.id === shot.shotType);
@@ -992,7 +992,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                   </marker>
                 </defs>
                 
-                {/* エリアを塗りつぶす */}
+                {/* Fill area */}
                 {targetAreaIds.map(areaId => {
                   const area = COURT_AREAS.find(a => a.id === areaId);
                   if (area) {
@@ -1023,7 +1023,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                   markerEnd={`url(#arrow-${shot.id})`}
                 />
                 
-                {/* ショット番号と複数ショットタイプインジケーター */}
+                {/* Shot number and multiple shot type indicator */}
                 <circle
                   cx={shot.from.x + (shot.to.x - shot.from.x) / 2}
                   cy={shot.from.y + (shot.to.y - shot.from.y) / 2}
@@ -1043,7 +1043,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                 >
                   {shot.order}
                 </text>
-                {/* 複数ショットタイプ数表示 */}
+                {/* Multiple shot type count display */}
                 {shot.shotTypes && shot.shotTypes.length > 1 && (
                   <text
                     x={shot.from.x + (shot.to.x - shot.from.x) / 2}
@@ -1062,7 +1062,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
           </g>
           </svg>
 
-          {/* 選択中のポイント表示 */}
+          {/* Selected points display */}
           {selectedPoints.map((point, index) => (
             <div
               key={index}
@@ -1074,7 +1074,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             />
           ))}
 
-          {/* プレイヤー表示 */}
+          {/* Player display */}
           {playerPositions.map(player => (
             <div
               key={player.id}
@@ -1114,9 +1114,9 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
         </div>
       </div>
 
-      {/* ツールボックス - モバイルでは下部に固定 */}
+      {/* Toolbox - Fixed at bottom on mobile */}
       <div className="w-full bg-gray-50 rounded-lg p-3 sm:p-4 flex flex-col gap-3 sm:gap-4 overflow-y-auto">
-        {/* ヘッダー */}
+        {/* Header */}
         <div className="flex justify-between items-start">
           <div>
             <h3 className="text-base sm:text-lg font-bold mb-1 sm:mb-2">練習カード作成</h3>
@@ -1124,13 +1124,13 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               {practiceType === 'knock_practice' ? 'ノック練習' : 'パターン練習'}
             </div>
           </div>
-          {/* モバイル用ショット数表示 */}
+          {/* Mobile shot count display */}
           <div className="lg:hidden bg-white px-3 py-1 rounded-full border border-gray-200">
             <span className="text-sm font-medium text-gray-700">{shotTrajectories.length}球</span>
           </div>
         </div>
 
-        {/* 入力モード切替（ショットが入力されていない場合のみ表示） */}
+        {/* Input mode toggle (shown only when no shots entered) */}
         {shotTrajectories.length === 0 && (
           <div className="space-y-2">
             <div className="text-sm font-medium">入力モード</div>
@@ -1170,7 +1170,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
           </div>
         )}
 
-        {/* 配置モード */}
+        {/* Setup mode */}
         {inputMode === 'setup' && (
           <>
             <div className="space-y-2">
@@ -1223,7 +1223,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               </div>
             </div>
 
-            {/* 配置済みアイテム */}
+            {/* Placed items */}
             <div className="space-y-2">
               <div className="text-sm font-medium">配置済みアイテム</div>
               <div className="bg-white rounded-lg p-3 max-h-40 overflow-y-auto">
@@ -1269,7 +1269,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               </div>
             </div>
 
-            {/* 配置完了ボタン */}
+            {/* Setup complete button */}
             {playerPositions.length > 0 && (
               <button
                 type="button"
@@ -1285,10 +1285,10 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
           </>
         )}
 
-        {/* ショット入力モード */}
+        {/* Shot input mode */}
         {inputMode === 'shot' && (
           <>
-            {/* ノック練習のノッカー選択 */}
+            {/* Knocker selection for knock practice */}
             {practiceType === 'knock_practice' && (
               <div className="space-y-2">
                 <div className="text-sm font-medium">使用するノッカー</div>
@@ -1326,7 +1326,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               </div>
             )}
 
-            {/* 現在の状態表示 */}
+            {/* Current state display */}
             <div className="bg-gray-50 border border-gray-200 p-3 rounded-lg">
               <div className="flex items-start gap-2">
                 <div className="text-gray-400 mt-0.5">
@@ -1353,7 +1353,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               </div>
             </div>
 
-            {/* プレイヤー移動選択 */}
+            {/* Player movement selection */}
             {practiceType === 'knock_practice' && isWaitingForPlayer && latestShotLanding && (
               <div className="space-y-2">
                 <div className="text-sm font-medium text-gray-700">プレイヤー移動選択</div>
@@ -1385,7 +1385,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               </div>
             )}
 
-            {/* ノック練習中は着地点選択を表示しない（プレイヤーが着地点に移動するまで） */}
+            {/* Hide landing point selection during knock practice (until player moves to landing point) */}
             {!(practiceType === 'knock_practice' && (!isWaitingForPlayer || (isWaitingForPlayer && latestShotLanding))) && (
               <div className="space-y-2">
                 <div className="text-sm font-medium">着地点選択</div>
@@ -1403,9 +1403,9 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                     }`}
                   >
                     <svg viewBox="0 0 32 32" className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      {/* 矢印 */}
+                      {/* Arrow */}
                       <path d="M10 10 L20 20" strokeWidth="1.8" markerEnd="url(#arrowhead-pinpoint)" />
-                      {/* 的 */}
+                      {/* Target */}
                       <circle cx="20" cy="20" r="4" fill="none" strokeWidth="1.2" />
                       <circle cx="20" cy="20" r="2" fill="none" strokeWidth="1" />
                       <circle cx="20" cy="20" r="0.8" fill="currentColor" />
@@ -1442,9 +1442,9 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                     }`}
                   >
                     <svg viewBox="0 0 32 32" className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      {/* 矢印 */}
+                      {/* Arrow */}
                       <path d="M8 8 L20 20" strokeWidth="1.8" markerEnd="url(#arrowhead-area)" />
-                      {/* エリア選択範囲 */}
+                      {/* Area selection range */}
                       <rect x="18" y="18" width="8" height="8" rx="1" strokeDasharray="1.5,1" strokeWidth="1" />
                       <rect x="19.5" y="19.5" width="5" height="5" rx="0.5" strokeDasharray="1,0.5" strokeWidth="0.8" />
                       <rect x="20.5" y="20.5" width="3" height="3" rx="0.5" fill="currentColor" fillOpacity="0.4" strokeWidth="0.5" />
@@ -1460,7 +1460,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               </div>
             )}
 
-            {/* ターゲット選択完了ボタン */}
+            {/* Target selection complete button */}
             {isSelectingTargets && (selectedPoints.length > 0 || selectedAreas.length > 0) && (
               <button
                 type="button"
@@ -1475,14 +1475,14 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               </button>
             )}
 
-            {/* ショットタイプ別に選択 */}
+            {/* Select by shot type */}
             {!isSelectingTargets && (selectedPoints.length > 0 || selectedAreas.length > 0) && (
               <div className="space-y-2">
                 <div className="text-sm font-medium">
                   各ターゲットのショットタイプを選択
                 </div>
                 <div className="max-h-60 overflow-y-auto space-y-2">
-                  {/* ピンポイントモード */}
+                  {/* Pinpoint mode */}
                   {shotInputMode === 'pinpoint' && selectedPoints.map((point, index) => {
                   const pointId = `point_${index}`;
                   const selectedTypes = shotTypeSelections[pointId] || [];
@@ -1529,7 +1529,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                   );
                 })}
                 
-                {/* エリアモード */}
+                {/* Area mode */}
                 {shotInputMode === 'area' && selectedAreas.map((areaId) => {
                   const area = COURT_AREAS.find(a => a.id === areaId);
                   const selectedTypes = shotTypeSelections[areaId] || [];
@@ -1577,7 +1577,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                 })}
               </div>
                 
-                {/* ショット確定ボタン */}
+                {/* Shot confirmation button */}
                 <button
                   type="button"
                   onClick={(e) => {
@@ -1593,7 +1593,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
           </>
         )}
 
-        {/* アクションボタン */}
+        {/* Action buttons */}
         <div className="flex gap-2 mt-auto">
           <button
             type="button"
@@ -1625,7 +1625,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
         </div>
       </div>
 
-      {/* ショット履歴（右側） - デスクトップのみ表示 */}
+      {/* Shot history (right side) - Desktop only */}
       <div className="hidden lg:block w-80 bg-white rounded-lg p-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold flex items-center gap-2">
