@@ -821,12 +821,12 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               maxWidth: '100%'
             }}
             data-mobile-scale="true"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={handlePlayerDrop}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleCourtClick(e);
-          }}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handlePlayerDrop}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCourtClick(e);
+            }}
         >
           {/* コート */}
           <svg 
