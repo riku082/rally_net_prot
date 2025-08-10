@@ -367,11 +367,12 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
       if (practiceType === 'knock_practice') {
         if (!isWaitingForPlayer) {
           // ノック練習: 初回のノッカーからの配球
-          if (selectedKnocker) {
+          const currentKnocker = playerPositions.find(p => p.role === 'knocker');
+          if (currentKnocker) {
             saveToHistory('addShot');
             const newShot: ShotTrajectory = {
               id: `shot_${Date.now()}`,
-              from: { x: selectedKnocker.x, y: selectedKnocker.y },
+              from: { x: currentKnocker.x, y: currentKnocker.y },
               to: { x, y },
               shotType: '',
               shotBy: 'knocker',
@@ -647,16 +648,29 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
         // 通常のショット
         // 各ポイントに一つの矢印を作成（複数ショットタイプをまとめる）
         let shotIndex = 0;
+        // 現在のポジションからfrom位置を取得
+        let fromPos = { x: 0, y: 0 };
+        let shotByRole: 'knocker' | 'player' = 'player';
+        if (currentShot.from?.role === 'knocker') {
+          const currentKnocker = playerPositions.find(p => p.role === 'knocker');
+          fromPos = currentKnocker ? { x: currentKnocker.x, y: currentKnocker.y } : { x: 0, y: 0 };
+          shotByRole = 'knocker';
+        } else if (currentShot.from) {
+          const currentPlayer = playerPositions.find(p => p.id === currentShot.from?.id);
+          fromPos = currentPlayer ? { x: currentPlayer.x, y: currentPlayer.y } : { x: currentShot.from.x, y: currentShot.from.y };
+          shotByRole = currentShot.from.role || 'player';
+        }
+        
         selectedPoints.forEach((point, index) => {
           const shotTypes = shotTypeSelections[`point_${index}`] || ['clear'];
           if (shotTypes.length > 0) {
             const newShot: ShotTrajectory = {
               id: `shot_${Date.now()}_${shotIndex}`,
-              from: currentShot.from ? { x: currentShot.from.x, y: currentShot.from.y } : { x: 0, y: 0 },
+              from: fromPos,
               to: point,
               shotType: shotTypes[0], // 最初のタイプを代表として使用
               shotTypes: shotTypes.length > 1 ? shotTypes : undefined, // 複数ある場合のみ設定
-              shotBy: currentShot.from?.role || 'player' as const,
+              shotBy: shotByRole,
               order: currentShotNumber + shotIndex
             };
             setShotTrajectories(prev => [...prev, newShot]);
@@ -731,7 +745,15 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
         // 接しているエリアをグループ化して一つの矢印でまとめる
         let shotIndex = 0;
         const areaGroups = groupAdjacentAreas(selectedAreas);
-        const fromPos = currentShot.from ? { x: currentShot.from.x, y: currentShot.from.y } : { x: 0, y: 0 };
+        // 現在のポジションからfrom位置を取得
+        let fromPos = { x: 0, y: 0 };
+        if (currentShot.from?.role === 'knocker') {
+          const currentKnocker = playerPositions.find(p => p.role === 'knocker');
+          fromPos = currentKnocker ? { x: currentKnocker.x, y: currentKnocker.y } : { x: 0, y: 0 };
+        } else if (currentShot.from) {
+          const currentPlayer = playerPositions.find(p => p.id === currentShot.from?.id);
+          fromPos = currentPlayer ? { x: currentPlayer.x, y: currentPlayer.y } : { x: currentShot.from.x, y: currentShot.from.y };
+        }
         
         areaGroups.forEach(groupAreaIds => {
           // グループ内の全エリアのショットタイプを集約
@@ -758,13 +780,21 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               const centerY = totalY / validAreas;
               const shotTypesArray = Array.from(allShotTypes);
               
+              // shotByの値を正しく設定
+              let shotByRole: 'knocker' | 'player' = 'player';
+              if (currentShot.from?.role === 'knocker') {
+                shotByRole = 'knocker';
+              } else if (currentShot.from?.role) {
+                shotByRole = currentShot.from.role as 'knocker' | 'player';
+              }
+              
               const newShot: ShotTrajectory = {
                 id: `shot_${Date.now()}_${shotIndex}`,
                 from: fromPos,
                 to: { x: centerX, y: centerY },
                 shotType: shotTypesArray[0], // 最初のタイプを代表として使用
                 shotTypes: shotTypesArray.length > 1 ? shotTypesArray : undefined,
-                shotBy: currentShot.from?.role || 'player',
+                shotBy: shotByRole,
                 order: currentShotNumber + shotIndex,
                 targetArea: groupAreaIds.join(',')
               };
