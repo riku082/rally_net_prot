@@ -1179,11 +1179,12 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             <line x1={SIDE_ALLEY_WIDTH} y1="0" x2={SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" />
             <line x1={COURT_WIDTH - SIDE_ALLEY_WIDTH} y1="0" x2={COURT_WIDTH - SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" />
 
-            {/* Show guide only in area selection mode */}
-            {inputMode === 'shot' && shotInputMode === 'area' && currentShot.from && (
-              <g>
-                {/* Connected area group background display */}
-                {selectedAreas.length > 0 && groupAdjacentAreas(selectedAreas).map((groupAreaIds, groupIndex) => {
+            {/* Connected area group background display */}
+            {((inputMode === 'shot' && shotInputMode === 'area' && currentShot.from) || 
+              (practiceType === 'pattern_practice' && patternInputMode === 'player-settings' && selectedPlayerForSettings)) &&
+              selectedAreas.length > 0 && (
+                <g>
+                  {groupAdjacentAreas(selectedAreas).map((groupAreaIds, groupIndex) => {
                   if (groupAreaIds.length <= 1) return null;
                   
                   // グループの境界を計算
@@ -1223,18 +1224,29 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                       className="pointer-events-none"
                     />
                   );
-                })}
-                {COURT_AREAS.map(area => {
+                  })}
+                </g>
+              )}
+            
+            {/* Area display and selection - always visible for click interaction */}
+            {COURT_AREAS.map(area => {
                   // プレイヤー設定モードでのエリア選択状態をチェック
                   const isSelectedInPlayerSettings = patternInputMode === 'player-settings' && 
                     selectedPlayerForSettings && 
                     tempShotTargets.some(t => t.area === area.id);
+                  
+                  // エリアを表示する条件
+                  const shouldShowArea = (inputMode === 'shot' && shotInputMode === 'area') || 
+                    (practiceType === 'pattern_practice' && patternInputMode === 'player-settings' && selectedPlayerForSettings && playerSettingsInputMode === 'area');
                   
                   const isSelected = selectedAreas.includes(area.id) || isSelectedInPlayerSettings;
                   const selectedTypes = shotTypeSelections[area.id] || [];
                   // 複数選択の場合は最初のタイプの色を使用、未選択の場合はデフォルト色
                   const primaryShotType = selectedTypes.length > 0 ? SHOT_TYPES.find(t => t.id === selectedTypes[0]) : null;
                   const fillColor = isSelected ? (isSelectedInPlayerSettings ? '#8B5CF6' : primaryShotType?.color || '#FCD34D') : 'transparent';
+                  
+                  // エリアを表示すべきでない場合は何も表示しない
+                  if (!shouldShowArea) return null;
                   
                   return (
                     <g key={area.id}>
@@ -1286,8 +1298,6 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                     </g>
                   );
                 })}
-              </g>
-            )}
             
             {/* Shot trajectories (displayed above areas) */}
             <g>
