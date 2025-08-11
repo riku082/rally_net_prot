@@ -17,7 +17,8 @@
       "Bash(mkdir:*)",
       "Bash(touch:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git cherry-pick:*)"
     ],
     "deny": []
   }
