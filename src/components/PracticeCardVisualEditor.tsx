@@ -271,6 +271,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   const [selectedPlayerForSettings, setSelectedPlayerForSettings] = useState<PlayerPosition | null>(null); // 設定中のプレイヤー
   const [tempShotTargets, setTempShotTargets] = useState<Array<{ x: number; y: number; area?: string }>>([]);  // 複数の着地点を選択可能
   const [playerSettingsMode, setPlayerSettingsMode] = useState<'pinpoint' | 'area'>('pinpoint'); // プレイヤー設定モードの入力方式
+  const [playerSettingsShotTypes, setPlayerSettingsShotTypes] = useState<{[key: string]: string[]}>({});  // プレイヤー設定モードでのショットタイプ選択
   // カウンターの初期値を既存のポジションから計算
   const getInitialCounter = (role: string) => {
     const existing = (visualInfo.playerPositions || []).filter(p => p.role === role);
@@ -1161,10 +1162,15 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
 
             {/* Connected area group background display */}
             {((inputMode === 'shot' && shotInputMode === 'area' && currentShot.from) || 
-              (practiceType === 'pattern_practice' && patternInputMode === 'player-settings' && selectedPlayerForSettings)) &&
-              selectedAreas.length > 0 && (
+              (practiceType === 'pattern_practice' && patternInputMode === 'player-settings' && selectedPlayerForSettings && playerSettingsMode === 'area')) &&
+              (selectedAreas.length > 0 || tempShotTargets.some(t => t.area)) && (
                 <g>
-                  {groupAdjacentAreas(selectedAreas).map((groupAreaIds, groupIndex) => {
+                  {(() => {
+                    // プレイヤー設定モードの場合はtempShotTargetsから、それ以外はselectedAreasを使用
+                    const areasToGroup = patternInputMode === 'player-settings' 
+                      ? tempShotTargets.map(t => t.area).filter(Boolean) as string[]
+                      : selectedAreas;
+                    return groupAdjacentAreas(areasToGroup).map((groupAreaIds, groupIndex) => {
                   if (groupAreaIds.length <= 1) return null;
                   
                   // グループの境界を計算
@@ -1180,13 +1186,19 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                   });
                   
                   // グループ全体のショットタイプを集約
-                  const allTypes = new Set<string>();
-                  groupAreaIds.forEach(areaId => {
-                    const types = shotTypeSelections[areaId] || [];
-                    types.forEach(type => allTypes.add(type));
-                  });
-                  const primaryType = allTypes.size > 0 ? SHOT_TYPES.find(t => allTypes.has(t.id)) : null;
-                  const groupColor = primaryType?.color || '#FCD34D';
+                  let groupColor = '#FCD34D';
+                  if (patternInputMode === 'player-settings') {
+                    // プレイヤー設定モードでは紫色
+                    groupColor = '#8B5CF6';
+                  } else {
+                    const allTypes = new Set<string>();
+                    groupAreaIds.forEach(areaId => {
+                      const types = shotTypeSelections[areaId] || [];
+                      types.forEach(type => allTypes.add(type));
+                    });
+                    const primaryType = allTypes.size > 0 ? SHOT_TYPES.find(t => allTypes.has(t.id)) : null;
+                    groupColor = primaryType?.color || '#FCD34D';
+                  }
                   
                   return (
                     <rect
@@ -1204,7 +1216,8 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                       className="pointer-events-none"
                     />
                   );
-                  })}
+                  });
+                  })()}
                 </g>
               )}
             
@@ -1952,6 +1965,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                           setPlayerSettingsMode('pinpoint');
                           setTempShotTargets([]);
                           setSelectedPoints([]);
+                          setPlayerSettingsShotTypes({});
                         }}
                         className={`p-1.5 text-[10px] rounded transition-all ${
                           playerSettingsMode === 'pinpoint' 
@@ -1967,6 +1981,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                           setPlayerSettingsMode('area');
                           setTempShotTargets([]);
                           setSelectedPoints([]);
+                          setPlayerSettingsShotTypes({});
                         }}
                         className={`p-1.5 text-[10px] rounded transition-all ${
                           playerSettingsMode === 'area' 
@@ -2001,51 +2016,138 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                 {/* ショットタイプ選択 */}
                 {selectedPlayerForSettings && tempShotTargets.length > 0 && (
                   <div className="space-y-2">
-                    <div className="text-xs text-gray-600">ショットタイプを選択</div>
+                    <div className="text-xs text-gray-600">ショットタイプを選択（複数選択可）</div>
                     <div className="grid grid-cols-3 gap-1">
-                      {SHOT_TYPES.map(shotType => (
-                        <button
-                          key={shotType.id}
-                          type="button"
-                          onClick={() => {
-                            if (selectedPlayerForSettings && tempShotTargets.length > 0) {
-                              const playerId = selectedPlayerForSettings.id;
-                              const existingShots = playerShotSettings[playerId] || [];
-                              
-                              // 各着地点に対してショットを作成
-                              const newShots: ShotTrajectory[] = tempShotTargets.map((target, index) => ({
-                                id: `shot_${Date.now()}_${selectedPlayerForSettings.id}_${index}`,
-                                from: { x: selectedPlayerForSettings.x, y: selectedPlayerForSettings.y },
-                                to: { x: target.x, y: target.y },
-                                targetArea: target.area,
-                                shotType: shotType.id,
-                                shotBy: 'player',
-                                order: 0
-                              }));
-                              
-                              setPlayerShotSettings(prev => ({
-                                ...prev,
-                                [playerId]: [...existingShots, ...newShots]
-                              }));
-                              
-                              // 次のプレイヤー設定のためにリセット（プレイヤー選択画面に戻る）
-                              setSelectedPlayerForSettings(null);
-                              setTempShotTargets([]);
-                              setSelectedPoints([]);
-                              setSelectedAreas([]);
-                              setIsSelectingTargets(false);
-                              
-                              // 設定が完了したことを表示（オプション）
-                              console.log(`${selectedPlayerForSettings?.label}のショット設定完了: ${newShots.length}箇所`);
-                            }
-                          }}
-                          className="p-1.5 text-[10px] rounded transition-all bg-gray-100 text-gray-700 hover:bg-gray-200"
-                          style={{ borderColor: shotType.color }}
-                        >
-                          {shotType.name}
-                        </button>
-                      ))}
+                      {SHOT_TYPES.map(shotType => {
+                        // 選択中のターゲットのキーを作成
+                        const targetKey = playerSettingsMode === 'area' && tempShotTargets[0]?.area 
+                          ? `area_${tempShotTargets.map(t => t.area).sort().join('_')}`
+                          : `point_${selectedPlayerForSettings.id}_${tempShotTargets.length}`;
+                        const selectedTypes = playerSettingsShotTypes[targetKey] || [];
+                        const isSelected = selectedTypes.includes(shotType.id);
+                        
+                        return (
+                          <button
+                            key={shotType.id}
+                            type="button"
+                            onClick={() => {
+                              setPlayerSettingsShotTypes(prev => {
+                                const current = prev[targetKey] || [];
+                                if (current.includes(shotType.id)) {
+                                  // 既に選択されていれば削除
+                                  return {
+                                    ...prev,
+                                    [targetKey]: current.filter(t => t !== shotType.id)
+                                  };
+                                } else {
+                                  // 選択されていなければ追加
+                                  return {
+                                    ...prev,
+                                    [targetKey]: [...current, shotType.id]
+                                  };
+                                }
+                              });
+                            }}
+                            className={`p-1.5 text-[10px] rounded transition-all border-2 ${
+                              isSelected 
+                                ? 'bg-opacity-20 border-opacity-100' 
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300'
+                            }`}
+                            style={isSelected ? {
+                              backgroundColor: shotType.color + '33',
+                              borderColor: shotType.color,
+                              color: shotType.color
+                            } : {}}
+                          >
+                            {shotType.name}
+                          </button>
+                        );
+                      })}
                     </div>
+                    
+                    {/* ショット確定ボタン */}
+                    {Object.values(playerSettingsShotTypes).some(types => types.length > 0) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (selectedPlayerForSettings && tempShotTargets.length > 0) {
+                            const playerId = selectedPlayerForSettings.id;
+                            const existingShots = playerShotSettings[playerId] || [];
+                            const newShots: ShotTrajectory[] = [];
+                            
+                            if (playerSettingsMode === 'area' && tempShotTargets.some(t => t.area)) {
+                              // エリアモード: 隣接エリアをグループ化
+                              const areaIds = tempShotTargets.map(t => t.area).filter(Boolean) as string[];
+                              const groups = groupAdjacentAreas(areaIds);
+                              
+                              groups.forEach(groupAreaIds => {
+                                const targetKey = `area_${groupAreaIds.sort().join('_')}`;
+                                const shotTypes = playerSettingsShotTypes[targetKey] || ['clear'];
+                                
+                                shotTypes.forEach((shotType, typeIndex) => {
+                                  const targetArea = groupAreaIds.join(',');
+                                  // グループの中心を計算
+                                  let centerX = 0, centerY = 0;
+                                  groupAreaIds.forEach(areaId => {
+                                    const area = COURT_AREAS.find(a => a.id === areaId);
+                                    if (area) {
+                                      centerX += area.x + area.w / 2;
+                                      centerY += area.y + area.h / 2;
+                                    }
+                                  });
+                                  centerX /= groupAreaIds.length;
+                                  centerY /= groupAreaIds.length;
+                                  
+                                  newShots.push({
+                                    id: `shot_${Date.now()}_${playerId}_${groupAreaIds.join('_')}_${typeIndex}`,
+                                    from: { x: selectedPlayerForSettings.x, y: selectedPlayerForSettings.y },
+                                    to: { x: centerX, y: centerY },
+                                    targetArea,
+                                    shotType,
+                                    shotBy: 'player',
+                                    order: 0
+                                  });
+                                });
+                              });
+                            } else {
+                              // ピンポイントモード
+                              tempShotTargets.forEach((target, index) => {
+                                const targetKey = `point_${selectedPlayerForSettings.id}_${tempShotTargets.length}`;
+                                const shotTypes = playerSettingsShotTypes[targetKey] || ['clear'];
+                                
+                                shotTypes.forEach((shotType, typeIndex) => {
+                                  newShots.push({
+                                    id: `shot_${Date.now()}_${playerId}_${index}_${typeIndex}`,
+                                    from: { x: selectedPlayerForSettings.x, y: selectedPlayerForSettings.y },
+                                    to: { x: target.x, y: target.y },
+                                    shotType,
+                                    shotBy: 'player',
+                                    order: 0
+                                  });
+                                });
+                              });
+                            }
+                            
+                            setPlayerShotSettings(prev => ({
+                              ...prev,
+                              [playerId]: [...existingShots, ...newShots]
+                            }));
+                            
+                            // リセット
+                            setSelectedPlayerForSettings(null);
+                            setTempShotTargets([]);
+                            setSelectedPoints([]);
+                            setSelectedAreas([]);
+                            setPlayerSettingsShotTypes({});
+                            setIsSelectingTargets(false);
+                          }
+                        }}
+                        className="w-full px-3 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all font-medium text-sm"
+                      >
+                        ショットを確定
+                      </button>
+                    )}
+                    
                     <div className="flex gap-2">
                       <button
                         type="button"
