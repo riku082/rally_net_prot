@@ -270,7 +270,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   const [playerShotSettings, setPlayerShotSettings] = useState<Record<string, ShotTrajectory[]>>({}); // 各プレイヤーのショット設定
   const [selectedPlayerForSettings, setSelectedPlayerForSettings] = useState<PlayerPosition | null>(null); // 設定中のプレイヤー
   const [tempShotTargets, setTempShotTargets] = useState<Array<{ x: number; y: number; area?: string }>>([]);  // 複数の着地点を選択可能
-  const [playerSettingsInputMode, setPlayerSettingsInputMode] = useState<'pinpoint' | 'area'>('pinpoint'); // ピンポイント/エリア選択モード
+  const [playerSettingsMode, setPlayerSettingsMode] = useState<'pinpoint' | 'area'>('pinpoint'); // プレイヤー設定モードの入力方式
   // カウンターの初期値を既存のポジションから計算
   const getInitialCounter = (role: string) => {
     const existing = (visualInfo.playerPositions || []).filter(p => p.role === role);
@@ -372,7 +372,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
     
     // プレイヤー設定モードの処理
     if (practiceType === 'pattern_practice' && patternInputMode === 'player-settings' && selectedPlayerForSettings) {
-      if (playerSettingsInputMode === 'pinpoint') {
+      if (playerSettingsMode === 'pinpoint') {
         // ピンポイント選択（複数可）
         setTempShotTargets(prev => {
           // 既に同じ位置が選択されていれば削除、なければ追加
@@ -524,20 +524,9 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
 
   // エリアクリック処理
   const handleAreaClick = (areaId: string) => {
-    console.log('Area clicked:', areaId, {
-      inputMode,
-      practiceType,
-      patternInputMode,
-      selectedPlayerForSettings: selectedPlayerForSettings ? selectedPlayerForSettings.label : null,
-      playerSettingsInputMode
-    });
-    
-    // プレイヤー設定モードの処理
+    // プレイヤー設定モードのエリア選択処理
     if (practiceType === 'pattern_practice' && patternInputMode === 'player-settings' && selectedPlayerForSettings) {
-      console.log('In player settings mode, playerSettingsInputMode:', playerSettingsInputMode);
-      if (playerSettingsInputMode === 'area') {
-        console.log('Player settings area mode - selecting area:', areaId);
-        // エリア選択（複数可）
+      if (playerSettingsMode === 'area') {
         const area = COURT_AREAS.find(a => a.id === areaId);
         if (area) {
           const centerX = area.x + area.w / 2;
@@ -546,20 +535,11 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             // 既に同じエリアが選択されていれば削除、なければ追加
             const existingIndex = prev.findIndex(p => p.area === areaId);
             if (existingIndex >= 0) {
-              const newTargets = prev.filter((_, i) => i !== existingIndex);
-              setSelectedAreas(newTargets.map(t => t.area!).filter(Boolean));
-              console.log('Removing area, new targets:', newTargets);
-              return newTargets;
+              return prev.filter((_, i) => i !== existingIndex);
             }
-            const newTargets = [...prev, { x: centerX, y: centerY, area: areaId }];
-            setSelectedAreas(newTargets.map(t => t.area!).filter(Boolean));
-            console.log('Adding area, new targets:', newTargets);
-            return newTargets;
+            return [...prev, { x: centerX, y: centerY, area: areaId }];
           });
-          setIsSelectingTargets(true);
         }
-      } else {
-        console.log('Not in area mode, playerSettingsInputMode is:', playerSettingsInputMode);
       }
       return;
     }
@@ -1233,11 +1213,13 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                   // プレイヤー設定モードでのエリア選択状態をチェック
                   const isSelectedInPlayerSettings = patternInputMode === 'player-settings' && 
                     selectedPlayerForSettings && 
+                    playerSettingsMode === 'area' &&
                     tempShotTargets.some(t => t.area === area.id);
                   
                   // エリアを表示する条件
-                  const shouldShowArea = (inputMode === 'shot' && shotInputMode === 'area') || 
-                    (practiceType === 'pattern_practice' && patternInputMode === 'player-settings' && selectedPlayerForSettings && playerSettingsInputMode === 'area');
+                  const shouldShowArea = (inputMode === 'shot' && shotInputMode === 'area') ||
+                    (practiceType === 'pattern_practice' && patternInputMode === 'player-settings' && 
+                     selectedPlayerForSettings && playerSettingsMode === 'area');
                   
                   const isSelected = selectedAreas.includes(area.id) || isSelectedInPlayerSettings;
                   const selectedTypes = shotTypeSelections[area.id] || [];
@@ -1962,18 +1944,17 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                       <span className="text-xs">のショットを設定中</span>
                     </div>
                     
-                    {/* ピンポイント/エリア選択切り替え */}
-                    <div className="grid grid-cols-2 gap-1">
+                    {/* 入力モード選択 */}
+                    <div className="grid grid-cols-2 gap-1 mb-2">
                       <button
                         type="button"
                         onClick={() => {
-                          setPlayerSettingsInputMode('pinpoint');
+                          setPlayerSettingsMode('pinpoint');
                           setTempShotTargets([]);
                           setSelectedPoints([]);
-                          setSelectedAreas([]);
                         }}
                         className={`p-1.5 text-[10px] rounded transition-all ${
-                          playerSettingsInputMode === 'pinpoint' 
+                          playerSettingsMode === 'pinpoint' 
                             ? 'bg-blue-500 text-white' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
@@ -1983,15 +1964,12 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                       <button
                         type="button"
                         onClick={() => {
-                          console.log('Switching to area mode');
-                          setPlayerSettingsInputMode('area');
+                          setPlayerSettingsMode('area');
                           setTempShotTargets([]);
                           setSelectedPoints([]);
-                          setSelectedAreas([]);
-                          console.log('playerSettingsInputMode should be area now');
                         }}
                         className={`p-1.5 text-[10px] rounded transition-all ${
-                          playerSettingsInputMode === 'area' 
+                          playerSettingsMode === 'area' 
                             ? 'bg-blue-500 text-white' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
@@ -2001,7 +1979,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                     </div>
                     
                     <div className="text-xs text-gray-600">
-                      {playerSettingsInputMode === 'pinpoint' 
+                      {playerSettingsMode === 'pinpoint' 
                         ? 'コート上をクリックして着地点を選択（複数選択可）'
                         : 'エリアをクリックして選択（複数選択可）'}
                     </div>
