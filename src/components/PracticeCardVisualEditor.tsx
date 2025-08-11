@@ -230,7 +230,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   const [inputMode, setInputMode] = useState<'setup' | 'shot'>(
     visualInfo.shotTrajectories && visualInfo.shotTrajectories.length > 0 ? 'shot' : 'setup'
   );
-  const [shotInputMode, setIshotInputMode] = useState<'pinpoint' | 'area'>('pinpoint');
+  const [shotInputMode, setShotInputMode] = useState<'pinpoint' | 'area'>('pinpoint');
   const [currentShot, setCurrentShot] = useState<{ from?: PlayerPosition }>({});
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [selectedPoints, setSelectedPoints] = useState<{x: number, y: number}[]>([]);
@@ -971,7 +971,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
         setCurrentShot({});
       }
       setIsSelectingTargets(false);
-      setIshotInputMode('pinpoint'); // デフォルトに戻す
+      setShotInputMode('pinpoint'); // デフォルトに戻す
       
     } else if (selectedAreas.length > 0) {
       // エリアモードでのショット追加
@@ -1095,7 +1095,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
       
       setSelectedAreas([]);
       setShotTypeSelections({});
-      setIshotInputMode('pinpoint'); // デフォルトに戻す
+      setShotInputMode('pinpoint'); // デフォルトに戻す
       
       // ノック練習の場合の次のショット準備
       if (practiceType === 'knock_practice') {
@@ -1953,9 +1953,14 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                     <div className="grid grid-cols-2 gap-1">
                       <button
                         type="button"
-                        onClick={() => setIshotInputMode('pinpoint')}
+                        onClick={() => {
+                          setPlayerSettingsInputMode('pinpoint');
+                          setTempShotTargets([]);
+                          setSelectedPoints([]);
+                          setSelectedAreas([]);
+                        }}
                         className={`p-1.5 text-[10px] rounded transition-all ${
-                          shotInputMode === 'pinpoint' 
+                          playerSettingsInputMode === 'pinpoint' 
                             ? 'bg-blue-500 text-white' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
@@ -1964,9 +1969,14 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                       </button>
                       <button
                         type="button"
-                        onClick={() => setIshotInputMode('area')}
+                        onClick={() => {
+                          setPlayerSettingsInputMode('area');
+                          setTempShotTargets([]);
+                          setSelectedPoints([]);
+                          setSelectedAreas([]);
+                        }}
                         className={`p-1.5 text-[10px] rounded transition-all ${
-                          shotInputMode === 'area' 
+                          playerSettingsInputMode === 'area' 
                             ? 'bg-blue-500 text-white' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
@@ -1976,9 +1986,9 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                     </div>
                     
                     <div className="text-xs text-gray-600">
-                      {shotInputMode === 'pinpoint' 
-                        ? 'コート上をクリックして着地点を選択してください'
-                        : 'エリアをクリックして選択してください'}
+                      {playerSettingsInputMode === 'pinpoint' 
+                        ? 'コート上をクリックして着地点を選択（複数選択可）'
+                        : 'エリアをクリックして選択（複数選択可）'}
                     </div>
                     <button
                       type="button"
@@ -2283,8 +2293,9 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               </div>
             )}
 
-            {/* Hide landing point selection during knock practice (until player moves to landing point) */}
-            {!(practiceType === 'knock_practice' && (!isWaitingForPlayer || (isWaitingForPlayer && latestShotLanding))) && (
+            {/* Hide landing point selection during knock practice (until player moves to landing point) and during player settings mode */}
+            {!(practiceType === 'knock_practice' && (!isWaitingForPlayer || (isWaitingForPlayer && latestShotLanding))) && 
+             !(practiceType === 'pattern_practice' && patternInputMode === 'player-settings') && (
               <div className="space-y-2">
                 <div className="text-sm font-medium">着地点選択</div>
                 <div className="grid grid-cols-2 gap-3">
@@ -2292,7 +2303,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setIshotInputMode('pinpoint');
+                      setShotInputMode('pinpoint');
                     }}
                     className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all flex flex-col items-center gap-1 min-h-[65px] border-2 ${
                       shotInputMode === 'pinpoint' 
@@ -2319,7 +2330,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setIshotInputMode('area');
+                      setShotInputMode('area');
                       // エリアモードに切り替えた時、プレイヤーが選択されていなければ選択
                       if (!currentShot.from && practiceType === 'pattern_practice') {
                         const player = playerPositions.find(p => p.role === 'player');
