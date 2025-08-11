@@ -524,11 +524,18 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
 
   // エリアクリック処理
   const handleAreaClick = (areaId: string) => {
-    if (inputMode !== 'shot' || shotInputMode !== 'area') return;
+    console.log('Area clicked:', areaId, {
+      inputMode,
+      practiceType,
+      patternInputMode,
+      selectedPlayerForSettings,
+      playerSettingsInputMode
+    });
     
     // プレイヤー設定モードの処理
     if (practiceType === 'pattern_practice' && patternInputMode === 'player-settings' && selectedPlayerForSettings) {
       if (playerSettingsInputMode === 'area') {
+        console.log('Player settings area mode - selecting area:', areaId);
         // エリア選択（複数可）
         const area = COURT_AREAS.find(a => a.id === areaId);
         if (area) {
@@ -540,10 +547,12 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             if (existingIndex >= 0) {
               const newTargets = prev.filter((_, i) => i !== existingIndex);
               setSelectedAreas(newTargets.map(t => t.area!).filter(Boolean));
+              console.log('Removing area, new targets:', newTargets);
               return newTargets;
             }
             const newTargets = [...prev, { x: centerX, y: centerY, area: areaId }];
             setSelectedAreas(newTargets.map(t => t.area!).filter(Boolean));
+            console.log('Adding area, new targets:', newTargets);
             return newTargets;
           });
           setIsSelectingTargets(true);
@@ -551,6 +560,9 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
       }
       return;
     }
+    
+    // 通常のエリア選択処理
+    if (inputMode !== 'shot' || shotInputMode !== 'area') return;
 
     // ノック練習で未選択の場合
     if (practiceType === 'knock_practice' && isWaitingForPlayer && !currentShot.from) {
@@ -1210,11 +1222,16 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                   );
                 })}
                 {COURT_AREAS.map(area => {
-                  const isSelected = selectedAreas.includes(area.id);
+                  // プレイヤー設定モードでのエリア選択状態をチェック
+                  const isSelectedInPlayerSettings = patternInputMode === 'player-settings' && 
+                    selectedPlayerForSettings && 
+                    tempShotTargets.some(t => t.area === area.id);
+                  
+                  const isSelected = selectedAreas.includes(area.id) || isSelectedInPlayerSettings;
                   const selectedTypes = shotTypeSelections[area.id] || [];
                   // 複数選択の場合は最初のタイプの色を使用、未選択の場合はデフォルト色
                   const primaryShotType = selectedTypes.length > 0 ? SHOT_TYPES.find(t => t.id === selectedTypes[0]) : null;
-                  const fillColor = isSelected ? (primaryShotType?.color || '#FCD34D') : 'transparent';
+                  const fillColor = isSelected ? (isSelectedInPlayerSettings ? '#8B5CF6' : primaryShotType?.color || '#FCD34D') : 'transparent';
                   
                   return (
                     <g key={area.id}>
