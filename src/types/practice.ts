@@ -275,6 +275,7 @@ export interface PlayerPosition {
   color?: string;
   direction?: 'north' | 'northeast' | 'east' | 'southeast' | 'south' | 'southwest' | 'west' | 'northwest';
   icon?: string; // カスタムアイコン
+  team?: 'red' | 'green'; // パターン練習用のチーム識別
 }
 
 // ショット軌道

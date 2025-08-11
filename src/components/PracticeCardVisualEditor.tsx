@@ -269,7 +269,8 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   const [patternInputMode, setPatternInputMode] = useState<'sequential' | 'player-settings'>('sequential'); // パターン練習の入力モード
   const [playerShotSettings, setPlayerShotSettings] = useState<Record<string, ShotTrajectory[]>>({}); // 各プレイヤーのショット設定
   const [selectedPlayerForSettings, setSelectedPlayerForSettings] = useState<PlayerPosition | null>(null); // 設定中のプレイヤー
-  const [tempShotForPlayer, setTempShotForPlayer] = useState<Partial<ShotTrajectory> | null>(null); // 一時的なショット情報
+  const [tempShotTargets, setTempShotTargets] = useState<Array<{ x: number; y: number; area?: string }>>([]);  // 複数の着地点を選択可能
+  const [playerSettingsInputMode, setPlayerSettingsInputMode] = useState<'pinpoint' | 'area'>('pinpoint'); // ピンポイント/エリア選択モード
   // カウンターの初期値を既存のポジションから計算
   const getInitialCounter = (role: string) => {
     const existing = (visualInfo.playerPositions || []).filter(p => p.role === role);
@@ -371,15 +372,21 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
     
     // プレイヤー設定モードの処理
     if (practiceType === 'pattern_practice' && patternInputMode === 'player-settings' && selectedPlayerForSettings) {
-      if (!tempShotForPlayer) {
-        // ショットの着地点を設定
-        setTempShotForPlayer({
-          from: { x: selectedPlayerForSettings.x, y: selectedPlayerForSettings.y },
-          to: { x, y },
-          shotBy: 'player'
+      if (playerSettingsInputMode === 'pinpoint') {
+        // ピンポイント選択（複数可）
+        setTempShotTargets(prev => {
+          // 既に同じ位置が選択されていれば削除、なければ追加
+          const existingIndex = prev.findIndex(p => Math.abs(p.x - x) < 10 && Math.abs(p.y - y) < 10);
+          if (existingIndex >= 0) {
+            const newTargets = prev.filter((_, i) => i !== existingIndex);
+            setSelectedPoints(newTargets.map(t => ({x: t.x, y: t.y})));
+            return newTargets;
+          }
+          const newTargets = [...prev, { x, y }];
+          setSelectedPoints(newTargets.map(t => ({x: t.x, y: t.y})));
+          return newTargets;
         });
         setIsSelectingTargets(true);
-        setSelectedPoints([{x, y}]);
       }
       return;
     }
@@ -521,15 +528,26 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
     
     // プレイヤー設定モードの処理
     if (practiceType === 'pattern_practice' && patternInputMode === 'player-settings' && selectedPlayerForSettings) {
-      if (!tempShotForPlayer) {
-        // エリアを選択
-        setSelectedAreas([areaId]);
-        setTempShotForPlayer({
-          from: { x: selectedPlayerForSettings.x, y: selectedPlayerForSettings.y },
-          targetArea: areaId,
-          shotBy: 'player'
-        });
-        setIsSelectingTargets(true);
+      if (playerSettingsInputMode === 'area') {
+        // エリア選択（複数可）
+        const area = COURT_AREAS.find(a => a.id === areaId);
+        if (area) {
+          const centerX = area.x + area.w / 2;
+          const centerY = area.y + area.h / 2;
+          setTempShotTargets(prev => {
+            // 既に同じエリアが選択されていれば削除、なければ追加
+            const existingIndex = prev.findIndex(p => p.area === areaId);
+            if (existingIndex >= 0) {
+              const newTargets = prev.filter((_, i) => i !== existingIndex);
+              setSelectedAreas(newTargets.map(t => t.area!).filter(Boolean));
+              return newTargets;
+            }
+            const newTargets = [...prev, { x: centerX, y: centerY, area: areaId }];
+            setSelectedAreas(newTargets.map(t => t.area!).filter(Boolean));
+            return newTargets;
+          });
+          setIsSelectingTargets(true);
+        }
       }
       return;
     }
@@ -743,8 +761,9 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
     
     // リセット
     setSelectedPlayerForSettings(null);
-    setTempShotForPlayer(null);
+    setTempShotTargets([]);
     setSelectedPoints([]);
+    setSelectedAreas([]);
     setIsSelectingTargets(false);
   };
   
@@ -1387,8 +1406,9 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                     if (!selectedPlayerForSettings && player.role === 'player') {
                       // プレイヤーを選択
                       setSelectedPlayerForSettings(player);
-                      setTempShotForPlayer(null);
+                      setTempShotTargets([]);
                       setSelectedPoints([]);
+                      setSelectedAreas([]);
                     }
                   } 
                   // 順番入力モードの場合
@@ -1827,7 +1847,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               <div className="space-y-2">
                 <div className="text-sm font-medium">
                   {!selectedPlayerForSettings ? 'ショットを設定するプレイヤーを選択' : 
-                   !tempShotForPlayer ? `${selectedPlayerForSettings.label}のショット着地点を選択` :
+                   tempShotTargets.length === 0 ? `${selectedPlayerForSettings.label}のショット着地点を選択` :
                    'ショットタイプを選択'}
                 </div>
                 
@@ -1902,7 +1922,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                 )}
                 
                 {/* 選択中のプレイヤー表示と着地点選択 */}
-                {selectedPlayerForSettings && !tempShotForPlayer && (
+                {selectedPlayerForSettings && tempShotTargets.length === 0 && (
                   <div className="space-y-2">
                     <div className="bg-purple-50 p-2 rounded-lg flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold" 
@@ -1947,7 +1967,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                       type="button"
                       onClick={() => {
                         setSelectedPlayerForSettings(null);
-                        setTempShotForPlayer(null);
+                        setTempShotTargets([]);
                         setSelectedPoints([]);
                         setSelectedAreas([]);
                       }}
@@ -1959,7 +1979,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                 )}
                 
                 {/* ショットタイプ選択 */}
-                {tempShotForPlayer && (
+                {selectedPlayerForSettings && tempShotTargets.length > 0 && (
                   <div className="space-y-2">
                     <div className="text-xs text-gray-600">ショットタイプを選択</div>
                     <div className="grid grid-cols-3 gap-1">
@@ -1968,53 +1988,36 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                           key={shotType.id}
                           type="button"
                           onClick={() => {
-                            // ショットを保存
-                            let newShot: ShotTrajectory;
-                            
-                            if (tempShotForPlayer.targetArea) {
-                              // エリア選択の場合
-                              const area = COURT_AREAS.find(a => a.id === tempShotForPlayer.targetArea);
-                              const centerX = area ? area.x + area.w / 2 : COURT_WIDTH / 2;
-                              const centerY = area ? area.y + area.h / 2 : COURT_HEIGHT / 2;
+                            if (selectedPlayerForSettings && tempShotTargets.length > 0) {
+                              const playerId = selectedPlayerForSettings.id;
+                              const existingShots = playerShotSettings[playerId] || [];
                               
-                              newShot = {
-                                id: `shot_${Date.now()}_${selectedPlayerForSettings?.id}`,
-                                from: tempShotForPlayer.from!,
-                                to: { x: centerX, y: centerY },
-                                targetArea: tempShotForPlayer.targetArea,
+                              // 各着地点に対してショットを作成
+                              const newShots: ShotTrajectory[] = tempShotTargets.map((target, index) => ({
+                                id: `shot_${Date.now()}_${selectedPlayerForSettings.id}_${index}`,
+                                from: { x: selectedPlayerForSettings.x, y: selectedPlayerForSettings.y },
+                                to: { x: target.x, y: target.y },
+                                targetArea: target.area,
                                 shotType: shotType.id,
                                 shotBy: 'player',
-                                order: 0 // 後で調整
-                              };
-                            } else {
-                              // ピンポイントの場合
-                              newShot = {
-                                id: `shot_${Date.now()}_${selectedPlayerForSettings?.id}`,
-                                from: tempShotForPlayer.from!,
-                                to: tempShotForPlayer.to!,
-                                shotType: shotType.id,
-                                shotBy: 'player',
-                                order: 0 // 後で調整
-                              };
+                                order: 0
+                              }));
+                              
+                              setPlayerShotSettings(prev => ({
+                                ...prev,
+                                [playerId]: [...existingShots, ...newShots]
+                              }));
+                              
+                              // 次のプレイヤー設定のためにリセット（プレイヤー選択画面に戻る）
+                              setSelectedPlayerForSettings(null);
+                              setTempShotTargets([]);
+                              setSelectedPoints([]);
+                              setSelectedAreas([]);
+                              setIsSelectingTargets(false);
+                              
+                              // 設定が完了したことを表示（オプション）
+                              console.log(`${selectedPlayerForSettings?.label}のショット設定完了: ${newShots.length}箇所`);
                             }
-                            
-                            setPlayerShotSettings(prev => ({
-                              ...prev,
-                              [selectedPlayerForSettings!.id]: [
-                                ...(prev[selectedPlayerForSettings!.id] || []),
-                                newShot
-                              ]
-                            }));
-                            
-                            // 次のプレイヤー設定のためにリセット（プレイヤー選択画面に戻る）
-                            setSelectedPlayerForSettings(null);
-                            setTempShotForPlayer(null);
-                            setSelectedPoints([]);
-                            setSelectedAreas([]);
-                            setIsSelectingTargets(false);
-                            
-                            // 設定が完了したことを表示（オプション）
-                            console.log(`${selectedPlayerForSettings?.label}のショット設定完了`);
                           }}
                           className="p-1.5 text-[10px] rounded transition-all bg-gray-100 text-gray-700 hover:bg-gray-200"
                           style={{ borderColor: shotType.color }}
@@ -2027,8 +2030,9 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                       <button
                         type="button"
                         onClick={() => {
-                          setTempShotForPlayer(null);
+                          setTempShotTargets([]);
                           setSelectedPoints([]);
+                          setSelectedAreas([]);
                           setIsSelectingTargets(false);
                         }}
                         className="text-xs text-gray-500 hover:text-gray-700"
