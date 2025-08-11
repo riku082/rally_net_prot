@@ -528,12 +528,13 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
       inputMode,
       practiceType,
       patternInputMode,
-      selectedPlayerForSettings,
+      selectedPlayerForSettings: selectedPlayerForSettings ? selectedPlayerForSettings.label : null,
       playerSettingsInputMode
     });
     
     // プレイヤー設定モードの処理
     if (practiceType === 'pattern_practice' && patternInputMode === 'player-settings' && selectedPlayerForSettings) {
+      console.log('In player settings mode, playerSettingsInputMode:', playerSettingsInputMode);
       if (playerSettingsInputMode === 'area') {
         console.log('Player settings area mode - selecting area:', areaId);
         // エリア選択（複数可）
@@ -557,6 +558,8 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
           });
           setIsSelectingTargets(true);
         }
+      } else {
+        console.log('Not in area mode, playerSettingsInputMode is:', playerSettingsInputMode);
       }
       return;
     }
@@ -1970,10 +1973,12 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                       <button
                         type="button"
                         onClick={() => {
+                          console.log('Switching to area mode');
                           setPlayerSettingsInputMode('area');
                           setTempShotTargets([]);
                           setSelectedPoints([]);
                           setSelectedAreas([]);
+                          console.log('playerSettingsInputMode should be area now');
                         }}
                         className={`p-1.5 text-[10px] rounded transition-all ${
                           playerSettingsInputMode === 'area' 
