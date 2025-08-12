@@ -1353,34 +1353,30 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                           </marker>
                         </defs>
                         
-                        {/* ショットタイプラベル */}
-                        {shotType && (
-                          <g>
-                            <rect
-                              x={shot.from.x + (shot.to.x - shot.from.x) * 0.5 - 20}
-                              y={shot.from.y + (shot.to.y - shot.from.y) * 0.5 - 10}
-                              width="40"
-                              height="20"
-                              fill="white"
-                              stroke={color}
-                              strokeWidth="1.5"
-                              rx="3"
-                              className="pointer-events-none"
-                            />
-                            <text
-                              x={shot.from.x + (shot.to.x - shot.from.x) * 0.5}
-                              y={shot.from.y + (shot.to.y - shot.from.y) * 0.5 + 2}
-                              textAnchor="middle"
-                              dominantBaseline="middle"
-                              fill={color}
-                              fontSize="10"
-                              fontWeight="bold"
-                              className="pointer-events-none"
-                            >
-                              {shotType.name}
-                            </text>
-                          </g>
-                        )}
+                        {/* ショット番号 */}
+                        <g>
+                          <circle
+                            cx={shot.from.x + (shot.to.x - shot.from.x) * 0.5}
+                            cy={shot.from.y + (shot.to.y - shot.from.y) * 0.5}
+                            r="12"
+                            fill="white"
+                            stroke={color}
+                            strokeWidth="2"
+                            className="pointer-events-none"
+                          />
+                          <text
+                            x={shot.from.x + (shot.to.x - shot.from.x) * 0.5}
+                            y={shot.from.y + (shot.to.y - shot.from.y) * 0.5 + 1}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            fill={color}
+                            fontSize="11"
+                            fontWeight="bold"
+                            className="pointer-events-none"
+                          >
+                            {index + 1}
+                          </text>
+                        </g>
                       </g>
                     );
                   })
@@ -2139,7 +2135,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                                 }
                               });
                             }}
-                            className={`p-1.5 text-[10px] rounded transition-all border-2 ${
+                            className={`col-span-1 flex flex-col items-center gap-1 p-2 border-2 rounded-lg transition-all ${
                               isSelected 
                                 ? 'bg-opacity-20 border-opacity-100' 
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300'
@@ -2150,7 +2146,10 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                               color: shotType.color
                             } : {}}
                           >
-                            {shotType.name}
+                            <div className="w-6 h-6">
+                              {shotType.icon}
+                            </div>
+                            <span className="text-[10px] font-medium">{shotType.name}</span>
                           </button>
                         );
                       })}
@@ -2728,12 +2727,70 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             ショット履歴
           </h3>
           <span className="text-sm text-gray-500">
-            {shotTrajectories.length}球
+            {(() => {
+              // プレイヤー設定モードの場合は全プレイヤーのショット数を合計
+              if (practiceType === 'pattern_practice' && patternInputMode === 'player-settings') {
+                const totalShots = Object.values(playerShotSettings).flat().length;
+                return `${totalShots}球`;
+              }
+              return `${shotTrajectories.length}球`;
+            })()}
           </span>
         </div>
         
         <div className="space-y-2 max-h-[600px] overflow-y-auto">
-          {shotTrajectories.length === 0 ? (
+          {/* プレイヤー設定モードの履歴表示 */}
+          {practiceType === 'pattern_practice' && patternInputMode === 'player-settings' ? (
+            Object.entries(playerShotSettings).map(([playerId, shots]) => {
+              if (shots.length === 0) return null;
+              const player = playerPositions.find(p => p.id === playerId);
+              if (!player) return null;
+              
+              return (
+                <div key={playerId} className="border-l-4 pl-2" style={{ borderColor: player.color }}>
+                  <div className="text-xs font-semibold text-gray-700 mb-1">
+                    {player.label}のショット
+                  </div>
+                  {shots.map((shot, index) => {
+                    const shotType = SHOT_TYPES.find(t => t.id === shot.shotType);
+                    const targetAreaIds = shot.targetArea ? shot.targetArea.split(',') : [];
+                    const areaNames = targetAreaIds.map(id => {
+                      const area = COURT_AREAS.find(a => a.id === id);
+                      return area ? area.name : id;
+                    }).join(' + ');
+                    
+                    return (
+                      <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                        <div className="flex items-center justify-center w-6 h-6 rounded-full text-white text-xs font-bold"
+                             style={{ backgroundColor: shotType?.color || '#10B981' }}>
+                          {index + 1}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            {shotType && (
+                              <>
+                                <div className="w-5 h-5" style={{ color: shotType.color }}>
+                                  {shotType.icon}
+                                </div>
+                                <span className="text-sm font-medium" style={{ color: shotType.color }}>
+                                  {shotType.name}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                          {areaNames && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              → {areaNames}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })
+          ) : shotTrajectories.length === 0 ? (
             <p className="text-gray-400 text-sm text-center py-8">
               ショットを入力してください
             </p>
