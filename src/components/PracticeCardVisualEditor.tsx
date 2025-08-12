@@ -1296,6 +1296,97 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             
             {/* Shot trajectories (displayed above areas) */}
             <g>
+              {/* プレイヤー設定モードで設定済みのショットを表示 */}
+              {practiceType === 'pattern_practice' && patternInputMode === 'player-settings' && 
+                Object.entries(playerShotSettings).map(([playerId, shots]) => 
+                  shots.map((shot, index) => {
+                    const shotType = SHOT_TYPES.find(t => t.id === shot.shotType);
+                    const color = shotType?.color || '#10B981';
+                    const targetAreaIds = shot.targetArea ? shot.targetArea.split(',') : [];
+                    
+                    return (
+                      <g key={`${playerId}_${index}`}>
+                        {/* エリアターゲットの場合 */}
+                        {targetAreaIds.length > 0 && targetAreaIds.map(areaId => {
+                          const area = COURT_AREAS.find(a => a.id === areaId);
+                          if (!area) return null;
+                          return (
+                            <rect
+                              key={areaId}
+                              x={area.x}
+                              y={area.y}
+                              width={area.w}
+                              height={area.h}
+                              fill={color}
+                              fillOpacity={0.15}
+                              stroke="none"
+                              className="pointer-events-none"
+                            />
+                          );
+                        })}
+                        
+                        {/* 矢印 */}
+                        <line
+                          x1={shot.from.x}
+                          y1={shot.from.y}
+                          x2={shot.to.x}
+                          y2={shot.to.y}
+                          stroke={color}
+                          strokeWidth="2.5"
+                          markerEnd={`url(#arrow-player-${playerId}-${index})`}
+                          className="pointer-events-none"
+                        />
+                        <defs>
+                          <marker
+                            id={`arrow-player-${playerId}-${index}`}
+                            markerWidth="8"
+                            markerHeight="8"
+                            refX="6"
+                            refY="3"
+                            orient="auto"
+                            markerUnits="strokeWidth"
+                          >
+                            <path
+                              d="M0,0 L0,6 L7,3 z"
+                              fill={color}
+                            />
+                          </marker>
+                        </defs>
+                        
+                        {/* ショットタイプラベル */}
+                        {shotType && (
+                          <g>
+                            <rect
+                              x={shot.from.x + (shot.to.x - shot.from.x) * 0.5 - 20}
+                              y={shot.from.y + (shot.to.y - shot.from.y) * 0.5 - 10}
+                              width="40"
+                              height="20"
+                              fill="white"
+                              stroke={color}
+                              strokeWidth="1.5"
+                              rx="3"
+                              className="pointer-events-none"
+                            />
+                            <text
+                              x={shot.from.x + (shot.to.x - shot.from.x) * 0.5}
+                              y={shot.from.y + (shot.to.y - shot.from.y) * 0.5 + 2}
+                              textAnchor="middle"
+                              dominantBaseline="middle"
+                              fill={color}
+                              fontSize="10"
+                              fontWeight="bold"
+                              className="pointer-events-none"
+                            >
+                              {shotType.name}
+                            </text>
+                          </g>
+                        )}
+                      </g>
+                    );
+                  })
+                ).flat()}
+              
+              {/* 既存のショット軌道 */}
               {shotTrajectories.map((shot) => {
                 const shotType = SHOT_TYPES.find(t => t.id === shot.shotType);
                 const color = shot.shotBy === 'knocker' ? '#000000' : (shotType?.color || '#10B981');
