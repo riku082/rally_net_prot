@@ -1298,14 +1298,35 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             <g>
               {/* プレイヤー設定モードで設定済みのショットを表示 */}
               {practiceType === 'pattern_practice' && patternInputMode === 'player-settings' && 
-                Object.entries(playerShotSettings).map(([playerId, shots]) => 
-                  shots.map((shot, index) => {
-                    const shotType = SHOT_TYPES.find(t => t.id === shot.shotType);
-                    const color = shotType?.color || '#10B981';
-                    const targetAreaIds = shot.targetArea ? shot.targetArea.split(',') : [];
+                (() => {
+                  // 同じターゲットへのショットをグループ化
+                  const groupedShots: { [key: string]: { shots: any[], from: any, to: any, targetArea?: string } } = {};
+                  let shotCounter = 0;
+                  
+                  Object.entries(playerShotSettings).forEach(([playerId, shots]) => {
+                    shots.forEach(shot => {
+                      const key = `${shot.from.x}_${shot.from.y}_${shot.to.x}_${shot.to.y}_${shot.targetArea || ''}`;
+                      if (!groupedShots[key]) {
+                        groupedShots[key] = {
+                          shots: [],
+                          from: shot.from,
+                          to: shot.to,
+                          targetArea: shot.targetArea
+                        };
+                      }
+                      groupedShots[key].shots.push({
+                        ...shot,
+                        playerId,
+                        orderNumber: ++shotCounter
+                      });
+                    });
+                  });
+                  
+                  return Object.entries(groupedShots).map(([key, group], groupIndex) => {
+                    const targetAreaIds = group.targetArea ? group.targetArea.split(',') : [];
                     
                     return (
-                      <g key={`${playerId}_${index}`}>
+                      <g key={key}>
                         {/* エリアターゲットの場合 */}
                         {targetAreaIds.length > 0 && targetAreaIds.map(areaId => {
                           const area = COURT_AREAS.find(a => a.id === areaId);
@@ -1325,62 +1346,72 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                           );
                         })}
                         
-                        {/* 矢印 */}
-                        <line
-                          x1={shot.from.x}
-                          y1={shot.from.y}
-                          x2={shot.to.x}
-                          y2={shot.to.y}
-                          stroke={color}
-                          strokeWidth="2.5"
-                          markerEnd={`url(#arrow-player-${playerId}-${index})`}
-                          className="pointer-events-none"
-                        />
-                        <defs>
-                          <marker
-                            id={`arrow-player-${playerId}-${index}`}
-                            markerWidth="8"
-                            markerHeight="8"
-                            refX="6"
-                            refY="3"
-                            orient="auto"
-                            markerUnits="strokeWidth"
-                          >
-                            <path
-                              d="M0,0 L0,6 L7,3 z"
-                              fill={color}
-                            />
-                          </marker>
-                        </defs>
+                        {/* 矢印 - グループの最初のショットの色を使用 */}
+                        {(() => {
+                          const firstShot = group.shots[0];
+                          const shotType = SHOT_TYPES.find(t => t.id === firstShot.shotType);
+                          const arrowColor = shotType?.color || '#10B981';
+                          
+                          return (
+                            <>
+                              <line
+                                x1={group.from.x}
+                                y1={group.from.y}
+                                x2={group.to.x}
+                                y2={group.to.y}
+                                stroke={arrowColor}
+                                strokeWidth="2.5"
+                                markerEnd={`url(#arrow-group-${groupIndex})`}
+                                className="pointer-events-none"
+                              />
+                              <defs>
+                                <marker
+                                  id={`arrow-group-${groupIndex}`}
+                                  markerWidth="8"
+                                  markerHeight="8"
+                                  refX="6"
+                                  refY="3"
+                                  orient="auto"
+                                  markerUnits="strokeWidth"
+                                >
+                                  <path
+                                    d="M0,0 L0,6 L7,3 z"
+                                    fill={arrowColor}
+                                  />
+                                </marker>
+                              </defs>
+                            </>
+                          );
+                        })()}
                         
-                        {/* ショット番号 */}
+                        {/* ショット番号 - 複数の場合はカンマ区切りで表示 */}
                         <g>
                           <circle
-                            cx={shot.from.x + (shot.to.x - shot.from.x) * 0.5}
-                            cy={shot.from.y + (shot.to.y - shot.from.y) * 0.5}
-                            r="12"
+                            cx={group.from.x + (group.to.x - group.from.x) * 0.5}
+                            cy={group.from.y + (group.to.y - group.from.y) * 0.5}
+                            r={group.shots.length > 1 ? 16 : 12}
                             fill="white"
-                            stroke={color}
+                            stroke="#6B7280"
                             strokeWidth="2"
                             className="pointer-events-none"
                           />
                           <text
-                            x={shot.from.x + (shot.to.x - shot.from.x) * 0.5}
-                            y={shot.from.y + (shot.to.y - shot.from.y) * 0.5 + 1}
+                            x={group.from.x + (group.to.x - group.from.x) * 0.5}
+                            y={group.from.y + (group.to.y - group.from.y) * 0.5 + 1}
                             textAnchor="middle"
                             dominantBaseline="middle"
-                            fill={color}
-                            fontSize="11"
+                            fill="#374151"
+                            fontSize={group.shots.length > 2 ? "9" : "11"}
                             fontWeight="bold"
                             className="pointer-events-none"
                           >
-                            {index + 1}
+                            {group.shots.map(s => s.orderNumber).join(',')}
                           </text>
                         </g>
                       </g>
                     );
-                  })
-                ).flat()}
+                  });
+                })()}
               
               {/* 既存のショット軌道 */}
               {shotTrajectories.map((shot) => {
