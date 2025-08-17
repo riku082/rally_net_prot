@@ -35,15 +35,15 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
     difficulty: card?.difficulty || 'beginner' as PracticeDifficulty,
     equipment: card?.equipment || [''],
     courtInfo: card?.courtInfo || undefined,
-    practiceType: card?.practiceType || undefined,
-    visualInfo: card?.visualInfo || undefined,
+    practiceType: card?.practiceType || 'knock_practice',
+    visualInfo: card?.visualInfo || { shotTrajectories: [], playerPositions: [] },
     notes: card?.notes || '',
     tags: card?.tags || [''],
     isPublic: card?.isPublic || false,
     rating: card?.rating || undefined,
   });
   
-  const [useVisualEditor, setUseVisualEditor] = useState(!!card?.visualInfo); // 既存カードの場合のみビジュアルエディタを使用
+  const [useVisualEditor, setUseVisualEditor] = useState(card?.visualInfo !== undefined ? true : true); // デフォルトでビジュアルエディタを使用
 
   const difficultyOptions = [
     { value: 'beginner', label: '軽い', color: 'bg-green-100 text-green-800' },
@@ -130,8 +130,9 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
       ...formData,
       equipment: formData.equipment.filter(eq => eq.trim() !== ''),
       tags: formData.tags.filter(tag => tag.trim() !== ''),
-      visualInfo: useVisualEditor ? formData.visualInfo : undefined,
-      practiceType: useVisualEditor ? formData.practiceType : undefined,
+      // ビジュアルエディタを使用している場合、または既存のvisualInfoがある場合は保持
+      visualInfo: useVisualEditor || formData.visualInfo ? formData.visualInfo : undefined,
+      practiceType: formData.practiceType || 'knock_practice',
     };
     
     onSave(filteredData);

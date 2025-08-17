@@ -149,6 +149,22 @@ function PracticeManagementContent() {
           notes: '初心者向けの基本的なサーブ練習です。',
           tags: ['基礎', 'サーブ'],
           isPublic: false,
+          visualInfo: {
+            playerPositions: [
+              { id: 'p1', x: 122, y: 400, label: 'P1', role: 'player', color: '#10B981' }
+            ],
+            shotTrajectories: [
+              { 
+                id: 's1', 
+                from: { id: 'p1', x: 122, y: 400, label: 'P1', role: 'player', color: '#10B981' },
+                to: { x: 61, y: 100 },
+                shotType: 'clear',
+                shotBy: 'player',
+                order: 1
+              }
+            ]
+          },
+          practiceType: 'knock_practice',
           usageCount: 5,
           lastUsed: '2024-07-09',
           rating: 4.2,
@@ -180,6 +196,31 @@ function PracticeManagementContent() {
           notes: '普通強度のクリア練習です。',
           tags: ['普通', 'クリア'],
           isPublic: false,
+          visualInfo: {
+            playerPositions: [
+              { id: 'k1', x: 122, y: 50, label: 'K1', role: 'knocker', color: '#3B82F6' },
+              { id: 'p1', x: 122, y: 450, label: 'P1', role: 'player', color: '#10B981' }
+            ],
+            shotTrajectories: [
+              { 
+                id: 's1', 
+                from: { id: 'k1', x: 122, y: 50, label: 'K1', role: 'knocker', color: '#3B82F6' },
+                to: { x: 122, y: 450 },
+                shotType: 'clear',
+                shotBy: 'knocker',
+                order: 1
+              },
+              { 
+                id: 's2', 
+                from: { id: 'p1', x: 122, y: 450, label: 'P1', role: 'player', color: '#10B981' },
+                to: { x: 122, y: 50 },
+                shotType: 'clear',
+                shotBy: 'player',
+                order: 2
+              }
+            ]
+          },
+          practiceType: 'knock_practice',
           usageCount: 3,
           lastUsed: '2024-07-08',
           rating: 4.5,
@@ -211,6 +252,41 @@ function PracticeManagementContent() {
           notes: 'きつい強度の繊細なタッチが必要な練習です。',
           tags: ['きつい', 'ドロップ', 'ネット'],
           isPublic: false,
+          visualInfo: {
+            playerPositions: [
+              { id: 'p1', x: 61, y: 450, label: 'P1', role: 'player', color: '#10B981', team: 'green' },
+              { id: 'p2', x: 183, y: 450, label: 'P2', role: 'player', color: '#10B981', team: 'green' },
+              { id: 'p3', x: 61, y: 50, label: 'P3', role: 'opponent', color: '#EF4444', team: 'red' },
+              { id: 'p4', x: 183, y: 50, label: 'P4', role: 'opponent', color: '#EF4444', team: 'red' }
+            ],
+            shotTrajectories: [
+              { 
+                id: 's1', 
+                from: { id: 'p1', x: 61, y: 450, label: 'P1', role: 'player', color: '#10B981' },
+                to: { x: 183, y: 300 },
+                shotType: 'drop',
+                shotBy: 'player',
+                order: 1
+              },
+              { 
+                id: 's2', 
+                from: { id: 'p4', x: 183, y: 50, label: 'P4', role: 'opponent', color: '#EF4444' },
+                to: { x: 61, y: 350 },
+                shotType: 'hairpin',
+                shotBy: 'player',
+                order: 2
+              },
+              { 
+                id: 's3', 
+                from: { id: 'p2', x: 183, y: 450, label: 'P2', role: 'player', color: '#10B981' },
+                to: { x: 183, y: 250 },
+                shotType: 'hairpin',
+                shotBy: 'player',
+                order: 3
+              }
+            ]
+          },
+          practiceType: 'pattern_practice',
           usageCount: 8,
           lastUsed: '2024-07-11',
           rating: 4.8,
