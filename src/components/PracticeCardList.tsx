@@ -353,56 +353,34 @@ const PracticeCardList: React.FC<PracticeCardListProps> = ({
           </p>
         </div>
       ) : (
-        <div className="relative">
-          {/* スクロールヒント */}
-          <div className="flex items-center justify-between mb-3">
+        <div>
+          {/* カード数の表示 */}
+          <div className="mb-4">
             <div className="text-sm text-gray-500">
               {sortedCards.length}件のカード
             </div>
-            <div className="text-xs text-gray-400 hidden sm:block">
-              横にスワイプして他のカードを表示
-            </div>
           </div>
           
-          {/* 横スクロールコンテナ */}
-          <div className="overflow-x-auto scrollbar-hide">
-            <div className="flex space-x-4 pb-4" style={{ minWidth: 'max-content' }}>
-              {sortedCards.map(card => (
-                <div key={card.id} className="flex-shrink-0 w-80 sm:w-96">
-                  <PracticeCardItem
-                    card={card}
-                    editMode={editMode}
-                    isSelected={selectedForDeletion.has(card.id)}
-                    onCardClick={() => handleCardClick(card)}
-                    onEdit={() => onEdit(card)}
-                    onDelete={() => onDelete(card.id)}
-                    onDeleteSelection={() => handleDeleteSelection(card.id)}
-                    difficultyLabel={difficultyLabels[card.difficulty]}
-                    difficultyColor={difficultyColors[card.difficulty]}
-                    formatDuration={formatDuration}
-                    formatLastUsed={formatLastUsed}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* スクロールインジケーター */}
-          {sortedCards.length > 1 && (
-            <div className="flex justify-center mt-4 space-x-1">
-              {Array.from({ length: Math.min(sortedCards.length, 10) }).map((_, index) => (
-                <div 
-                  key={index} 
-                  className="w-2 h-2 rounded-full bg-gray-300"
+          {/* レスポンシブグリッドレイアウト */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {sortedCards.map(card => (
+              <div key={card.id} className="w-full">
+                <PracticeCardItem
+                  card={card}
+                  editMode={editMode}
+                  isSelected={selectedForDeletion.has(card.id)}
+                  onCardClick={() => handleCardClick(card)}
+                  onEdit={() => onEdit(card)}
+                  onDelete={() => onDelete(card.id)}
+                  onDeleteSelection={() => handleDeleteSelection(card.id)}
+                  difficultyLabel={difficultyLabels[card.difficulty]}
+                  difficultyColor={difficultyColors[card.difficulty]}
+                  formatDuration={formatDuration}
+                  formatLastUsed={formatLastUsed}
                 />
-              ))}
-              {sortedCards.length > 10 && (
-                <div className="text-xs text-gray-400 ml-2">
-                  +{sortedCards.length - 10}
-                </div>
-              )}
-            </div>
-          )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
       
@@ -630,7 +608,7 @@ const PracticeCardItem: React.FC<PracticeCardItemProps> = ({
 
   return (
     <div 
-      className={`border rounded-xl transition-all duration-200 overflow-hidden cursor-pointer h-full ${
+      className={`border rounded-xl transition-all duration-200 overflow-hidden cursor-pointer h-full flex flex-col ${
         editMode 
           ? isSelected 
             ? 'border-red-300 bg-red-50' 
@@ -639,12 +617,12 @@ const PracticeCardItem: React.FC<PracticeCardItemProps> = ({
       }`}
       onClick={editMode ? onDeleteSelection : onCardClick}
     >
-      <div className="p-4">
+      <div className="p-3 sm:p-4 flex-1 flex flex-col">
         {/* ヘッダー */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-start space-x-3 flex-1">
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex items-start space-x-2 flex-1 min-w-0">
             {editMode && (
-              <div className="flex items-center pt-1">
+              <div className="flex items-center pt-1 flex-shrink-0">
                 <input
                   type="checkbox"
                   checked={isSelected}
@@ -653,13 +631,13 @@ const PracticeCardItem: React.FC<PracticeCardItemProps> = ({
                 />
               </div>
             )}
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{card.title}</h3>
-              <div className="flex items-center flex-wrap gap-2 mb-2">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${difficultyColor}`}>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 truncate">{card.title}</h3>
+              <div className="flex items-center flex-wrap gap-1 sm:gap-2">
+                <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${difficultyColor}`}>
                   {difficultyLabel}
                 </span>
-                <span className="flex items-center text-sm text-gray-600">
+                <span className="flex items-center text-xs sm:text-sm text-gray-600">
                   <FaClock className="w-3 h-3 mr-1" />
                   {formatDuration(card.drill.duration)}
                 </span>
@@ -668,58 +646,58 @@ const PracticeCardItem: React.FC<PracticeCardItemProps> = ({
           </div>
           
           {!editMode && (
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-1 flex-shrink-0">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit();
                 }}
-                className="p-1.5 sm:p-2 text-theme-primary-600 hover:bg-theme-primary-50 rounded-lg transition-colors"
+                className="p-1 sm:p-1.5 text-theme-primary-600 hover:bg-theme-primary-50 rounded-lg transition-colors"
               >
-                <FaEdit className="w-3 h-3 sm:w-4 sm:h-4" />
+                <FaEdit className="w-3 h-3" />
               </button>
             </div>
           )}
         </div>
 
         {/* 説明 */}
-        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{card.description}</p>
+        <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">{card.description}</p>
 
         {/* ビジュアル情報（ミニコート） */}
         {card.visualInfo && (
-          <div className="mb-3 flex justify-center">
+          <div className="mb-2 flex justify-center flex-1">
             <PracticeCardMiniCourt
               shotTrajectories={card.visualInfo.shotTrajectories}
               playerPositions={card.visualInfo.playerPositions}
-              width={100}
-              height={175}
+              width={80}
+              height={140}
             />
           </div>
         )}
 
         {/* コート情報 */}
         {card.courtInfo && card.courtInfo.targetAreas.length > 0 && (
-          <div className="mb-3">
-            <div className="flex items-center space-x-2 mb-2">
-              <FaMapMarkerAlt className="w-3 h-3 text-green-600" />
+          <div className="mb-2">
+            <div className="flex items-center space-x-1 mb-1">
+              <FaMapMarkerAlt className="w-3 h-3 text-green-600 flex-shrink-0" />
               <span className="text-xs font-medium text-gray-700">
-                {card.courtInfo.courtType === 'singles' ? 'シングルス' : 'ダブルス'}コート
+                {card.courtInfo.courtType === 'singles' ? 'シングルス' : 'ダブルス'}
               </span>
               {card.courtInfo.focusArea && (
-                <span className={`px-2 py-1 rounded text-xs font-medium border ${getCourtZoneColor(card.courtInfo.focusArea)}`}>
+                <span className={`px-1 py-0.5 rounded text-xs font-medium border ${getCourtZoneColor(card.courtInfo.focusArea)} truncate`}>
                   🎯 {getCourtZoneLabel(card.courtInfo.focusArea)}
                 </span>
               )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-              {card.courtInfo.targetAreas.slice(0, 4).map(area => (
-                <span key={area} className={`px-2 py-1 rounded text-xs border ${getCourtZoneColor(area)} truncate`}>
+            <div className="flex flex-wrap gap-1">
+              {card.courtInfo.targetAreas.slice(0, 2).map(area => (
+                <span key={area} className={`px-1 py-0.5 rounded text-xs border ${getCourtZoneColor(area)} truncate`}>
                   {getCourtZoneLabel(area)}
                 </span>
               ))}
-              {card.courtInfo.targetAreas.length > 4 && (
-                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs border border-gray-200">
-                  +{card.courtInfo.targetAreas.length - 4}エリア
+              {card.courtInfo.targetAreas.length > 2 && (
+                <span className="px-1 py-0.5 bg-gray-100 text-gray-600 rounded text-xs border border-gray-200">
+                  +{card.courtInfo.targetAreas.length - 2}
                 </span>
               )}
             </div>
@@ -727,20 +705,20 @@ const PracticeCardItem: React.FC<PracticeCardItemProps> = ({
         )}
 
         {/* 統計情報 */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm text-gray-500 mb-3 space-y-1 sm:space-y-0">
-          <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-between text-xs text-gray-500 mt-auto pt-2 border-t border-gray-100">
+          <div className="flex items-center space-x-2">
             <span className="flex items-center">
-              <FiUsers className="w-3 h-3 mr-1" />
-              {card.usageCount}回使用
+              <FiUsers className="w-3 h-3 mr-0.5" />
+              {card.usageCount}回
             </span>
             {card.rating && (
               <span className="flex items-center">
-                <FaStar className="w-3 h-3 mr-1 text-yellow-500" />
+                <FaStar className="w-3 h-3 mr-0.5 text-yellow-500" />
                 {card.rating.toFixed(1)}
               </span>
             )}
           </div>
-          <span className="text-xs sm:text-sm">{formatLastUsed(card.lastUsed)}</span>
+          <span className="text-xs">{formatLastUsed(card.lastUsed)}</span>
         </div>
 
       </div>
