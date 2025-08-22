@@ -36,6 +36,8 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
   // ステップ管理
   const [currentStep, setCurrentStep] = useState<MobileEditStep>('basic');
   const [currentShot, setCurrentShot] = useState<any>(null); // 現在選択中のショット開始点
+  const [isWaitingForPlayer, setIsWaitingForPlayer] = useState(false); // プレイヤーの返球待ち
+  const [shotMode, setShotMode] = useState<'knocker' | 'player'>('knocker'); // 現在のショットモード
   
   // フォームデータ
   const [formData, setFormData] = useState({
@@ -50,6 +52,54 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
     notes: card?.notes || '',
     courtInfo: card?.courtInfo || undefined,
   });
+
+  // ショット入力の状態管理
+  const [pendingShot, setPendingShot] = useState<{
+    from: { x: number, y: number },
+    to: { x: number, y: number },
+    needsPlayerSelection?: boolean
+  } | null>(null);
+  const [shotInputMode, setShotInputMode] = useState<'pinpoint' | 'area'>('pinpoint');
+  const [selectedShotType, setSelectedShotType] = useState('clear');
+  const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
+  const [showShotTypeSelection, setShowShotTypeSelection] = useState(false);
+
+  // コートエリア定義（PC版と同じ）
+  const COURT_AREAS = [
+    // 上側コート（相手側）
+    { id: 'opp_fl', name: '相手前左' },
+    { id: 'opp_fc', name: '相手前中' },
+    { id: 'opp_fr', name: '相手前右' },
+    { id: 'opp_ml', name: '相手中左' },
+    { id: 'opp_mc', name: '相手中央' },
+    { id: 'opp_mr', name: '相手中右' },
+    { id: 'opp_bl', name: '相手後左' },
+    { id: 'opp_bc', name: '相手後中' },
+    { id: 'opp_br', name: '相手後右' },
+    // 下側コート（自分側）
+    { id: 'own_fl', name: '自分前左' },
+    { id: 'own_fc', name: '自分前中' },
+    { id: 'own_fr', name: '自分前右' },
+    { id: 'own_ml', name: '自分中左' },
+    { id: 'own_mc', name: '自分中央' },
+    { id: 'own_mr', name: '自分中右' },
+    { id: 'own_bl', name: '自分後左' },
+    { id: 'own_bc', name: '自分後中' },
+    { id: 'own_br', name: '自分後右' },
+  ];
+
+  // ショットタイプ定義（PC版と同じ）
+  const SHOT_TYPES = [
+    { id: 'clear', name: 'クリア', color: '#3B82F6' },
+    { id: 'smash', name: 'スマッシュ', color: '#EF4444' },
+    { id: 'drop', name: 'ドロップ', color: '#10B981' },
+    { id: 'hairpin', name: 'ヘアピン', color: '#F59E0B' },
+    { id: 'drive', name: 'ドライブ', color: '#8B5CF6' },
+    { id: 'push', name: 'プッシュ', color: '#EC4899' },
+    { id: 'lob', name: 'ロブ', color: '#14B8A6' },
+    { id: 'receive', name: 'レシーブ', color: '#06B6D4' },
+    { id: 'other', name: 'その他', color: '#6B7280' },
+  ];
 
   // ステップインジケーター
   const steps = [
@@ -544,84 +594,307 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
         {/* ステップ3: ショット入力 */}
         {currentStep === 'shots' && (
           <div className="h-full flex flex-col">
-            {/* コート表示エリア (50%) */}
+            {/* コート表示エリア */}
             <div className="h-1/2 bg-green-50 p-2 overflow-hidden">
               <div className="h-full w-full flex items-center justify-center">
                 <div style={{ transform: 'scale(0.6)', transformOrigin: 'center' }}>
                   <PracticeCardVisualEditor
                     visualInfo={formData.visualInfo}
                     practiceType={formData.practiceType}
-                    onUpdate={(visualInfo) => {
-                      setFormData(prev => ({ ...prev, visualInfo }));
-                      // ショットが追加されたらcurrentShotをリセット
-                      if (visualInfo.shotTrajectories && visualInfo.shotTrajectories.length > (formData.visualInfo.shotTrajectories?.length || 0)) {
-                        setCurrentShot(null);
+                    onUpdate={(visualInfo) => setFormData(prev => ({ ...prev, visualInfo }))}
+                    courtType="singles"
+                    mobileMode="shots"
+                    onShotStart={(coord: any) => {
+                      // プレイヤータップの場合は座標ではなくプレイヤー情報
+                      if (coord.role) {
+                        // プレイヤーをタップした場合、そのプレイヤーからの shot を開始
+                        setCurrentShot(coord);
+                        return;
+                      }
+                      
+                      // コートタップ時の処理
+                      if (formData.practiceType === 'knock_practice') {
+                        // ノック練習：最初のタップ = ノッカーからの着地点
+                        const knocker = formData.visualInfo.playerPositions?.find(p => p.role === 'knocker');
+                        if (knocker) {
+                          setPendingShot({
+                            from: { x: knocker.x, y: knocker.y },
+                            to: { x: coord.x, y: coord.y },
+                            needsPlayerSelection: true
+                          });
+                        }
+                      } else if (currentShot) {
+                        // パターン練習：プレイヤーを選択してからコートタップ
+                        setPendingShot({
+                          from: { x: currentShot.x, y: currentShot.y },
+                          to: { x: coord.x, y: coord.y }
+                        });
+                        setShowShotTypeSelection(true);
                       }
                     }}
-                    courtType="singles"
-                    mobileMode="shots" // ショット入力モード
-                    onShotStart={(player) => setCurrentShot(player)}
                   />
                 </div>
               </div>
             </div>
             
-            {/* ショット履歴 (50%) */}
-            <div className="h-1/2 bg-white border-t border-gray-200 p-4 overflow-y-auto">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium text-gray-900">ショット履歴</h3>
-                {!currentShot && (
-                  <p className="text-xs text-gray-500">
-                    プレイヤーをタップして開始
-                  </p>
-                )}
-                {currentShot && (
-                  <p className="text-xs text-blue-600">
-                    コートをタップして着地点を選択
-                  </p>
-                )}
-              </div>
-              
-              {formData.visualInfo.shotTrajectories && formData.visualInfo.shotTrajectories.length > 0 ? (
-                <div className="space-y-2">
-                  {formData.visualInfo.shotTrajectories.map((shot, index) => (
-                    <div key={shot.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <div className="flex items-center space-x-2">
-                        <span className="w-6 h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center font-bold">
-                          {index + 1}
-                        </span>
-                        <span className="text-sm">
-                          {shot.shotBy === 'knocker' ? 'ノック' : 'プレイヤー'}
-                        </span>
-                        <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
-                          {shot.shotType}
-                        </span>
+            {/* 操作パネル */}
+            <div className="h-1/2 bg-white border-t border-gray-200 overflow-y-auto">
+              <div className="p-4 space-y-4">
+                
+                {/* pendingShotがある場合：プレイヤー選択とショット設定 */}
+                {pendingShot && (
+                  <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-200">
+                    <h4 className="font-medium text-blue-900 mb-3">ショット設定</h4>
+                    
+                    {/* プレイヤー選択 */}
+                    <div className="mb-4">
+                      <label className="text-sm font-medium text-blue-800 mb-2 block">
+                        移動するプレイヤーを選択:
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {formData.visualInfo.playerPositions?.filter(p => p.role === 'player').map(player => (
+                          <button
+                            key={player.id}
+                            onClick={() => {
+                              // プレイヤーを着地点に移動
+                              const updatedPositions = formData.visualInfo.playerPositions?.map(p => 
+                                p.id === player.id 
+                                  ? { ...p, x: pendingShot.to.x, y: pendingShot.to.y }
+                                  : p
+                              ) || [];
+                              setFormData(prev => ({
+                                ...prev,
+                                visualInfo: {
+                                  ...prev.visualInfo,
+                                  playerPositions: updatedPositions
+                                }
+                              }));
+                              setShowShotTypeSelection(true);
+                            }}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium active:bg-blue-700"
+                          >
+                            {player.label}を移動
+                          </button>
+                        ))}
                       </div>
+                    </div>
+                    
+                    <button
+                      onClick={() => setPendingShot(null)}
+                      className="w-full py-2 bg-gray-200 text-gray-700 rounded text-sm"
+                    >
+                      キャンセル
+                    </button>
+                  </div>
+                )}
+                
+                {/* ショットタイプ選択 */}
+                {showShotTypeSelection && pendingShot && (
+                  <div className="bg-green-50 rounded-lg p-4 border-2 border-green-200">
+                    <h4 className="font-medium text-green-900 mb-3">ショット詳細設定</h4>
+                    
+                    {/* 入力モード選択 */}
+                    <div className="mb-3">
+                      <div className="flex bg-gray-100 rounded-lg p-1">
+                        <button
+                          onClick={() => setShotInputMode('pinpoint')}
+                          className={`flex-1 py-2 px-3 rounded text-sm font-medium transition ${
+                            shotInputMode === 'pinpoint' 
+                              ? 'bg-white text-blue-600 shadow-sm' 
+                              : 'text-gray-600'
+                          }`}
+                        >
+                          ピンポイント
+                        </button>
+                        <button
+                          onClick={() => setShotInputMode('area')}
+                          className={`flex-1 py-2 px-3 rounded text-sm font-medium transition ${
+                            shotInputMode === 'area' 
+                              ? 'bg-white text-blue-600 shadow-sm' 
+                              : 'text-gray-600'
+                          }`}
+                        >
+                          エリア
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* エリア選択（エリアモードの場合） */}
+                    {shotInputMode === 'area' && (
+                      <div className="mb-3">
+                        <label className="text-sm font-medium text-green-800 mb-2 block">
+                          対象エリア（複数選択可能）:
+                        </label>
+                        <div className="grid grid-cols-3 gap-1 text-xs">
+                          {COURT_AREAS.map(area => (
+                            <button
+                              key={area.id}
+                              onClick={() => {
+                                setSelectedAreas(prev => 
+                                  prev.includes(area.id)
+                                    ? prev.filter(id => id !== area.id)
+                                    : [...prev, area.id]
+                                );
+                              }}
+                              className={`py-2 px-2 rounded text-xs font-medium transition ${
+                                selectedAreas.includes(area.id)
+                                  ? 'bg-green-600 text-white'
+                                  : 'bg-gray-100 text-gray-700'
+                              }`}
+                            >
+                              {area.name}
+                            </button>
+                          ))}
+                        </div>
+                        {selectedAreas.length > 0 && (
+                          <p className="text-xs text-green-600 mt-1">
+                            選択中: {selectedAreas.length}エリア
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ショットタイプ選択 */}
+                    <div className="mb-3">
+                      <label className="text-sm font-medium text-green-800 mb-2 block">
+                        ショットタイプ:
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {SHOT_TYPES.map(shotType => (
+                          <button
+                            key={shotType.id}
+                            onClick={() => setSelectedShotType(shotType.id)}
+                            className={`px-3 py-2 rounded text-xs font-medium transition ${
+                              selectedShotType === shotType.id
+                                ? 'text-white shadow-sm'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}
+                            style={selectedShotType === shotType.id ? { backgroundColor: shotType.color } : {}}
+                          >
+                            {shotType.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* 確定ボタン */}
+                    <div className="flex gap-2">
                       <button
                         onClick={() => {
-                          const newShots = formData.visualInfo.shotTrajectories?.filter(s => s.id !== shot.id) || [];
+                          // ショットを確定
+                          const shotBy = formData.practiceType === 'knock_practice' 
+                            ? (pendingShot.needsPlayerSelection ? 'knocker' : 'player') 
+                            : (currentShot?.role || 'player');
+                            
+                          const newShot = {
+                            id: `shot_${Date.now()}`,
+                            from: pendingShot.from,
+                            to: pendingShot.to,
+                            shotType: selectedShotType,
+                            shotBy: shotBy as 'knocker' | 'player',
+                            order: (formData.visualInfo.shotTrajectories?.length || 0) + 1,
+                            memo: '',
+                            targetArea: shotInputMode === 'area' ? selectedAreas.join(',') : undefined
+                          };
+                          
                           setFormData(prev => ({
                             ...prev,
                             visualInfo: {
                               ...prev.visualInfo,
-                              shotTrajectories: newShots
+                              shotTrajectories: [...(prev.visualInfo.shotTrajectories || []), newShot]
                             }
                           }));
+                          
+                          // リセット
+                          setPendingShot(null);
+                          setShowShotTypeSelection(false);
+                          setSelectedAreas([]);
+                          setCurrentShot(null);
                         }}
-                        className="p-1 text-red-500"
+                        className="flex-1 py-2 bg-green-600 text-white rounded font-medium active:bg-green-700"
                       >
-                        <FaTrash className="w-3 h-3" />
+                        ショット確定
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowShotTypeSelection(false);
+                          setPendingShot(null);
+                        }}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded"
+                      >
+                        キャンセル
                       </button>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-400">
-                  <GiShuttlecock className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">まだショットがありません</p>
-                  <p className="text-xs mt-1">プレイヤーをタップして開始</p>
-                </div>
-              )}
+                  </div>
+                )}
+                
+                {/* プレイヤー選択状態（パターン練習） */}
+                {!pendingShot && !showShotTypeSelection && currentShot && formData.practiceType === 'pattern_practice' && (
+                  <div className="text-center py-6 bg-blue-50 rounded-lg">
+                    <div className="text-4xl mb-2">👤</div>
+                    <h3 className="font-medium text-blue-900 mb-2">{currentShot.label} を選択中</h3>
+                    <p className="text-sm text-blue-700">
+                      コートをタップして着地点を設定してください
+                    </p>
+                    <button
+                      onClick={() => setCurrentShot(null)}
+                      className="mt-2 px-3 py-1 bg-gray-200 text-gray-700 rounded text-xs"
+                    >
+                      選択解除
+                    </button>
+                  </div>
+                )}
+
+                {/* 通常状態：コートタップの案内 */}
+                {!pendingShot && !showShotTypeSelection && !currentShot && (
+                  <div className="text-center py-6 text-gray-500">
+                    <div className="text-6xl mb-3">🏸</div>
+                    <h3 className="font-medium text-gray-900 mb-2">ショット入力</h3>
+                    <p className="text-sm">
+                      {formData.practiceType === 'knock_practice' 
+                        ? 'コート下側をタップしてノッカーからの配球を設定'
+                        : 'プレイヤーをタップしてからコートをタップ'
+                      }
+                    </p>
+                  </div>
+                )}
+                
+                {/* ショット履歴 */}
+                {formData.visualInfo.shotTrajectories && formData.visualInfo.shotTrajectories.length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">ショット履歴</h4>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {formData.visualInfo.shotTrajectories.map((shot, index) => (
+                        <div key={shot.id} className="flex items-center justify-between p-2 bg-gray-50 rounded text-xs">
+                          <div className="flex items-center space-x-2">
+                            <span className="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
+                              {index + 1}
+                            </span>
+                            <span>{shot.shotType}</span>
+                            <span className="text-gray-500">{shot.shotBy}</span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              const newShots = formData.visualInfo.shotTrajectories?.filter(s => s.id !== shot.id) || [];
+                              setFormData(prev => ({
+                                ...prev,
+                                visualInfo: {
+                                  ...prev.visualInfo,
+                                  shotTrajectories: newShots
+                                }
+                              }));
+                            }}
+                            className="p-1 text-red-500"
+                          >
+                            <FaTrash className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+              </div>
             </div>
           </div>
         )}

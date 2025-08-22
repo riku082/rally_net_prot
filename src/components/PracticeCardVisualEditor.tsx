@@ -391,7 +391,8 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
     }
     
     if (mobileMode === 'shots') {
-      // ショット入力モード
+      // モバイル用ショット入力モード - PC版と同様の処理
+      // 外部のコールバックに座標を渡してモバイル側で処理
       const target = e.currentTarget as SVGElement | HTMLDivElement;
       const rect = target instanceof SVGElement ? 
         target.getBoundingClientRect() : 
@@ -405,22 +406,8 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
       // 範囲チェック
       if (x < 0 || x > COURT_WIDTH || y < 0 || y > COURT_HEIGHT) return;
       
-      // ショットの終点として設定
-      if (currentShot.from) {
-        const newShot: ShotTrajectory = {
-          id: `shot_${Date.now()}`,
-          from: { x: currentShot.from.x, y: currentShot.from.y },
-          to: { x, y },
-          shotType: 'clear',
-          shotBy: currentShot.from.role === 'knocker' ? 'knocker' : 'player',
-          order: currentShotNumber + 1,
-          memo: ''
-        };
-        setShotTrajectories(prev => [...prev, newShot]);
-        setCurrentShotNumber(prev => prev + 1);
-        setCurrentShot({});
-        onShotStart?.(null);
-      }
+      // モバイル側のコールバックに座標を渡す（onShotStartを拡張利用）
+      onShotStart?.({ x, y } as any);
       return;
     }
     
@@ -912,41 +899,8 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   // プレイヤーをクリックした時の処理
   const handlePlayerClick = (player: PlayerPosition) => {
     if (mobileMode === 'shots') {
-      // ショット入力モードでプレイヤーをクリック
-      if (practiceType === 'knock_practice') {
-        // ノック練習の場合
-        if (player.role === 'knocker') {
-          // ノッカーからのショット
-          setCurrentShot({ from: player });
-          onShotStart?.(player);
-        } else if (player.role === 'player') {
-          // プレイヤーからの返球
-          if (currentShot.from?.role === 'knocker') {
-            // ノッカーから始まっている場合、終点として設定
-            const newShot: ShotTrajectory = {
-              id: `shot_${Date.now()}`,
-              from: { x: currentShot.from.x, y: currentShot.from.y },
-              to: { x: player.x, y: player.y },
-              shotType: 'clear',
-              shotBy: 'knocker',
-              order: currentShotNumber + 1,
-              memo: ''
-            };
-            setShotTrajectories(prev => [...prev, newShot]);
-            setCurrentShotNumber(prev => prev + 1);
-            setCurrentShot({});
-            onShotStart?.(null);
-          } else {
-            // プレイヤーから始める
-            setCurrentShot({ from: player });
-            onShotStart?.(player);
-          }
-        }
-      } else {
-        // パターン練習の場合
-        setCurrentShot({ from: player });
-        onShotStart?.(player);
-      }
+      // モバイル用：プレイヤー情報をコールバックに渡す
+      onShotStart?.(player);
     }
   };
   
