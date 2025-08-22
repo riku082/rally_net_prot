@@ -20,6 +20,7 @@ interface PracticeCardVisualEditorProps {
   courtType?: 'singles' | 'doubles';
   currentStep?: number;
   mobileMode?: 'players' | 'shots' | 'preview'; // モバイル用のモード
+  onShotStart?: (player: PlayerPosition) => void; // ショット開始時のコールバック
 }
 
 // コート寸法（ピクセル）- 実際の比率に基づく
@@ -225,7 +226,8 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   onUpdate,
   courtType = 'singles',
   currentStep,
-  mobileMode
+  mobileMode,
+  onShotStart
 }) => {
   const [playerPositions, setPlayerPositions] = useState<PlayerPosition[]>(visualInfo.playerPositions || []);
   const [shotTrajectories, setShotTrajectories] = useState<ShotTrajectory[]>(visualInfo.shotTrajectories || []);
@@ -381,7 +383,48 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   };
 
   // コート上のクリック処理
-  const handleCourtClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleCourtClick = (e: React.MouseEvent<HTMLDivElement> | React.MouseEvent<SVGElement>) => {
+    // モバイルモードでの処理
+    if (mobileMode === 'players') {
+      // プレイヤー配置モードでは処理しない（ボタンで配置）
+      return;
+    }
+    
+    if (mobileMode === 'shots') {
+      // ショット入力モード
+      const target = e.currentTarget as SVGElement | HTMLDivElement;
+      const rect = target instanceof SVGElement ? 
+        target.getBoundingClientRect() : 
+        target.getBoundingClientRect();
+      
+      const scaleX = COURT_WIDTH / rect.width;
+      const scaleY = COURT_HEIGHT / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+      
+      // 範囲チェック
+      if (x < 0 || x > COURT_WIDTH || y < 0 || y > COURT_HEIGHT) return;
+      
+      // ショットの終点として設定
+      if (currentShot.from) {
+        const newShot: ShotTrajectory = {
+          id: `shot_${Date.now()}`,
+          from: { x: currentShot.from.x, y: currentShot.from.y },
+          to: { x, y },
+          shotType: 'clear',
+          shotBy: currentShot.from.role === 'knocker' ? 'knocker' : 'player',
+          order: currentShotNumber + 1,
+          memo: ''
+        };
+        setShotTrajectories(prev => [...prev, newShot]);
+        setCurrentShotNumber(prev => prev + 1);
+        setCurrentShot({});
+        onShotStart?.(null);
+      }
+      return;
+    }
+    
+    // 通常モードの処理
     if (inputMode !== 'shot' || !courtRef.current) return;
 
     const rect = courtRef.current.getBoundingClientRect();
@@ -864,6 +907,47 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
     // 入力モードをリセット
     setCurrentShot({});
     setIsSelectingTargets(false);
+  };
+  
+  // プレイヤーをクリックした時の処理
+  const handlePlayerClick = (player: PlayerPosition) => {
+    if (mobileMode === 'shots') {
+      // ショット入力モードでプレイヤーをクリック
+      if (practiceType === 'knock_practice') {
+        // ノック練習の場合
+        if (player.role === 'knocker') {
+          // ノッカーからのショット
+          setCurrentShot({ from: player });
+          onShotStart?.(player);
+        } else if (player.role === 'player') {
+          // プレイヤーからの返球
+          if (currentShot.from?.role === 'knocker') {
+            // ノッカーから始まっている場合、終点として設定
+            const newShot: ShotTrajectory = {
+              id: `shot_${Date.now()}`,
+              from: { x: currentShot.from.x, y: currentShot.from.y },
+              to: { x: player.x, y: player.y },
+              shotType: 'clear',
+              shotBy: 'knocker',
+              order: currentShotNumber + 1,
+              memo: ''
+            };
+            setShotTrajectories(prev => [...prev, newShot]);
+            setCurrentShotNumber(prev => prev + 1);
+            setCurrentShot({});
+            onShotStart?.(null);
+          } else {
+            // プレイヤーから始める
+            setCurrentShot({ from: player });
+            onShotStart?.(player);
+          }
+        }
+      } else {
+        // パターン練習の場合
+        setCurrentShot({ from: player });
+        onShotStart?.(player);
+      }
+    }
   };
   
   // ショット確定処理

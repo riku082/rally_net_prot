@@ -35,6 +35,7 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
 }) => {
   // ステップ管理
   const [currentStep, setCurrentStep] = useState<MobileEditStep>('basic');
+  const [currentShot, setCurrentShot] = useState<any>(null); // 現在選択中のショット開始点
   
   // フォームデータ
   const [formData, setFormData] = useState({
@@ -550,9 +551,16 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                   <PracticeCardVisualEditor
                     visualInfo={formData.visualInfo}
                     practiceType={formData.practiceType}
-                    onUpdate={(visualInfo) => setFormData(prev => ({ ...prev, visualInfo }))}
+                    onUpdate={(visualInfo) => {
+                      setFormData(prev => ({ ...prev, visualInfo }));
+                      // ショットが追加されたらcurrentShotをリセット
+                      if (visualInfo.shotTrajectories && visualInfo.shotTrajectories.length > (formData.visualInfo.shotTrajectories?.length || 0)) {
+                        setCurrentShot(null);
+                      }
+                    }}
                     courtType="singles"
                     mobileMode="shots" // ショット入力モード
+                    onShotStart={(player) => setCurrentShot(player)}
                   />
                 </div>
               </div>
@@ -560,7 +568,19 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
             
             {/* ショット履歴 (50%) */}
             <div className="h-1/2 bg-white border-t border-gray-200 p-4 overflow-y-auto">
-              <h3 className="font-medium text-gray-900 mb-3">ショット履歴</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-gray-900">ショット履歴</h3>
+                {!currentShot && (
+                  <p className="text-xs text-gray-500">
+                    プレイヤーをタップして開始
+                  </p>
+                )}
+                {currentShot && (
+                  <p className="text-xs text-blue-600">
+                    コートをタップして着地点を選択
+                  </p>
+                )}
+              </div>
               
               {formData.visualInfo.shotTrajectories && formData.visualInfo.shotTrajectories.length > 0 ? (
                 <div className="space-y-2">
