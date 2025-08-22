@@ -733,17 +733,6 @@ function PracticeManagementContent() {
                         onDelete={handleDeletePracticeCard}
                         isLoading={false}
                       />
-                      
-                      {/* モバイル用フローティングアクションボタン */}
-                      <div className="fixed bottom-6 right-6 sm:hidden z-40">
-                        <button
-                          onClick={() => setShowCardForm(true)}
-                          className="flex items-center justify-center w-14 h-14 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 transition-all duration-200 hover:scale-105"
-                          aria-label="練習カードを追加"
-                        >
-                          <FaPlus className="w-6 h-6" />
-                        </button>
-                      </div>
                     </div>
                   )}
                 </div>
@@ -806,6 +795,46 @@ function PracticeManagementContent() {
               }}
               isLoading={isSaving}
             />
+          </div>
+        </div>
+      )}
+
+      {/* モバイル用フローティングアクションボタン - カード管理タブの時のみ表示 */}
+      {activeView === 'cards' && !showCardForm && (
+        <div className="fixed bottom-6 right-6 sm:hidden z-40 animate-in fade-in slide-in-from-bottom-5 duration-300">
+          <button
+            onClick={() => setShowCardForm(true)}
+            className="group flex items-center justify-center w-14 h-14 bg-green-600 text-white rounded-full shadow-xl hover:shadow-2xl hover:bg-green-700 active:bg-green-800 transition-all duration-200 hover:scale-110 active:scale-95"
+            aria-label="練習カードを追加"
+            style={{
+              boxShadow: '0 4px 14px 0 rgba(34, 197, 94, 0.5)'
+            }}
+          >
+            <FaPlus className="w-6 h-6 transition-transform duration-200 group-hover:rotate-90" />
+          </button>
+          {/* ツールチップ */}
+          <div className="absolute bottom-16 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 pointer-events-none transition-opacity duration-200 group-hover:opacity-100 whitespace-nowrap">
+            練習カードを追加
+          </div>
+        </div>
+      )}
+
+      {/* モバイル用フローティングアクションボタン - 記録一覧タブの時のみ表示 */}
+      {activeView === 'records' && !showPracticeForm && (
+        <div className="fixed bottom-6 right-6 sm:hidden z-40 animate-in fade-in slide-in-from-bottom-5 duration-300">
+          <button
+            onClick={() => handleCreatePractice()}
+            className="group flex items-center justify-center w-14 h-14 bg-blue-600 text-white rounded-full shadow-xl hover:shadow-2xl hover:bg-blue-700 active:bg-blue-800 transition-all duration-200 hover:scale-110 active:scale-95"
+            aria-label="練習記録を追加"
+            style={{
+              boxShadow: '0 4px 14px 0 rgba(59, 130, 246, 0.5)'
+            }}
+          >
+            <FaPlus className="w-6 h-6 transition-transform duration-200 group-hover:rotate-90" />
+          </button>
+          {/* ツールチップ */}
+          <div className="absolute bottom-16 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 pointer-events-none transition-opacity duration-200 group-hover:opacity-100 whitespace-nowrap">
+            練習記録を追加
           </div>
         </div>
       )}

@@ -8,6 +8,7 @@ import { MdSportsBaseball } from 'react-icons/md';
 import { GiShuttlecock } from 'react-icons/gi';
 import CourtSelector from './CourtSelectorSimple';
 import PracticeCardVisualEditor from './PracticeCardVisualEditor';
+import PracticeCardMobileEditor from './PracticeCardMobileEditor';
 
 interface PracticeCardFormProps {
   card?: PracticeCard;
@@ -22,6 +23,10 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
   onCancel, 
   isLoading = false 
 }) => {
+  // モバイルデバイスの検出
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // すべてのHooksを条件分岐の前に定義
   const [formData, setFormData] = useState({
     title: card?.title || '',
     description: card?.description || '',
@@ -44,6 +49,17 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
   });
   
   const [useVisualEditor, setUseVisualEditor] = useState(card?.visualInfo !== undefined ? true : true); // デフォルトでビジュアルエディタを使用
+
+  // モバイルデバイスの検出
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const difficultyOptions = [
     { value: 'beginner', label: '軽い', color: 'bg-green-100 text-green-800' },
@@ -137,6 +153,18 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
     
     onSave(filteredData);
   };
+
+  // モバイルの場合は専用エディターを表示
+  if (isMobile) {
+    return (
+      <PracticeCardMobileEditor
+        card={card}
+        onSave={onSave}
+        onCancel={onCancel}
+        isLoading={isLoading}
+      />
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-4 sm:p-6 max-w-5xl mx-auto">

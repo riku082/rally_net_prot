@@ -19,6 +19,7 @@ interface PracticeCardVisualEditorProps {
   onUpdate: (visualInfo: PracticeVisualInfo) => void;
   courtType?: 'singles' | 'doubles';
   currentStep?: number;
+  mobileMode?: 'players' | 'shots' | 'preview'; // モバイル用のモード
 }
 
 // コート寸法（ピクセル）- 実際の比率に基づく
@@ -223,13 +224,17 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   practiceType = 'knock_practice',
   onUpdate,
   courtType = 'singles',
-  currentStep
+  currentStep,
+  mobileMode
 }) => {
   const [playerPositions, setPlayerPositions] = useState<PlayerPosition[]>(visualInfo.playerPositions || []);
   const [shotTrajectories, setShotTrajectories] = useState<ShotTrajectory[]>(visualInfo.shotTrajectories || []);
-  const [inputMode, setInputMode] = useState<'setup' | 'shot'>(
-    visualInfo.shotTrajectories && visualInfo.shotTrajectories.length > 0 ? 'shot' : 'setup'
-  );
+  const [inputMode, setInputMode] = useState<'setup' | 'shot'>(() => {
+    // モバイルモードの場合、モードを固定
+    if (mobileMode === 'players') return 'setup';
+    if (mobileMode === 'shots') return 'shot';
+    return visualInfo.shotTrajectories && visualInfo.shotTrajectories.length > 0 ? 'shot' : 'setup';
+  });
   const [shotInputMode, setShotInputMode] = useState<'pinpoint' | 'area'>('pinpoint');
   const [currentShot, setCurrentShot] = useState<{ from?: PlayerPosition; to?: { x: number; y: number }; nextPlayer?: PlayerPosition }>({});
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
@@ -297,6 +302,8 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   const [selectedKnocker, setSelectedKnocker] = useState<PlayerPosition | null>(null);
   const [latestShotLanding, setLatestShotLanding] = useState<{x: number, y: number} | null>(null);
   const courtRef = useRef<HTMLDivElement>(null);
+  const [draggingPlayer, setDraggingPlayer] = useState<string | null>(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
   // 初期配置
   useEffect(() => {
@@ -320,7 +327,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
         shotTrajectories
       });
     }
-  }, [playerPositions, shotTrajectories]);
+  }, [playerPositions, shotTrajectories, onUpdate, visualInfo]);
 
   // ノック練習でショットモードに入った時、ノッカーを自動選択
   useEffect(() => {
@@ -1130,6 +1137,202 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
       }
     }
   };
+
+  // モバイルモードの場合はコートのみを表示
+  if (mobileMode) {
+    return (
+      <div className="relative bg-gray-100 rounded-lg" style={{ width: COURT_WIDTH + COURT_PADDING * 2, height: COURT_HEIGHT + COURT_PADDING * 2 }}>
+        <div 
+          className="absolute inset-0 cursor-pointer"
+          onClick={handleCourtClick}
+        >
+          <svg 
+            viewBox={`0 0 ${COURT_WIDTH} ${COURT_HEIGHT}`}
+            className="absolute"
+            style={{ 
+              left: COURT_PADDING,
+              top: COURT_PADDING,
+              width: COURT_WIDTH,
+              height: COURT_HEIGHT
+            }}
+            onPointerMove={(e) => {
+              if (draggingPlayer && mobileMode === 'players') {
+                e.preventDefault();
+                const rect = (e.currentTarget as SVGElement).getBoundingClientRect();
+                const scaleX = COURT_WIDTH / rect.width;
+                const scaleY = COURT_HEIGHT / rect.height;
+                const clientX = 'touches' in e ? (e as any).touches[0].clientX : e.clientX;
+                const clientY = 'touches' in e ? (e as any).touches[0].clientY : e.clientY;
+                const newX = Math.max(0, Math.min(COURT_WIDTH, (clientX - rect.left) * scaleX - dragOffset.x));
+                const newY = Math.max(0, Math.min(COURT_HEIGHT, (clientY - rect.top) * scaleY - dragOffset.y));
+                const newPositions = playerPositions.map(p => 
+                  p.id === draggingPlayer ? { ...p, x: newX, y: newY } : p
+                );
+                setPlayerPositions(newPositions);
+                onUpdate({ ...visualInfo, playerPositions: newPositions });
+              }
+            }}
+            onPointerUp={() => {
+              if (draggingPlayer) {
+                setDraggingPlayer(null);
+              }
+            }}
+            onPointerLeave={() => {
+              if (draggingPlayer) {
+                setDraggingPlayer(null);
+              }
+            }}
+          >
+            {/* Court Background */}
+            <rect x="0" y="0" width={COURT_WIDTH} height={COURT_HEIGHT} fill="#4ade80" />
+            
+            {/* Court Lines */}
+            <rect x="0" y="0" width={COURT_WIDTH} height={COURT_HEIGHT} fill="none" stroke="white" strokeWidth="2" />
+            
+            {/* Net */}
+            <line x1="0" y1={NET_POSITION} x2={COURT_WIDTH} y2={NET_POSITION} stroke="#424242" strokeWidth="3" />
+            
+            {/* Service Lines */}
+            <line x1="0" y1={NET_POSITION - SHORT_SERVICE_LINE} x2={COURT_WIDTH} y2={NET_POSITION - SHORT_SERVICE_LINE} stroke="white" strokeWidth="1.5" />
+            <line x1="0" y1={NET_POSITION + SHORT_SERVICE_LINE} x2={COURT_WIDTH} y2={NET_POSITION + SHORT_SERVICE_LINE} stroke="white" strokeWidth="1.5" />
+            
+            {/* Back Boundary Lines */}
+            <line x1="0" y1={BACK_BOUNDARY_LINE_SINGLES} x2={COURT_WIDTH} y2={BACK_BOUNDARY_LINE_SINGLES} stroke="white" strokeWidth="1.5" />
+            <line x1="0" y1={COURT_HEIGHT - BACK_BOUNDARY_LINE_SINGLES} x2={COURT_WIDTH} y2={COURT_HEIGHT - BACK_BOUNDARY_LINE_SINGLES} stroke="white" strokeWidth="1.5" />
+            
+            {/* Center Line */}
+            <line x1={COURT_WIDTH / 2} y1="0" x2={COURT_WIDTH / 2} y2={NET_POSITION - SHORT_SERVICE_LINE} stroke="white" strokeWidth="1.5" />
+            <line x1={COURT_WIDTH / 2} y1={NET_POSITION + SHORT_SERVICE_LINE} x2={COURT_WIDTH / 2} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" />
+            
+            {/* Side Lines */}
+            <line x1={SIDE_ALLEY_WIDTH} y1="0" x2={SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" />
+            <line x1={COURT_WIDTH - SIDE_ALLEY_WIDTH} y1="0" x2={COURT_WIDTH - SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" />
+            
+            {/* エリア表示（ショット入力モード） */}
+            {mobileMode === 'shots' && shotInputMode === 'area' && (
+              <>
+                {COURT_AREAS.map(area => (
+                  <rect
+                    key={area.id}
+                    x={area.x}
+                    y={area.y}
+                    width={area.w}
+                    height={area.h}
+                    fill={selectedAreas.includes(area.id) ? '#3B82F6' : 'transparent'}
+                    fillOpacity={selectedAreas.includes(area.id) ? 0.3 : 0}
+                    stroke={selectedAreas.includes(area.id) ? '#2563EB' : '#9CA3AF'}
+                    strokeWidth="1"
+                    strokeOpacity="0.5"
+                    className="cursor-pointer hover:fill-blue-200 hover:fill-opacity-20"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAreaClick(area.id);
+                    }}
+                  />
+                ))}
+              </>
+            )}
+            
+            {/* ショット軌道 */}
+            {shotTrajectories.map((shot, index) => {
+              const color = shot.shotBy === 'knocker' ? '#000000' : '#10B981';
+              return (
+                <g key={shot.id}>
+                  <defs>
+                    <marker
+                      id={`arrow-${shot.id}`}
+                      markerWidth="10"
+                      markerHeight="10"
+                      refX="9"
+                      refY="3"
+                      orient="auto"
+                    >
+                      <path d="M0,0 L0,6 L9,3 z" fill={color} />
+                    </marker>
+                  </defs>
+                  <line
+                    x1={shot.from.x}
+                    y1={shot.from.y}
+                    x2={shot.to.x}
+                    y2={shot.to.y}
+                    stroke={color}
+                    strokeWidth="2"
+                    markerEnd={`url(#arrow-${shot.id})`}
+                    opacity="0.8"
+                  />
+                  <circle
+                    cx={(shot.from.x + shot.to.x) / 2}
+                    cy={(shot.from.y + shot.to.y) / 2}
+                    r="12"
+                    fill="white"
+                    stroke={color}
+                    strokeWidth="2"
+                  />
+                  <text
+                    x={(shot.from.x + shot.to.x) / 2}
+                    y={(shot.from.y + shot.to.y) / 2 + 4}
+                    textAnchor="middle"
+                    fontSize="12"
+                    fontWeight="bold"
+                    fill={color}
+                  >
+                    {shot.order || index + 1}
+                  </text>
+                </g>
+              );
+            })}
+            
+            {/* プレイヤー表示 */}
+            {playerPositions.map((player) => (
+              <g key={player.id}>
+                <circle 
+                  cx={player.x} 
+                  cy={player.y} 
+                  r="15"
+                  fill={player.color || '#10B981'} 
+                  stroke="white" 
+                  strokeWidth="2"
+                  className="cursor-move"
+                  style={{ cursor: mobileMode === 'players' ? 'move' : 'pointer' }}
+                  onPointerDown={(e) => {
+                    if (mobileMode === 'players') {
+                      e.stopPropagation();
+                      setDraggingPlayer(player.id);
+                      const rect = (e.currentTarget as SVGElement).ownerSVGElement?.getBoundingClientRect();
+                      if (rect) {
+                        const scaleX = COURT_WIDTH / rect.width;
+                        const scaleY = COURT_HEIGHT / rect.height;
+                        const clientX = 'touches' in e ? (e as any).touches[0].clientX : e.clientX;
+                        const clientY = 'touches' in e ? (e as any).touches[0].clientY : e.clientY;
+                        setDragOffset({
+                          x: (clientX - rect.left) * scaleX - player.x,
+                          y: (clientY - rect.top) * scaleY - player.y
+                        });
+                      }
+                    } else if (mobileMode === 'shots') {
+                      e.stopPropagation();
+                      handlePlayerClick(player);
+                    }
+                  }}
+                />
+                <text 
+                  x={player.x} 
+                  y={player.y + 5} 
+                  textAnchor="middle" 
+                  fill="white" 
+                  fontSize="12"
+                  fontWeight="bold"
+                  pointerEvents="none"
+                >
+                  {player.label?.charAt(0) || 'P'}
+                </text>
+              </g>
+            ))}
+          </svg>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col lg:flex-row gap-1 lg:gap-4 p-1 lg:p-4 h-screen lg:h-auto overflow-hidden" onClick={(e) => e.stopPropagation()}>
