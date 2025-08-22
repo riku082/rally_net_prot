@@ -125,6 +125,100 @@ function PracticeManagementContent() {
 
       const sampleCards: PracticeCard[] = [
         {
+          id: '4',
+          userId: user.uid,
+          title: 'スマッシュ&レシーブパターン',
+          description: 'スマッシュとレシーブの応酬を繰り返すパワフルなパターン練習',
+          drill: {
+            id: '4',
+            name: 'スマッシュ&レシーブパターン',
+            description: 'スマッシュの威力とレシーブの精度を同時に向上させる実戦的な練習。',
+            duration: 20,
+            skillCategory: 'smash',
+            sets: 5,
+            reps: 20
+          },
+          difficulty: 'advanced',
+          equipment: ['シャトル', 'ラケット'],
+          courtInfo: {
+            targetAreas: ['backcourt_left', 'backcourt_center', 'backcourt_right', 'midcourt_center'],
+            focusArea: 'midcourt_center',
+            courtType: 'singles',
+            notes: 'スマッシュは後方から、レシーブは中央で構える'
+          },
+          notes: '高強度の練習。体力と集中力が必要です。',
+          tags: ['スマッシュ', 'レシーブ', 'パターン', '高強度'],
+          isPublic: false,
+          visualInfo: {
+            playerPositions: [
+              { id: 'p1', x: 122, y: 400, label: 'P1', role: 'player', color: '#10B981', team: 'green' },
+              { id: 'p2', x: 122, y: 136, label: 'P2', role: 'opponent', color: '#EF4444', team: 'red' }
+            ],
+            shotTrajectories: [
+              { 
+                id: 's1', 
+                from: { id: 'p2', x: 122, y: 136, label: 'P2', role: 'opponent', color: '#EF4444' },
+                to: { x: 122, y: 450 },
+                shotType: 'clear',
+                shotBy: 'player',
+                order: 1,
+                memo: '高いクリアで相手を下げる'
+              },
+              { 
+                id: 's2', 
+                from: { id: 'p1', x: 122, y: 400, label: 'P1', role: 'player', color: '#10B981' },
+                to: { x: 61, y: 268 },
+                shotType: 'smash',
+                shotBy: 'player',
+                order: 2,
+                memo: 'クロススマッシュ'
+              },
+              { 
+                id: 's3', 
+                from: { id: 'p2', x: 122, y: 136, label: 'P2', role: 'opponent', color: '#EF4444' },
+                to: { x: 122, y: 450 },
+                shotType: 'receive',
+                shotBy: 'player',
+                order: 3,
+                memo: 'ディフェンシブレシーブ'
+              },
+              { 
+                id: 's4', 
+                from: { id: 'p1', x: 122, y: 400, label: 'P1', role: 'player', color: '#10B981' },
+                to: { x: 183, y: 268 },
+                shotType: 'smash',
+                shotBy: 'player',
+                order: 4,
+                memo: 'ストレートスマッシュ'
+              },
+              { 
+                id: 's5', 
+                from: { id: 'p2', x: 122, y: 136, label: 'P2', role: 'opponent', color: '#EF4444' },
+                to: { x: 122, y: 350 },
+                shotType: 'drive',
+                shotBy: 'player',
+                order: 5,
+                memo: 'カウンタードライブ'
+              },
+              { 
+                id: 's6', 
+                from: { id: 'p1', x: 122, y: 400, label: 'P1', role: 'player', color: '#10B981' },
+                to: { x: 122, y: 186 },
+                shotType: 'drive',
+                shotBy: 'player',
+                order: 6,
+                memo: 'ドライブで応戦'
+              }
+            ]
+          },
+          practiceType: 'pattern_practice',
+          usageCount: 12,
+          lastUsed: '2024-07-13',
+          rating: 4.7,
+          createdAt: Date.now() - 172800000,
+          updatedAt: Date.now() - 172800000,
+        },
+        {
           id: '1',
           userId: user.uid,
           title: 'ハイサーブ練習',
@@ -230,34 +324,34 @@ function PracticeManagementContent() {
         {
           id: '3',
           userId: user.uid,
-          title: 'ネット前ドロップ',
-          description: 'ネット際にやわらかくシャトルを落とす練習',
+          title: 'ネット前ドロップパターン',
+          description: 'ネット際の攻防を繰り返すパターン練習',
           drill: {
             id: '3',
-            name: 'ネット前ドロップ',
-            description: 'ネット際にソフトタッチでシャトルを落とす練習。角度とタイミングが重要。',
-            duration: 10,
-                        skillCategory: 'drop',
+            name: 'ネット前ドロップパターン',
+            description: 'ネット際でのドロップとヘアピンの応酬を練習。タッチの精度とフットワークがポイント。',
+            duration: 15,
+                        skillCategory: 'net_play',
             sets: 4,
             reps: 10
           },
           difficulty: 'advanced',
-          equipment: ['シャトル', 'ラケット'],
+          equipment: ['シャトル', 'ラケット', 'コーン'],
           courtInfo: {
             targetAreas: ['frontcourt_left_own', 'frontcourt_center_own', 'frontcourt_right_own'],
             focusArea: 'frontcourt_center_own',
-            courtType: 'singles',
-            notes: 'ネット際の前衛エリアを狙う精密なドロップ'
+            courtType: 'doubles',
+            notes: 'ネット際の前衛エリアを狙う精密なドロップとヘアピンの練習'
           },
           notes: 'きつい強度の繊細なタッチが必要な練習です。',
-          tags: ['きつい', 'ドロップ', 'ネット'],
+          tags: ['きつい', 'ドロップ', 'ネット', 'パターン'],
           isPublic: false,
           visualInfo: {
             playerPositions: [
               { id: 'p1', x: 61, y: 450, label: 'P1', role: 'player', color: '#10B981', team: 'green' },
               { id: 'p2', x: 183, y: 450, label: 'P2', role: 'player', color: '#10B981', team: 'green' },
-              { id: 'p3', x: 61, y: 50, label: 'P3', role: 'opponent', color: '#EF4444', team: 'red' },
-              { id: 'p4', x: 183, y: 50, label: 'P4', role: 'opponent', color: '#EF4444', team: 'red' }
+              { id: 'p3', x: 61, y: 86, label: 'P3', role: 'opponent', color: '#EF4444', team: 'red' },
+              { id: 'p4', x: 183, y: 86, label: 'P4', role: 'opponent', color: '#EF4444', team: 'red' }
             ],
             shotTrajectories: [
               { 
@@ -266,23 +360,44 @@ function PracticeManagementContent() {
                 to: { x: 183, y: 300 },
                 shotType: 'drop',
                 shotBy: 'player',
-                order: 1
+                order: 1,
+                memo: '相手の右前にソフトドロップ'
               },
               { 
                 id: 's2', 
-                from: { id: 'p4', x: 183, y: 50, label: 'P4', role: 'opponent', color: '#EF4444' },
-                to: { x: 61, y: 350 },
+                from: { id: 'p4', x: 183, y: 86, label: 'P4', role: 'opponent', color: '#EF4444' },
+                to: { x: 61, y: 236 },
                 shotType: 'hairpin',
                 shotBy: 'player',
-                order: 2
+                order: 2,
+                memo: 'クロスヘアピンで返球'
               },
               { 
                 id: 's3', 
                 from: { id: 'p2', x: 183, y: 450, label: 'P2', role: 'player', color: '#10B981' },
-                to: { x: 183, y: 250 },
+                to: { x: 183, y: 300 },
                 shotType: 'hairpin',
                 shotBy: 'player',
-                order: 3
+                order: 3,
+                memo: 'ストレートヘアピン'
+              },
+              { 
+                id: 's4', 
+                from: { id: 'p3', x: 61, y: 86, label: 'P3', role: 'opponent', color: '#EF4444' },
+                to: { x: 61, y: 236 },
+                shotType: 'push',
+                shotBy: 'player',
+                order: 4,
+                memo: 'プッシュで押し込む'
+              },
+              { 
+                id: 's5', 
+                from: { id: 'p1', x: 61, y: 450, label: 'P1', role: 'player', color: '#10B981' },
+                to: { x: 122, y: 100 },
+                shotType: 'lob',
+                shotBy: 'player',
+                order: 5,
+                memo: 'ロブで後方へ'
               }
             ]
           },
