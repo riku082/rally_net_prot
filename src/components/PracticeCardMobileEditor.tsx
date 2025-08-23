@@ -59,6 +59,8 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
   const [shotInputMode, setShotInputMode] = useState<'pinpoint' | 'area'>('pinpoint'); // 入力モード
   const [showReturnShotConfig, setShowReturnShotConfig] = useState(false); // 返球設定画面
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]); // 選択されたエリア
+  const [selectedShotType, setSelectedShotType] = useState('clear'); // 選択されたショットタイプ
+  const [history, setHistory] = useState<any[]>([]); // 履歴管理
 
   // コートエリア定義（PC版と同じ）
   const COURT_AREAS = [
@@ -96,6 +98,34 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
     { id: 'receive', name: 'レシーブ', color: '#06B6D4' },
     { id: 'other', name: 'その他', color: '#6B7280' },
   ];
+
+  // 履歴を保存
+  const saveHistory = () => {
+    setHistory(prev => [...prev, {
+      formData: JSON.parse(JSON.stringify(formData)),
+      knockerShot,
+      selectedPlayer,
+      showReturnShotConfig,
+      selectedAreas: [...selectedAreas],
+      shotInputMode,
+      selectedShotType
+    }]);
+  };
+
+  // 一つ戻る
+  const undo = () => {
+    if (history.length === 0) return;
+    
+    const last = history[history.length - 1];
+    setFormData(last.formData);
+    setKnockerShot(last.knockerShot);
+    setSelectedPlayer(last.selectedPlayer);
+    setShowReturnShotConfig(last.showReturnShotConfig);
+    setSelectedAreas(last.selectedAreas);
+    setShotInputMode(last.shotInputMode);
+    setSelectedShotType(last.selectedShotType);
+    setHistory(prev => prev.slice(0, -1));
+  };
 
   // ステップインジケーター
   const steps = [
@@ -591,7 +621,18 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
         {currentStep === 'shots' && (
           <div className="h-full flex flex-col">
             {/* コート表示エリア */}
-            <div className="h-1/2 bg-green-50 p-2 overflow-hidden">
+            <div className="h-1/2 bg-green-50 p-2 overflow-hidden relative">
+              {/* 戻るボタン */}
+              {history.length > 0 && (
+                <button
+                  onClick={undo}
+                  className="absolute top-2 right-2 z-10 bg-white/90 hover:bg-white p-2 rounded-full shadow-sm transition-all active:scale-95"
+                  title="一つ戻る"
+                >
+                  <FaUndo className="w-4 h-4 text-gray-700" />
+                </button>
+              )}
+              
               {/* デバッグ情報 */}
               <div className="absolute top-2 left-2 z-10 bg-white/90 p-1 rounded text-xs">
                 ショット数: {formData.visualInfo.shotTrajectories?.length || 0}
@@ -622,14 +663,17 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                           // ①ノッカーの配球設定
                           const knocker = formData.visualInfo.playerPositions?.find(p => p.role === 'knocker');
                           if (knocker) {
+                            // 履歴保存
+                            saveHistory();
+                            
                             const newShot = {
                               id: `shot_${Date.now()}`,
                               from: { x: knocker.x, y: knocker.y },
                               to: { x: coord.x, y: coord.y },
-                              shotType: 'clear',
                               shotBy: 'knocker' as const,
                               order: (formData.visualInfo.shotTrajectories?.length || 0) + 1,
                               memo: ''
+                              // ノッカーの配球には球種なし
                             };
                             
                             // ②矢印を表示（ショット追加）
@@ -651,11 +695,14 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                         } else if (showReturnShotConfig) {
                           // ⑤プレイヤーの返球先設定
                           if (selectedPlayer) {
+                            // 履歴保存
+                            saveHistory();
+                            
                             const returnShot = {
                               id: `shot_${Date.now()}`,
                               from: { x: selectedPlayer.x, y: selectedPlayer.y },
                               to: { x: coord.x, y: coord.y },
-                              shotType: 'clear',
+                              shotType: selectedShotType, // プレイヤーの返球では球種を選択
                               shotBy: 'player' as const,
                               order: (formData.visualInfo.shotTrajectories?.length || 0) + 1,
                               memo: '',
@@ -675,6 +722,7 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                             setSelectedPlayer(null);
                             setShowReturnShotConfig(false);
                             setSelectedAreas([]);
+                            setSelectedShotType('clear'); // 球種もリセット
                           }
                         }
                       } else if (currentShot) {
@@ -729,6 +777,9 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                             <button
                               key={player.id}
                               onClick={() => {
+                                // 履歴保存
+                                saveHistory();
+                                
                                 // プレイヤーを着地点に移動
                                 const updatedPositions = formData.visualInfo.playerPositions?.map(p => 
                                   p.id === player.id 
@@ -823,6 +874,27 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                           </div>
                         )}
                         
+                        {/* 球種選択（プレイヤーの返球時のみ） */}
+                        <div className="mb-4">
+                          <p className="text-xs text-green-700 mb-2">球種を選択:</p>
+                          <div className="grid grid-cols-3 gap-1">
+                            {SHOT_TYPES.map(shotType => (
+                              <button
+                                key={shotType.id}
+                                onClick={() => setSelectedShotType(shotType.id)}
+                                className={`py-2 px-2 rounded text-xs font-medium transition ${
+                                  selectedShotType === shotType.id
+                                    ? 'text-white shadow-sm'
+                                    : 'bg-gray-100 text-gray-700'
+                                }`}
+                                style={selectedShotType === shotType.id ? { backgroundColor: shotType.color } : {}}
+                              >
+                                {shotType.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        
                         <div className="bg-green-100 rounded p-3">
                           <p className="text-sm text-green-800 font-medium">
                             ⑤ コートをタップして返球先を設定
@@ -901,6 +973,9 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                           </div>
                           <button
                             onClick={() => {
+                              // 履歴保存
+                              saveHistory();
+                              
                               const newShots = formData.visualInfo.shotTrajectories?.filter(s => s.id !== shot.id) || [];
                               setFormData(prev => ({
                                 ...prev,
