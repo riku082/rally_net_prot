@@ -565,6 +565,8 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                             { x: 61, y: 400 },  // 左
                             { x: 183, y: 400 }, // 右
                             { x: 122, y: 450 }, // 後方中央
+                            { x: 61, y: 450 },  // 後方左
+                            { x: 183, y: 450 }, // 後方右
                           ];
                           const pos = positions[playerCount % positions.length];
                           const newPlayer = {
@@ -1026,7 +1028,42 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                         <div className="mt-4">
                           <button
                             onClick={() => {
-                              if (!selectedPlayer || !returnTarget) {
+                              // エリア選択モードの場合、選択されたエリアを返球先として使用
+                              if (shotInputMode === 'area' && selectedAreas.length > 0) {
+                                const firstArea = COURT_AREAS.find(area => area.id === selectedAreas[0]);
+                                if (firstArea) {
+                                  // エリアの中央座標を返球先として設定
+                                  const areaReturnTarget = {
+                                    x: firstArea.x + firstArea.width / 2,
+                                    y: firstArea.y + firstArea.height / 2
+                                  };
+                                  setReturnTarget(areaReturnTarget);
+                                }
+                              }
+                              
+                              if (!selectedPlayer) {
+                                alert('プレイヤーを選択してください');
+                                return;
+                              }
+                              
+                              if (!returnTarget && selectedAreas.length === 0) {
+                                alert('返球先を設定するか、エリアを選択してください');
+                                return;
+                              }
+                              
+                              // 最終的な返球先を決定
+                              let finalReturnTarget = returnTarget;
+                              if (!finalReturnTarget && selectedAreas.length > 0) {
+                                const firstArea = COURT_AREAS.find(area => area.id === selectedAreas[0]);
+                                if (firstArea) {
+                                  finalReturnTarget = {
+                                    x: firstArea.x + firstArea.width / 2,
+                                    y: firstArea.y + firstArea.height / 2
+                                  };
+                                }
+                              }
+                              
+                              if (!finalReturnTarget) {
                                 alert('返球先を設定してください');
                                 return;
                               }
@@ -1038,7 +1075,7 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                               const returnShot = {
                                 id: `shot_${Date.now()}`,
                                 from: { x: selectedPlayer.x, y: selectedPlayer.y },
-                                to: { x: returnTarget.x, y: returnTarget.y },
+                                to: { x: finalReturnTarget.x, y: finalReturnTarget.y },
                                 shotType: selectedShotTypes[0], // 最初の球種を代表として使用
                                 shotTypes: selectedShotTypes.length > 1 ? selectedShotTypes : undefined, // 複数ある場合のみ設定
                                 shotBy: 'player' as const,
@@ -1067,9 +1104,9 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                               
                               console.log('ショット確定 - 次のノッカーの球に移動', returnShot);
                             }}
-                            disabled={!returnTarget}
+                            disabled={!selectedPlayer || (!returnTarget && selectedAreas.length === 0)}
                             className={`w-full py-3 px-4 rounded-lg font-medium text-sm transition-colors ${
-                              returnTarget 
+                              (selectedPlayer && (returnTarget || selectedAreas.length > 0))
                                 ? 'bg-blue-600 text-white hover:bg-blue-700' 
                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             }`}
