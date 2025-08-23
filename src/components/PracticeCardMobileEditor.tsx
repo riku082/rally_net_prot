@@ -62,28 +62,29 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
   const [selectedShotType, setSelectedShotType] = useState('clear'); // 選択されたショットタイプ
   const [history, setHistory] = useState<any[]>([]); // 履歴管理
 
-  // コートエリア定義（PC版と同じ）
+  // コートエリア定義（PC版と同じ、座標付き）
   const COURT_AREAS = [
-    // 上側コート（相手側）
-    { id: 'opp_fl', name: '相手前左' },
-    { id: 'opp_fc', name: '相手前中' },
-    { id: 'opp_fr', name: '相手前右' },
-    { id: 'opp_ml', name: '相手中左' },
-    { id: 'opp_mc', name: '相手中央' },
-    { id: 'opp_mr', name: '相手中右' },
-    { id: 'opp_bl', name: '相手後左' },
-    { id: 'opp_bc', name: '相手後中' },
-    { id: 'opp_br', name: '相手後右' },
-    // 下側コート（自分側）
-    { id: 'own_fl', name: '自分前左' },
-    { id: 'own_fc', name: '自分前中' },
-    { id: 'own_fr', name: '自分前右' },
-    { id: 'own_ml', name: '自分中左' },
-    { id: 'own_mc', name: '自分中央' },
-    { id: 'own_mr', name: '自分中右' },
-    { id: 'own_bl', name: '自分後左' },
-    { id: 'own_bc', name: '自分後中' },
-    { id: 'own_br', name: '自分後右' },
+    // 上側コート（相手側）- y座標は小さい値（上側）
+    { id: 'opp_bl', name: '相手後左', x: 61, y: 30, width: 61, height: 45 }, // 後衛左
+    { id: 'opp_bc', name: '相手後中', x: 122, y: 30, width: 61, height: 45 }, // 後衛中央
+    { id: 'opp_br', name: '相手後右', x: 183, y: 30, width: 61, height: 45 }, // 後衛右
+    { id: 'opp_ml', name: '相手中左', x: 61, y: 75, width: 61, height: 45 }, // 中衛左
+    { id: 'opp_mc', name: '相手中央', x: 122, y: 75, width: 61, height: 45 }, // 中衛中央
+    { id: 'opp_mr', name: '相手中右', x: 183, y: 75, width: 61, height: 45 }, // 中衛右
+    { id: 'opp_fl', name: '相手前左', x: 61, y: 120, width: 61, height: 45 }, // 前衛左
+    { id: 'opp_fc', name: '相手前中', x: 122, y: 120, width: 61, height: 45 }, // 前衛中央
+    { id: 'opp_fr', name: '相手前右', x: 183, y: 120, width: 61, height: 45 }, // 前衛右
+    
+    // 下側コート（自分側）- y座標は大きい値（下側）
+    { id: 'own_fl', name: '自分前左', x: 61, y: 320, width: 61, height: 45 }, // 前衛左
+    { id: 'own_fc', name: '自分前中', x: 122, y: 320, width: 61, height: 45 }, // 前衛中央
+    { id: 'own_fr', name: '自分前右', x: 183, y: 320, width: 61, height: 45 }, // 前衛右
+    { id: 'own_ml', name: '自分中左', x: 61, y: 365, width: 61, height: 45 }, // 中衛左
+    { id: 'own_mc', name: '自分中央', x: 122, y: 365, width: 61, height: 45 }, // 中衛中央
+    { id: 'own_mr', name: '自分中右', x: 183, y: 365, width: 61, height: 45 }, // 中衛右
+    { id: 'own_bl', name: '自分後左', x: 61, y: 410, width: 61, height: 45 }, // 後衛左
+    { id: 'own_bc', name: '自分後中', x: 122, y: 410, width: 61, height: 45 }, // 後衛中央
+    { id: 'own_br', name: '自分後右', x: 183, y: 410, width: 61, height: 45 }, // 後衛右
   ];
 
   // ショットタイプ定義（PC版と同じ）
@@ -645,6 +646,16 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                     onUpdate={(visualInfo) => setFormData(prev => ({ ...prev, visualInfo }))}
                     courtType="singles"
                     mobileMode="shots"
+                    mobileSelectedAreas={selectedAreas}
+                    onAreaSelect={(areaId) => {
+                      if (shotInputMode === 'area') {
+                        setSelectedAreas(prev => 
+                          prev.includes(areaId)
+                            ? prev.filter(id => id !== areaId)
+                            : [...prev, areaId]
+                        );
+                      }
+                    }}
                     onShotStart={(coord: any) => {
                       // プレイヤータップの場合
                       if (coord.role) {
@@ -846,30 +857,29 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                           </button>
                         </div>
                         
-                        {/* エリアモードの場合のエリア選択 */}
+                        {/* エリアモードの場合の案内 */}
                         {shotInputMode === 'area' && (
                           <div className="mb-4">
-                            <p className="text-xs text-green-700 mb-2">対象エリアを選択:</p>
-                            <div className="grid grid-cols-3 gap-1">
-                              {COURT_AREAS.filter(area => area.id.startsWith('opp_')).map(area => (
-                                <button
-                                  key={area.id}
-                                  onClick={() => {
-                                    setSelectedAreas(prev => 
-                                      prev.includes(area.id)
-                                        ? prev.filter(id => id !== area.id)
-                                        : [...prev, area.id]
-                                    );
-                                  }}
-                                  className={`py-2 px-1 rounded text-xs font-medium transition ${
-                                    selectedAreas.includes(area.id)
-                                      ? 'bg-green-600 text-white'
-                                      : 'bg-gray-100 text-gray-700'
-                                  }`}
-                                >
-                                  {area.name.replace('相手', '')}
-                                </button>
-                              ))}
+                            <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                              <p className="text-sm text-blue-800 font-medium mb-2">エリア選択モード</p>
+                              <p className="text-xs text-blue-700 mb-2">
+                                上のコートシート上の相手側エリアをタップして対象エリアを選択してください。
+                              </p>
+                              {selectedAreas.length > 0 && (
+                                <div>
+                                  <p className="text-xs text-blue-700 mb-1">選択済みエリア:</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {selectedAreas.map(areaId => {
+                                      const area = COURT_AREAS.find(a => a.id === areaId);
+                                      return area ? (
+                                        <span key={areaId} className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
+                                          {area.name.replace('相手', '')}
+                                        </span>
+                                      ) : null;
+                                    })}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}

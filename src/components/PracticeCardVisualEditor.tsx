@@ -21,6 +21,8 @@ interface PracticeCardVisualEditorProps {
   currentStep?: number;
   mobileMode?: 'players' | 'shots' | 'preview'; // モバイル用のモード
   onShotStart?: (player: PlayerPosition) => void; // ショット開始時のコールバック
+  mobileSelectedAreas?: string[]; // 選択されたエリアIDの配列
+  onAreaSelect?: (areaId: string) => void; // エリア選択時のコールバック
 }
 
 // コート寸法（ピクセル）- 実際の比率に基づく
@@ -227,7 +229,9 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   courtType = 'singles',
   currentStep,
   mobileMode,
-  onShotStart
+  onShotStart,
+  mobileSelectedAreas = [],
+  onAreaSelect
 }) => {
   const [playerPositions, setPlayerPositions] = useState<PlayerPosition[]>(visualInfo.playerPositions || []);
   const [shotTrajectories, setShotTrajectories] = useState<ShotTrajectory[]>(visualInfo.shotTrajectories || []);
@@ -1257,6 +1261,52 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             {/* Side Lines */}
             <line x1={SIDE_ALLEY_WIDTH} y1="0" x2={SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" />
             <line x1={COURT_WIDTH - SIDE_ALLEY_WIDTH} y1="0" x2={COURT_WIDTH - SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" />
+            
+            {/* 9分割グリッド - エリア選択時のみ表示 */}
+            {mobileMode === 'shots' && onAreaSelect && (
+              <>
+                {/* 相手側（9分割） */}
+                {COURT_AREAS.filter(area => area.id.startsWith('opp_')).map((area) => {
+                  const isSelected = mobileSelectedAreas.includes(area.id);
+                  return (
+                    <rect
+                      key={area.id}
+                      x={area.x}
+                      y={area.y}
+                      width={area.w}
+                      height={area.h}
+                      fill={isSelected ? '#22c55e' : 'transparent'}
+                      fillOpacity={isSelected ? 0.4 : 0}
+                      stroke={isSelected ? '#16a34a' : '#ffffff'}
+                      strokeWidth={isSelected ? '2' : '0.5'}
+                      strokeOpacity={isSelected ? 1 : 0.3}
+                      className="cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAreaSelect(area.id);
+                      }}
+                    />
+                  );
+                })}
+                
+                {/* エリアラベル表示（選択時のみ） */}
+                {COURT_AREAS.filter(area => area.id.startsWith('opp_') && mobileSelectedAreas.includes(area.id)).map((area) => (
+                  <text
+                    key={`label-${area.id}`}
+                    x={area.x + area.w / 2}
+                    y={area.y + area.h / 2}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize="10"
+                    fill="#ffffff"
+                    fontWeight="bold"
+                    className="pointer-events-none"
+                  >
+                    {area.name.replace('相手', '')}
+                  </text>
+                ))}
+              </>
+            )}
             
             
             {/* ショット軌道 - visualInfoから直接レンダリング */}
