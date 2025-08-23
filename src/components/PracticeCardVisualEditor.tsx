@@ -307,6 +307,15 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   const [draggingPlayer, setDraggingPlayer] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
+  // モバイルモードの場合は外部のvisualInfoを直接使用するため同期
+  useEffect(() => {
+    if (mobileMode) {
+      console.log('Syncing mobile mode - visualInfo shots:', visualInfo.shotTrajectories);
+      setPlayerPositions(visualInfo.playerPositions || []);
+      setShotTrajectories(visualInfo.shotTrajectories || []);
+    }
+  }, [visualInfo, mobileMode]);
+
   // 初期配置
   useEffect(() => {
     if (practiceType && playerPositions.length === 0) {
@@ -316,8 +325,10 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
   }, [practiceType]);
   
 
-  // プレイヤー位置とショット軌道の変更を監視して更新
+  // プレイヤー位置とショット軌道の変更を監視して更新（モバイルモードでは外部制御なのでスキップ）
   useEffect(() => {
+    if (mobileMode) return; // モバイルモードでは外部から制御されるのでスキップ
+    
     // 実際に値が変更された場合のみ更新
     const hasPlayerChanges = JSON.stringify(playerPositions) !== JSON.stringify(visualInfo.playerPositions || []);
     const hasShotChanges = JSON.stringify(shotTrajectories) !== JSON.stringify(visualInfo.shotTrajectories || []);
@@ -329,7 +340,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
         shotTrajectories
       });
     }
-  }, [playerPositions, shotTrajectories, onUpdate, visualInfo]);
+  }, [playerPositions, shotTrajectories, onUpdate, visualInfo, mobileMode]);
 
   // ノック練習でショットモードに入った時、ノッカーを自動選択
   useEffect(() => {
@@ -1176,23 +1187,25 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
     }
   };
 
-  // モバイルモードの場合はコートのみを表示
+  // モバイルモードの場合はコートのみを表示（visualInfoを直接使用）
   if (mobileMode) {
+    const mobilePlayerPositions = visualInfo.playerPositions || [];
+    const mobileShotTrajectories = visualInfo.shotTrajectories || [];
+    
+    console.log('Mobile mode - using visualInfo directly:', mobileShotTrajectories);
+    
     return (
       <div className="relative bg-gray-100 rounded-lg" style={{ width: COURT_WIDTH + COURT_PADDING * 2, height: COURT_HEIGHT + COURT_PADDING * 2 }}>
-        <div 
-          className="absolute inset-0 cursor-pointer"
+        <svg 
+          viewBox={`0 0 ${COURT_WIDTH} ${COURT_HEIGHT}`}
+          className="absolute cursor-pointer"
+          style={{ 
+            left: COURT_PADDING,
+            top: COURT_PADDING,
+            width: COURT_WIDTH,
+            height: COURT_HEIGHT
+          }}
           onClick={handleCourtClick}
-        >
-          <svg 
-            viewBox={`0 0 ${COURT_WIDTH} ${COURT_HEIGHT}`}
-            className="absolute"
-            style={{ 
-              left: COURT_PADDING,
-              top: COURT_PADDING,
-              width: COURT_WIDTH,
-              height: COURT_HEIGHT
-            }}
             onPointerMove={(e) => {
               if (draggingPlayer && mobileMode === 'players') {
                 e.preventDefault();
@@ -1203,10 +1216,9 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                 const clientY = 'touches' in e ? (e as any).touches[0].clientY : e.clientY;
                 const newX = Math.max(0, Math.min(COURT_WIDTH, (clientX - rect.left) * scaleX - dragOffset.x));
                 const newY = Math.max(0, Math.min(COURT_HEIGHT, (clientY - rect.top) * scaleY - dragOffset.y));
-                const newPositions = playerPositions.map(p => 
+                const newPositions = mobilePlayerPositions.map(p => 
                   p.id === draggingPlayer ? { ...p, x: newX, y: newY } : p
                 );
-                setPlayerPositions(newPositions);
                 onUpdate({ ...visualInfo, playerPositions: newPositions });
               }
             }}
@@ -1246,33 +1258,9 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             <line x1={SIDE_ALLEY_WIDTH} y1="0" x2={SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" />
             <line x1={COURT_WIDTH - SIDE_ALLEY_WIDTH} y1="0" x2={COURT_WIDTH - SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" />
             
-            {/* エリア表示（ショット入力モード） */}
-            {mobileMode === 'shots' && shotInputMode === 'area' && (
-              <>
-                {COURT_AREAS.map(area => (
-                  <rect
-                    key={area.id}
-                    x={area.x}
-                    y={area.y}
-                    width={area.w}
-                    height={area.h}
-                    fill={selectedAreas.includes(area.id) ? '#3B82F6' : 'transparent'}
-                    fillOpacity={selectedAreas.includes(area.id) ? 0.3 : 0}
-                    stroke={selectedAreas.includes(area.id) ? '#2563EB' : '#9CA3AF'}
-                    strokeWidth="1"
-                    strokeOpacity="0.5"
-                    className="cursor-pointer hover:fill-blue-200 hover:fill-opacity-20"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleAreaClick(area.id);
-                    }}
-                  />
-                ))}
-              </>
-            )}
             
-            {/* ショット軌道 */}
-            {shotTrajectories.map((shot, index) => {
+            {/* ショット軌道 - visualInfoから直接レンダリング */}
+            {mobileShotTrajectories.map((shot, index) => {
               const color = shot.shotBy === 'knocker' ? '#000000' : '#10B981';
               return (
                 <g key={shot.id}>
@@ -1321,7 +1309,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             })}
             
             {/* プレイヤー表示 */}
-            {playerPositions.map((player) => (
+            {mobilePlayerPositions.map((player) => (
               <g key={player.id}>
                 <circle 
                   cx={player.x} 
@@ -1366,8 +1354,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                 </text>
               </g>
             ))}
-          </svg>
-        </div>
+        </svg>
       </div>
     );
   }

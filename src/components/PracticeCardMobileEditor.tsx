@@ -54,15 +54,11 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
   });
 
   // ショット入力の状態管理
-  const [pendingShot, setPendingShot] = useState<{
-    from: { x: number, y: number },
-    to: { x: number, y: number },
-    needsPlayerSelection?: boolean
-  } | null>(null);
-  const [shotInputMode, setShotInputMode] = useState<'pinpoint' | 'area'>('pinpoint');
-  const [selectedShotType, setSelectedShotType] = useState('clear');
-  const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
-  const [showShotTypeSelection, setShowShotTypeSelection] = useState(false);
+  const [knockerShot, setKnockerShot] = useState<any>(null); // ノッカーのショット
+  const [selectedPlayer, setSelectedPlayer] = useState<any>(null); // 選択されたプレイヤー
+  const [shotInputMode, setShotInputMode] = useState<'pinpoint' | 'area'>('pinpoint'); // 入力モード
+  const [showReturnShotConfig, setShowReturnShotConfig] = useState(false); // 返球設定画面
+  const [selectedAreas, setSelectedAreas] = useState<string[]>([]); // 選択されたエリア
 
   // コートエリア定義（PC版と同じ）
   const COURT_AREAS = [
@@ -596,6 +592,10 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
           <div className="h-full flex flex-col">
             {/* コート表示エリア */}
             <div className="h-1/2 bg-green-50 p-2 overflow-hidden">
+              {/* デバッグ情報 */}
+              <div className="absolute top-2 left-2 z-10 bg-white/90 p-1 rounded text-xs">
+                ショット数: {formData.visualInfo.shotTrajectories?.length || 0}
+              </div>
               <div className="h-full w-full flex items-center justify-center">
                 <div style={{ transform: 'scale(0.6)', transformOrigin: 'center' }}>
                   <PracticeCardVisualEditor
@@ -605,31 +605,99 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                     courtType="singles"
                     mobileMode="shots"
                     onShotStart={(coord: any) => {
-                      // プレイヤータップの場合は座標ではなくプレイヤー情報
+                      // プレイヤータップの場合
                       if (coord.role) {
-                        // プレイヤーをタップした場合、そのプレイヤーからの shot を開始
-                        setCurrentShot(coord);
+                        if (formData.practiceType === 'pattern_practice') {
+                          setCurrentShot(coord);
+                        } else if (showReturnShotConfig && coord.role === 'player') {
+                          // 返球時のプレイヤー選択（返球元）
+                          // 通常はすでに移動したプレイヤーから返球
+                        }
                         return;
                       }
                       
                       // コートタップ時の処理
                       if (formData.practiceType === 'knock_practice') {
-                        // ノック練習：最初のタップ = ノッカーからの着地点
-                        const knocker = formData.visualInfo.playerPositions?.find(p => p.role === 'knocker');
-                        if (knocker) {
-                          setPendingShot({
-                            from: { x: knocker.x, y: knocker.y },
-                            to: { x: coord.x, y: coord.y },
-                            needsPlayerSelection: true
-                          });
+                        if (!knockerShot) {
+                          // ①ノッカーの配球設定
+                          const knocker = formData.visualInfo.playerPositions?.find(p => p.role === 'knocker');
+                          if (knocker) {
+                            const newShot = {
+                              id: `shot_${Date.now()}`,
+                              from: { x: knocker.x, y: knocker.y },
+                              to: { x: coord.x, y: coord.y },
+                              shotType: 'clear',
+                              shotBy: 'knocker' as const,
+                              order: (formData.visualInfo.shotTrajectories?.length || 0) + 1,
+                              memo: ''
+                            };
+                            
+                            // ②矢印を表示（ショット追加）
+                            console.log('Creating knocker shot:', newShot);
+                            setFormData(prev => {
+                              const updated = {
+                                ...prev,
+                                visualInfo: {
+                                  ...prev.visualInfo,
+                                  shotTrajectories: [...(prev.visualInfo.shotTrajectories || []), newShot]
+                                }
+                              };
+                              console.log('Updated formData with shots:', updated.visualInfo.shotTrajectories);
+                              return updated;
+                            });
+                            
+                            setKnockerShot(newShot);
+                          }
+                        } else if (showReturnShotConfig) {
+                          // ⑤プレイヤーの返球先設定
+                          if (selectedPlayer) {
+                            const returnShot = {
+                              id: `shot_${Date.now()}`,
+                              from: { x: selectedPlayer.x, y: selectedPlayer.y },
+                              to: { x: coord.x, y: coord.y },
+                              shotType: 'clear',
+                              shotBy: 'player' as const,
+                              order: (formData.visualInfo.shotTrajectories?.length || 0) + 1,
+                              memo: '',
+                              targetArea: shotInputMode === 'area' ? selectedAreas.join(',') : undefined
+                            };
+                            
+                            setFormData(prev => ({
+                              ...prev,
+                              visualInfo: {
+                                ...prev.visualInfo,
+                                shotTrajectories: [...(prev.visualInfo.shotTrajectories || []), returnShot]
+                              }
+                            }));
+                            
+                            // リセット
+                            setKnockerShot(null);
+                            setSelectedPlayer(null);
+                            setShowReturnShotConfig(false);
+                            setSelectedAreas([]);
+                          }
                         }
                       } else if (currentShot) {
-                        // パターン練習：プレイヤーを選択してからコートタップ
-                        setPendingShot({
+                        // パターン練習
+                        const newShot = {
+                          id: `shot_${Date.now()}`,
                           from: { x: currentShot.x, y: currentShot.y },
-                          to: { x: coord.x, y: coord.y }
-                        });
-                        setShowShotTypeSelection(true);
+                          to: { x: coord.x, y: coord.y },
+                          shotType: 'clear',
+                          shotBy: currentShot.role === 'knocker' ? 'knocker' : 'player',
+                          order: (formData.visualInfo.shotTrajectories?.length || 0) + 1,
+                          memo: ''
+                        };
+                        
+                        setFormData(prev => ({
+                          ...prev,
+                          visualInfo: {
+                            ...prev.visualInfo,
+                            shotTrajectories: [...(prev.visualInfo.shotTrajectories || []), newShot]
+                          }
+                        }));
+                        
+                        setCurrentShot(null);
                       }
                     }}
                   />
@@ -641,222 +709,180 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
             <div className="h-1/2 bg-white border-t border-gray-200 overflow-y-auto">
               <div className="p-4 space-y-4">
                 
-                {/* pendingShotがある場合：プレイヤー選択とショット設定 */}
-                {pendingShot && (
-                  <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-200">
-                    <h4 className="font-medium text-blue-900 mb-3">ショット設定</h4>
-                    
-                    {/* プレイヤー選択 */}
-                    <div className="mb-4">
-                      <label className="text-sm font-medium text-blue-800 mb-2 block">
-                        移動するプレイヤーを選択:
-                      </label>
-                      <div className="flex flex-wrap gap-2">
-                        {formData.visualInfo.playerPositions?.filter(p => p.role === 'player').map(player => (
-                          <button
-                            key={player.id}
-                            onClick={() => {
-                              // プレイヤーを着地点に移動
-                              const updatedPositions = formData.visualInfo.playerPositions?.map(p => 
-                                p.id === player.id 
-                                  ? { ...p, x: pendingShot.to.x, y: pendingShot.to.y }
-                                  : p
-                              ) || [];
-                              setFormData(prev => ({
-                                ...prev,
-                                visualInfo: {
-                                  ...prev.visualInfo,
-                                  playerPositions: updatedPositions
-                                }
-                              }));
-                              setShowShotTypeSelection(true);
-                            }}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium active:bg-blue-700"
-                          >
-                            {player.label}を移動
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <button
-                      onClick={() => setPendingShot(null)}
-                      className="w-full py-2 bg-gray-200 text-gray-700 rounded text-sm"
-                    >
-                      キャンセル
-                    </button>
-                  </div>
-                )}
-                
-                {/* ショットタイプ選択 */}
-                {showShotTypeSelection && pendingShot && (
-                  <div className="bg-green-50 rounded-lg p-4 border-2 border-green-200">
-                    <h4 className="font-medium text-green-900 mb-3">ショット詳細設定</h4>
-                    
-                    {/* 入力モード選択 */}
-                    <div className="mb-3">
-                      <div className="flex bg-gray-100 rounded-lg p-1">
-                        <button
-                          onClick={() => setShotInputMode('pinpoint')}
-                          className={`flex-1 py-2 px-3 rounded text-sm font-medium transition ${
-                            shotInputMode === 'pinpoint' 
-                              ? 'bg-white text-blue-600 shadow-sm' 
-                              : 'text-gray-600'
-                          }`}
-                        >
-                          ピンポイント
-                        </button>
-                        <button
-                          onClick={() => setShotInputMode('area')}
-                          className={`flex-1 py-2 px-3 rounded text-sm font-medium transition ${
-                            shotInputMode === 'area' 
-                              ? 'bg-white text-blue-600 shadow-sm' 
-                              : 'text-gray-600'
-                          }`}
-                        >
-                          エリア
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {/* エリア選択（エリアモードの場合） */}
-                    {shotInputMode === 'area' && (
-                      <div className="mb-3">
-                        <label className="text-sm font-medium text-green-800 mb-2 block">
-                          対象エリア（複数選択可能）:
-                        </label>
-                        <div className="grid grid-cols-3 gap-1 text-xs">
-                          {COURT_AREAS.map(area => (
+                {/* ノック練習フロー */}
+                {formData.practiceType === 'knock_practice' && (
+                  <>
+                    {/* ③プレイヤー選択（ノッカーショット後） */}
+                    {knockerShot && !selectedPlayer && !showReturnShotConfig && (
+                      <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-200">
+                        <div className="mb-3 p-2 bg-blue-100 rounded">
+                          <p className="text-sm text-blue-800 font-medium">
+                            ✅ ノッカーの配球が設定されました
+                          </p>
+                          <p className="text-xs text-blue-700 mt-1">
+                            コート上に矢印が表示されています
+                          </p>
+                        </div>
+                        <h4 className="font-medium text-blue-900 mb-3">③ 着地点に移動するプレイヤーを選択</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {formData.visualInfo.playerPositions?.filter(p => p.role === 'player').map(player => (
                             <button
-                              key={area.id}
+                              key={player.id}
                               onClick={() => {
-                                setSelectedAreas(prev => 
-                                  prev.includes(area.id)
-                                    ? prev.filter(id => id !== area.id)
-                                    : [...prev, area.id]
-                                );
+                                // プレイヤーを着地点に移動
+                                const updatedPositions = formData.visualInfo.playerPositions?.map(p => 
+                                  p.id === player.id 
+                                    ? { ...p, x: knockerShot.to.x, y: knockerShot.to.y }
+                                    : p
+                                ) || [];
+                                
+                                const movedPlayer = updatedPositions.find(p => p.id === player.id);
+                                
+                                setFormData(prev => ({
+                                  ...prev,
+                                  visualInfo: {
+                                    ...prev.visualInfo,
+                                    playerPositions: updatedPositions
+                                  }
+                                }));
+                                
+                                setSelectedPlayer(movedPlayer);
+                                setShowReturnShotConfig(true);
                               }}
-                              className={`py-2 px-2 rounded text-xs font-medium transition ${
-                                selectedAreas.includes(area.id)
-                                  ? 'bg-green-600 text-white'
-                                  : 'bg-gray-100 text-gray-700'
-                              }`}
+                              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium active:bg-blue-700"
                             >
-                              {area.name}
+                              {player.label}を移動
                             </button>
                           ))}
                         </div>
-                        {selectedAreas.length > 0 && (
-                          <p className="text-xs text-green-600 mt-1">
-                            選択中: {selectedAreas.length}エリア
-                          </p>
-                        )}
                       </div>
                     )}
-
-                    {/* ショットタイプ選択 */}
-                    <div className="mb-3">
-                      <label className="text-sm font-medium text-green-800 mb-2 block">
-                        ショットタイプ:
-                      </label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {SHOT_TYPES.map(shotType => (
-                          <button
-                            key={shotType.id}
-                            onClick={() => setSelectedShotType(shotType.id)}
-                            className={`px-3 py-2 rounded text-xs font-medium transition ${
-                              selectedShotType === shotType.id
-                                ? 'text-white shadow-sm'
-                                : 'bg-gray-100 text-gray-700'
-                            }`}
-                            style={selectedShotType === shotType.id ? { backgroundColor: shotType.color } : {}}
-                          >
-                            {shotType.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
                     
-                    {/* 確定ボタン */}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          // ショットを確定
-                          const shotBy = formData.practiceType === 'knock_practice' 
-                            ? (pendingShot.needsPlayerSelection ? 'knocker' : 'player') 
-                            : (currentShot?.role || 'player');
-                            
-                          const newShot = {
-                            id: `shot_${Date.now()}`,
-                            from: pendingShot.from,
-                            to: pendingShot.to,
-                            shotType: selectedShotType,
-                            shotBy: shotBy as 'knocker' | 'player',
-                            order: (formData.visualInfo.shotTrajectories?.length || 0) + 1,
-                            memo: '',
-                            targetArea: shotInputMode === 'area' ? selectedAreas.join(',') : undefined
-                          };
-                          
-                          setFormData(prev => ({
-                            ...prev,
-                            visualInfo: {
-                              ...prev.visualInfo,
-                              shotTrajectories: [...(prev.visualInfo.shotTrajectories || []), newShot]
-                            }
-                          }));
-                          
-                          // リセット
-                          setPendingShot(null);
-                          setShowShotTypeSelection(false);
-                          setSelectedAreas([]);
-                          setCurrentShot(null);
-                        }}
-                        className="flex-1 py-2 bg-green-600 text-white rounded font-medium active:bg-green-700"
-                      >
-                        ショット確定
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowShotTypeSelection(false);
-                          setPendingShot(null);
-                        }}
-                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded"
-                      >
-                        キャンセル
-                      </button>
-                    </div>
-                  </div>
+                    {/* ④配球方法の選択 */}
+                    {showReturnShotConfig && selectedPlayer && (
+                      <div className="bg-green-50 rounded-lg p-4 border-2 border-green-200">
+                        <h4 className="font-medium text-green-900 mb-3">④ 配球方法の選択</h4>
+                        
+                        <div className="mb-4">
+                          <p className="text-sm text-green-800 mb-2">
+                            {selectedPlayer.label}が着地点に移動しました
+                          </p>
+                        </div>
+                        
+                        <div className="flex bg-gray-100 rounded-lg p-1 mb-4">
+                          <button
+                            onClick={() => {
+                              setShotInputMode('pinpoint');
+                              setSelectedAreas([]);
+                            }}
+                            className={`flex-1 py-2 px-3 rounded text-sm font-medium transition ${
+                              shotInputMode === 'pinpoint' 
+                                ? 'bg-white text-blue-600 shadow-sm' 
+                                : 'text-gray-600'
+                            }`}
+                          >
+                            ピンポイント
+                          </button>
+                          <button
+                            onClick={() => setShotInputMode('area')}
+                            className={`flex-1 py-2 px-3 rounded text-sm font-medium transition ${
+                              shotInputMode === 'area' 
+                                ? 'bg-white text-blue-600 shadow-sm' 
+                                : 'text-gray-600'
+                            }`}
+                          >
+                            エリア
+                          </button>
+                        </div>
+                        
+                        {/* エリアモードの場合のエリア選択 */}
+                        {shotInputMode === 'area' && (
+                          <div className="mb-4">
+                            <p className="text-xs text-green-700 mb-2">対象エリアを選択:</p>
+                            <div className="grid grid-cols-3 gap-1">
+                              {COURT_AREAS.filter(area => area.id.startsWith('opp_')).map(area => (
+                                <button
+                                  key={area.id}
+                                  onClick={() => {
+                                    setSelectedAreas(prev => 
+                                      prev.includes(area.id)
+                                        ? prev.filter(id => id !== area.id)
+                                        : [...prev, area.id]
+                                    );
+                                  }}
+                                  className={`py-2 px-1 rounded text-xs font-medium transition ${
+                                    selectedAreas.includes(area.id)
+                                      ? 'bg-green-600 text-white'
+                                      : 'bg-gray-100 text-gray-700'
+                                  }`}
+                                >
+                                  {area.name.replace('相手', '')}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="bg-green-100 rounded p-3">
+                          <p className="text-sm text-green-800 font-medium">
+                            ⑤ コートをタップして返球先を設定
+                          </p>
+                          <p className="text-xs text-green-700 mt-1">
+                            {shotInputMode === 'pinpoint' 
+                              ? 'コート上側の特定の位置をタップ'
+                              : `選択したエリア内をタップ (${selectedAreas.length}エリア選択中)`}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* 初期状態（ノッカー配球前） */}
+                    {!knockerShot && !selectedPlayer && !showReturnShotConfig && (
+                      <div className="text-center py-6 bg-blue-50 rounded-lg">
+                        <div className="text-5xl mb-3">🏸</div>
+                        <h3 className="font-medium text-blue-900 mb-2">① ノッカーの配球</h3>
+                        <p className="text-sm text-blue-700">
+                          コート下側（自分側）をタップして配球先を設定
+                        </p>
+                        <p className="text-xs text-blue-600 mt-2">
+                          タップすると矢印が表示されます
+                        </p>
+                        {/* デバッグ情報 */}
+                        <p className="text-xs text-gray-500 mt-2">
+                          現在のショット数: {formData.visualInfo.shotTrajectories?.length || 0}
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
                 
-                {/* プレイヤー選択状態（パターン練習） */}
-                {!pendingShot && !showShotTypeSelection && currentShot && formData.practiceType === 'pattern_practice' && (
-                  <div className="text-center py-6 bg-blue-50 rounded-lg">
-                    <div className="text-4xl mb-2">👤</div>
-                    <h3 className="font-medium text-blue-900 mb-2">{currentShot.label} を選択中</h3>
-                    <p className="text-sm text-blue-700">
-                      コートをタップして着地点を設定してください
-                    </p>
-                    <button
-                      onClick={() => setCurrentShot(null)}
-                      className="mt-2 px-3 py-1 bg-gray-200 text-gray-700 rounded text-xs"
-                    >
-                      選択解除
-                    </button>
-                  </div>
-                )}
-
-                {/* 通常状態：コートタップの案内 */}
-                {!pendingShot && !showShotTypeSelection && !currentShot && (
-                  <div className="text-center py-6 text-gray-500">
-                    <div className="text-6xl mb-3">🏸</div>
-                    <h3 className="font-medium text-gray-900 mb-2">ショット入力</h3>
-                    <p className="text-sm">
-                      {formData.practiceType === 'knock_practice' 
-                        ? 'コート下側をタップしてノッカーからの配球を設定'
-                        : 'プレイヤーをタップしてからコートをタップ'
-                      }
-                    </p>
-                  </div>
+                {/* パターン練習 */}
+                {formData.practiceType === 'pattern_practice' && (
+                  <>
+                    {currentShot ? (
+                      <div className="text-center py-6 bg-blue-50 rounded-lg">
+                        <div className="text-4xl mb-2">👤</div>
+                        <h3 className="font-medium text-blue-900 mb-2">{currentShot.label} を選択中</h3>
+                        <p className="text-sm text-blue-700">
+                          コートをタップして着地点を設定してください
+                        </p>
+                        <button
+                          onClick={() => setCurrentShot(null)}
+                          className="mt-2 px-3 py-1 bg-gray-200 text-gray-700 rounded text-xs"
+                        >
+                          選択解除
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-gray-500">
+                        <div className="text-6xl mb-3">🏸</div>
+                        <h3 className="font-medium text-gray-900 mb-2">ショット入力</h3>
+                        <p className="text-sm">
+                          プレイヤーをタップしてからコートをタップ
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
                 
                 {/* ショット履歴 */}
@@ -883,6 +909,16 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                                   shotTrajectories: newShots
                                 }
                               }));
+                              
+                              // ノッカーショットを削除した場合、状態をリセット
+                              if (knockerShot && shot.id === knockerShot.id) {
+                                setKnockerShot(null);
+                                setSelectedPlayer(null);
+                                setShowReturnShotConfig(false);
+                                setSelectedAreas([]);
+                                
+                                // プレイヤーの位置も元に戻す必要があれば処理
+                              }
                             }}
                             className="p-1 text-red-500"
                           >
