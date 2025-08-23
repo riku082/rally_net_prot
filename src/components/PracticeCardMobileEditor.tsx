@@ -747,11 +747,27 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                     mobileMode="shots"
                     mobileSelectedAreas={shotInputMode === 'area' ? selectedAreas : []}
                     onAreaSelect={shotInputMode === 'area' ? (areaId) => {
-                      setSelectedAreas(prev => 
-                        prev.includes(areaId)
+                      setSelectedAreas(prev => {
+                        const newAreas = prev.includes(areaId)
                           ? prev.filter(id => id !== areaId)
-                          : [...prev, areaId]
-                      );
+                          : [...prev, areaId];
+                        
+                        // エリアが選択されたら、最初のエリアの中央を返球先として設定
+                        if (newAreas.length > 0) {
+                          const firstArea = COURT_AREAS.find(area => area.id === newAreas[0]);
+                          if (firstArea) {
+                            setReturnTarget({
+                              x: firstArea.x + firstArea.width / 2,
+                              y: firstArea.y + firstArea.height / 2
+                            });
+                          }
+                        } else {
+                          // エリアが全て解除されたら返球先もクリア
+                          setReturnTarget(null);
+                        }
+                        
+                        return newAreas;
+                      });
                     } : undefined}
                     onShotStart={(coord: any) => {
                       // プレイヤータップの場合
@@ -1028,43 +1044,20 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                         <div className="mt-4">
                           <button
                             onClick={() => {
-                              // エリア選択モードの場合、選択されたエリアを返球先として使用
-                              if (shotInputMode === 'area' && selectedAreas.length > 0) {
-                                const firstArea = COURT_AREAS.find(area => area.id === selectedAreas[0]);
-                                if (firstArea) {
-                                  // エリアの中央座標を返球先として設定
-                                  const areaReturnTarget = {
-                                    x: firstArea.x + firstArea.width / 2,
-                                    y: firstArea.y + firstArea.height / 2
-                                  };
-                                  setReturnTarget(areaReturnTarget);
-                                }
-                              }
-                              
                               if (!selectedPlayer) {
                                 alert('プレイヤーを選択してください');
                                 return;
                               }
                               
-                              if (!returnTarget && selectedAreas.length === 0) {
-                                alert('返球先を設定するか、エリアを選択してください');
-                                return;
-                              }
-                              
-                              // 最終的な返球先を決定
-                              let finalReturnTarget = returnTarget;
-                              if (!finalReturnTarget && selectedAreas.length > 0) {
-                                const firstArea = COURT_AREAS.find(area => area.id === selectedAreas[0]);
-                                if (firstArea) {
-                                  finalReturnTarget = {
-                                    x: firstArea.x + firstArea.width / 2,
-                                    y: firstArea.y + firstArea.height / 2
-                                  };
+                              // 返球先の確認（ピンポイントモードまたはエリアモード）
+                              if (!returnTarget) {
+                                if (shotInputMode === 'area' && selectedAreas.length === 0) {
+                                  alert('エリアを選択してください');
+                                } else if (shotInputMode === 'pinpoint') {
+                                  alert('返球先をタップして設定してください');
+                                } else {
+                                  alert('返球先を設定してください');
                                 }
-                              }
-                              
-                              if (!finalReturnTarget) {
-                                alert('返球先を設定してください');
                                 return;
                               }
                               
@@ -1075,7 +1068,7 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                               const returnShot = {
                                 id: `shot_${Date.now()}`,
                                 from: { x: selectedPlayer.x, y: selectedPlayer.y },
-                                to: { x: finalReturnTarget.x, y: finalReturnTarget.y },
+                                to: { x: returnTarget.x, y: returnTarget.y },
                                 shotType: selectedShotTypes[0], // 最初の球種を代表として使用
                                 shotTypes: selectedShotTypes.length > 1 ? selectedShotTypes : undefined, // 複数ある場合のみ設定
                                 shotBy: 'player' as const,
@@ -1104,9 +1097,9 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                               
                               console.log('ショット確定 - 次のノッカーの球に移動', returnShot);
                             }}
-                            disabled={!selectedPlayer || (!returnTarget && selectedAreas.length === 0)}
+                            disabled={!selectedPlayer || !returnTarget}
                             className={`w-full py-3 px-4 rounded-lg font-medium text-sm transition-colors ${
-                              (selectedPlayer && (returnTarget || selectedAreas.length > 0))
+                              (selectedPlayer && returnTarget)
                                 ? 'bg-blue-600 text-white hover:bg-blue-700' 
                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             }`}
