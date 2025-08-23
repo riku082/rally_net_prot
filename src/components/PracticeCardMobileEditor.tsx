@@ -60,7 +60,7 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
   const [showReturnShotConfig, setShowReturnShotConfig] = useState(false); // 返球設定画面
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]); // 選択されたエリア
   const [selectedShotType, setSelectedShotType] = useState('clear'); // 選択されたショットタイプ
-  const [selectedShotTypes, setSelectedShotTypes] = useState<string[]>(['clear']); // 複数選択対応
+  const [selectedShotTypes, setSelectedShotTypes] = useState<string[]>([]); // 複数選択対応（デフォルトは未選択）
   const [returnTarget, setReturnTarget] = useState<{x: number, y: number} | null>(null); // 返球先座標
   const [history, setHistory] = useState<any[]>([]); // 履歴管理
 
@@ -220,7 +220,7 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
     setSelectedAreas(last.selectedAreas);
     setShotInputMode(last.shotInputMode);
     setSelectedShotType(last.selectedShotType);
-    setSelectedShotTypes(last.selectedShotTypes || ['clear']);
+    setSelectedShotTypes(last.selectedShotTypes || []);
     setReturnTarget(last.returnTarget);
     setHistory(prev => prev.slice(0, -1));
   };
@@ -500,7 +500,7 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                         ① ノッカー配置
                       </h4>
                       <span className="text-sm text-blue-700">
-                        {formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker').length || 0}/1
+                        {formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker').length || 0}人
                       </span>
                     </div>
                     <p className="text-xs text-blue-700 mb-2">
@@ -508,17 +508,27 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                     </p>
                     <button
                       onClick={() => {
-                        // ノッカーを自動配置（上側中央）
+                        // ノッカーを追加配置
+                        const knockerCount = formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker').length || 0;
+                        const positions = [
+                          { x: 122, y: 50 },  // 中央
+                          { x: 61, y: 50 },   // 左
+                          { x: 183, y: 50 },  // 右
+                          { x: 122, y: 100 }, // 中央前
+                          { x: 61, y: 100 },  // 左前
+                          { x: 183, y: 100 }, // 右前
+                        ];
+                        const pos = positions[knockerCount % positions.length];
                         const newKnocker = {
                           id: `knocker_${Date.now()}`,
-                          x: 122, // 中央
-                          y: 50, // 上側
-                          label: 'K1',
+                          x: pos.x,
+                          y: pos.y,
+                          label: `K${knockerCount + 1}`,
                           role: 'knocker' as const,
                           color: '#3B82F6'
                         };
                         const newPositions = [
-                          ...formData.visualInfo.playerPositions?.filter(p => p.role !== 'knocker') || [],
+                          ...formData.visualInfo.playerPositions || [],
                           newKnocker
                         ];
                         setFormData(prev => ({
@@ -529,17 +539,32 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                           }
                         }));
                       }}
-                      disabled={formData.visualInfo.playerPositions?.some(p => p.role === 'knocker')}
-                      className={`w-full py-2 px-3 rounded text-sm font-medium transition-colors ${
-                        formData.visualInfo.playerPositions?.some(p => p.role === 'knocker')
-                          ? 'bg-gray-200 text-gray-400'
-                          : 'bg-blue-600 text-white active:bg-blue-700'
-                      }`}
+                      className="w-full py-2 px-3 bg-blue-600 text-white rounded text-sm font-medium active:bg-blue-700"
                     >
-                      {formData.visualInfo.playerPositions?.some(p => p.role === 'knocker')
-                        ? '✅ 配置済み'
-                        : 'ノッカーを配置'}
+                      ノッカー追加
                     </button>
+                    {formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker').length > 0 && (
+                      <button
+                        onClick={() => {
+                          // 最後のノッカーを削除
+                          const knockers = formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker') || [];
+                          if (knockers.length > 0) {
+                            const lastKnocker = knockers[knockers.length - 1];
+                            const newPositions = formData.visualInfo.playerPositions?.filter(p => p.id !== lastKnocker.id) || [];
+                            setFormData(prev => ({
+                              ...prev,
+                              visualInfo: {
+                                ...prev.visualInfo,
+                                playerPositions: newPositions
+                              }
+                            }));
+                          }
+                        }}
+                        className="mt-2 w-full py-2 px-3 bg-red-100 text-red-700 rounded text-sm font-medium active:bg-red-200"
+                      >
+                        ノッカー削除
+                      </button>
+                    )}
                   </div>
 
                   {/* プレイヤー配置 */}
@@ -1061,6 +1086,12 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                                 return;
                               }
                               
+                              // 球種が選択されていない場合はエラー
+                              if (selectedShotTypes.length === 0) {
+                                alert('球種を選択してください');
+                                return;
+                              }
+                              
                               // 履歴保存
                               saveHistory();
                               
@@ -1092,14 +1123,14 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                               setShowReturnShotConfig(false);
                               setSelectedAreas([]);
                               setSelectedShotType('clear');
-                              setSelectedShotTypes(['clear']);
+                              setSelectedShotTypes([]);
                               setReturnTarget(null);
                               
                               console.log('ショット確定 - 次のノッカーの球に移動', returnShot);
                             }}
-                            disabled={!selectedPlayer || !returnTarget}
+                            disabled={!selectedPlayer || !returnTarget || selectedShotTypes.length === 0}
                             className={`w-full py-3 px-4 rounded-lg font-medium text-sm transition-colors ${
-                              (selectedPlayer && returnTarget)
+                              (selectedPlayer && returnTarget && selectedShotTypes.length > 0)
                                 ? 'bg-blue-600 text-white hover:bg-blue-700' 
                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             }`}
