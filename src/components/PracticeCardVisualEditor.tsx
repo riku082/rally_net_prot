@@ -1262,7 +1262,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             <line x1={SIDE_ALLEY_WIDTH} y1="0" x2={SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" />
             <line x1={COURT_WIDTH - SIDE_ALLEY_WIDTH} y1="0" x2={COURT_WIDTH - SIDE_ALLEY_WIDTH} y2={COURT_HEIGHT} stroke="white" strokeWidth="1.5" />
             
-            {/* 9分割グリッド - エリア選択時のみ表示 */}
+            {/* 9分割グリッド - エリア選択モードのみ表示 */}
             {mobileMode === 'shots' && onAreaSelect && (
               <>
                 {/* 相手側（9分割） */}

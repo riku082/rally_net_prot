@@ -60,6 +60,8 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
   const [showReturnShotConfig, setShowReturnShotConfig] = useState(false); // 返球設定画面
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]); // 選択されたエリア
   const [selectedShotType, setSelectedShotType] = useState('clear'); // 選択されたショットタイプ
+  const [selectedShotTypes, setSelectedShotTypes] = useState<string[]>(['clear']); // 複数選択対応
+  const [returnTarget, setReturnTarget] = useState<{x: number, y: number} | null>(null); // 返球先座標
   const [history, setHistory] = useState<any[]>([]); // 履歴管理
 
   // コートエリア定義（PC版と同じ、座標付き）
@@ -87,17 +89,108 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
     { id: 'own_br', name: '自分後右', x: 183, y: 410, width: 61, height: 45 }, // 後衛右
   ];
 
-  // ショットタイプ定義（PC版と同じ）
+  // ショットタイプ定義（PC版と同じ、アイコン付き）
   const SHOT_TYPES = [
-    { id: 'clear', name: 'クリア', color: '#3B82F6' },
-    { id: 'smash', name: 'スマッシュ', color: '#EF4444' },
-    { id: 'drop', name: 'ドロップ', color: '#10B981' },
-    { id: 'hairpin', name: 'ヘアピン', color: '#F59E0B' },
-    { id: 'drive', name: 'ドライブ', color: '#8B5CF6' },
-    { id: 'push', name: 'プッシュ', color: '#EC4899' },
-    { id: 'lob', name: 'ロブ', color: '#14B8A6' },
-    { id: 'receive', name: 'レシーブ', color: '#06B6D4' },
-    { id: 'other', name: 'その他', color: '#6B7280' },
+    { 
+      id: 'clear', 
+      name: 'クリア', 
+      color: '#3B82F6',
+      icon: (
+        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
+          <path d="M12 20 L12 4 M12 4 L8 8 M12 4 L16 8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="12" cy="4" r="1.5" fill="currentColor"/>
+        </svg>
+      )
+    },
+    { 
+      id: 'smash', 
+      name: 'スマッシュ', 
+      color: '#EF4444',
+      icon: (
+        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
+          <path d="M4 4 L20 20 M20 20 L16 19 M20 20 L19 16" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="4" cy="4" r="1.5" fill="currentColor"/>
+        </svg>
+      )
+    },
+    { 
+      id: 'drop', 
+      name: 'ドロップ', 
+      color: '#10B981',
+      icon: (
+        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
+          <path d="M6 6 Q12 12 12 20 M12 20 L10 18 M12 20 L14 18" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="6" cy="6" r="1.5" fill="currentColor"/>
+        </svg>
+      )
+    },
+    { 
+      id: 'hairpin', 
+      name: 'ヘアピン', 
+      color: '#8B5CF6',
+      icon: (
+        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
+          <path d="M8 8 Q12 4 16 8 Q12 12 16 16" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="8" cy="8" r="1.5" fill="currentColor"/>
+        </svg>
+      )
+    },
+    { 
+      id: 'drive', 
+      name: 'ドライブ', 
+      color: '#F59E0B',
+      icon: (
+        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
+          <path d="M4 12 L20 12 M20 12 L16 8 M20 12 L16 16" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="4" cy="12" r="1.5" fill="currentColor"/>
+        </svg>
+      )
+    },
+    { 
+      id: 'push', 
+      name: 'プッシュ', 
+      color: '#EC4899',
+      icon: (
+        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
+          <path d="M6 10 L18 14 M18 14 L14 12 M18 14 L16 10" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="6" cy="10" r="1.5" fill="currentColor"/>
+        </svg>
+      )
+    },
+    { 
+      id: 'lob', 
+      name: 'ロブ', 
+      color: '#14B8A6',
+      icon: (
+        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
+          <path d="M8 16 Q12 4 16 16" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="8" cy="16" r="1.5" fill="currentColor"/>
+          <circle cx="16" cy="16" r="1.5" fill="currentColor"/>
+        </svg>
+      )
+    },
+    { 
+      id: 'receive', 
+      name: 'レシーブ', 
+      color: '#06B6D4',
+      icon: (
+        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
+          <path d="M20 8 L4 16 M4 16 L8 14 M4 16 L6 12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="20" cy="8" r="1.5" fill="currentColor"/>
+        </svg>
+      )
+    },
+    { 
+      id: 'other', 
+      name: 'その他', 
+      color: '#6B7280',
+      icon: (
+        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="8" strokeWidth="2"/>
+          <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+        </svg>
+      )
+    },
   ];
 
   // 履歴を保存
@@ -109,7 +202,9 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
       showReturnShotConfig,
       selectedAreas: [...selectedAreas],
       shotInputMode,
-      selectedShotType
+      selectedShotType,
+      selectedShotTypes: [...selectedShotTypes],
+      returnTarget
     }]);
   };
 
@@ -125,6 +220,8 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
     setSelectedAreas(last.selectedAreas);
     setShotInputMode(last.shotInputMode);
     setSelectedShotType(last.selectedShotType);
+    setSelectedShotTypes(last.selectedShotTypes || ['clear']);
+    setReturnTarget(last.returnTarget);
     setHistory(prev => prev.slice(0, -1));
   };
 
@@ -646,16 +743,14 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                     onUpdate={(visualInfo) => setFormData(prev => ({ ...prev, visualInfo }))}
                     courtType="singles"
                     mobileMode="shots"
-                    mobileSelectedAreas={selectedAreas}
-                    onAreaSelect={(areaId) => {
-                      if (shotInputMode === 'area') {
-                        setSelectedAreas(prev => 
-                          prev.includes(areaId)
-                            ? prev.filter(id => id !== areaId)
-                            : [...prev, areaId]
-                        );
-                      }
-                    }}
+                    mobileSelectedAreas={shotInputMode === 'area' ? selectedAreas : []}
+                    onAreaSelect={shotInputMode === 'area' ? (areaId) => {
+                      setSelectedAreas(prev => 
+                        prev.includes(areaId)
+                          ? prev.filter(id => id !== areaId)
+                          : [...prev, areaId]
+                      );
+                    } : undefined}
                     onShotStart={(coord: any) => {
                       // プレイヤータップの場合
                       if (coord.role) {
@@ -704,36 +799,10 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                             setKnockerShot(newShot);
                           }
                         } else if (showReturnShotConfig) {
-                          // ⑤プレイヤーの返球先設定
-                          if (selectedPlayer) {
-                            // 履歴保存
-                            saveHistory();
-                            
-                            const returnShot = {
-                              id: `shot_${Date.now()}`,
-                              from: { x: selectedPlayer.x, y: selectedPlayer.y },
-                              to: { x: coord.x, y: coord.y },
-                              shotType: selectedShotType, // プレイヤーの返球では球種を選択
-                              shotBy: 'player' as const,
-                              order: (formData.visualInfo.shotTrajectories?.length || 0) + 1,
-                              memo: '',
-                              targetArea: shotInputMode === 'area' ? selectedAreas.join(',') : undefined
-                            };
-                            
-                            setFormData(prev => ({
-                              ...prev,
-                              visualInfo: {
-                                ...prev.visualInfo,
-                                shotTrajectories: [...(prev.visualInfo.shotTrajectories || []), returnShot]
-                              }
-                            }));
-                            
-                            // リセット
-                            setKnockerShot(null);
-                            setSelectedPlayer(null);
-                            setShowReturnShotConfig(false);
-                            setSelectedAreas([]);
-                            setSelectedShotType('clear'); // 球種もリセット
+                          // ⑤プレイヤーの返球先設定（ピンポイントモードのみ）
+                          if (selectedPlayer && shotInputMode === 'pinpoint') {
+                            // 返球先を保存（確定ボタンで実際にショット作成）
+                            setReturnTarget({ x: coord.x, y: coord.y });
                           }
                         }
                       } else if (currentShot) {
@@ -884,25 +953,45 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                           </div>
                         )}
                         
-                        {/* 球種選択（プレイヤーの返球時のみ） */}
+                        {/* 球種選択（複数選択対応） */}
                         <div className="mb-4">
-                          <p className="text-xs text-green-700 mb-2">球種を選択:</p>
+                          <p className="text-xs text-green-700 mb-2">球種を選択（複数可）:</p>
                           <div className="grid grid-cols-3 gap-1">
-                            {SHOT_TYPES.map(shotType => (
-                              <button
-                                key={shotType.id}
-                                onClick={() => setSelectedShotType(shotType.id)}
-                                className={`py-2 px-2 rounded text-xs font-medium transition ${
-                                  selectedShotType === shotType.id
-                                    ? 'text-white shadow-sm'
-                                    : 'bg-gray-100 text-gray-700'
-                                }`}
-                                style={selectedShotType === shotType.id ? { backgroundColor: shotType.color } : {}}
-                              >
-                                {shotType.name}
-                              </button>
-                            ))}
+                            {SHOT_TYPES.map(shotType => {
+                              const isSelected = selectedShotTypes.includes(shotType.id);
+                              return (
+                                <button
+                                  key={shotType.id}
+                                  onClick={() => {
+                                    setSelectedShotTypes(prev => 
+                                      prev.includes(shotType.id)
+                                        ? prev.filter(id => id !== shotType.id)
+                                        : [...prev, shotType.id]
+                                    );
+                                    // メインのショットタイプも更新
+                                    if (!isSelected && selectedShotTypes.length === 0) {
+                                      setSelectedShotType(shotType.id);
+                                    }
+                                  }}
+                                  className={`py-2 px-2 rounded text-xs font-medium transition flex items-center gap-1 justify-center ${
+                                    isSelected
+                                      ? 'text-white shadow-sm'
+                                      : 'bg-gray-100 text-gray-700'
+                                  }`}
+                                  style={isSelected ? { backgroundColor: shotType.color } : {}}
+                                >
+                                  {shotType.icon}
+                                  <span>{shotType.name}</span>
+                                  {isSelected && <span className="ml-1">✓</span>}
+                                </button>
+                              );
+                            })}
                           </div>
+                          {selectedShotTypes.length > 1 && (
+                            <p className="text-xs text-green-600 mt-1">
+                              {selectedShotTypes.length}種類選択中: {selectedShotTypes.map(id => SHOT_TYPES.find(t => t.id === id)?.name).join(', ')}
+                            </p>
+                          )}
                         </div>
                         
                         <div className="bg-green-100 rounded p-3">
@@ -911,9 +1000,82 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                           </p>
                           <p className="text-xs text-green-700 mt-1">
                             {shotInputMode === 'pinpoint' 
-                              ? 'コート上側の特定の位置をタップ'
-                              : `選択したエリア内をタップ (${selectedAreas.length}エリア選択中)`}
+                              ? '上のコートシートの特定の位置をタップしてください'
+                              : `上のコートシートの選択したエリアをタップ (${selectedAreas.length}エリア選択中)`}
                           </p>
+                          {shotInputMode === 'pinpoint' && (
+                            <p className="text-xs text-green-600 mt-1">
+                              ⚠️ ピンポイントモード: グリッドは非表示です
+                            </p>
+                          )}
+                        </div>
+                        
+                        {/* 返球先設定状態表示 */}
+                        {returnTarget && (
+                          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                            <p className="text-sm text-blue-800 font-medium mb-1">
+                              ✓ 返球先が設定されました
+                            </p>
+                            <p className="text-xs text-blue-700">
+                              座標: ({Math.round(returnTarget.x)}, {Math.round(returnTarget.y)})
+                            </p>
+                          </div>
+                        )}
+                        
+                        {/* ショット確定ボタン */}
+                        <div className="mt-4">
+                          <button
+                            onClick={() => {
+                              if (!selectedPlayer || !returnTarget) {
+                                alert('返球先を設定してください');
+                                return;
+                              }
+                              
+                              // 履歴保存
+                              saveHistory();
+                              
+                              // 返球ショットを作成
+                              const returnShot = {
+                                id: `shot_${Date.now()}`,
+                                from: { x: selectedPlayer.x, y: selectedPlayer.y },
+                                to: { x: returnTarget.x, y: returnTarget.y },
+                                shotType: selectedShotTypes[0], // 最初の球種を代表として使用
+                                shotTypes: selectedShotTypes.length > 1 ? selectedShotTypes : undefined, // 複数ある場合のみ設定
+                                shotBy: 'player' as const,
+                                order: (formData.visualInfo.shotTrajectories?.length || 0) + 1,
+                                memo: '',
+                                targetArea: shotInputMode === 'area' ? selectedAreas.join(',') : undefined
+                              };
+                              
+                              // ショットを追加
+                              setFormData(prev => ({
+                                ...prev,
+                                visualInfo: {
+                                  ...prev.visualInfo,
+                                  shotTrajectories: [...(prev.visualInfo.shotTrajectories || []), returnShot]
+                                }
+                              }));
+                              
+                              // ショットを確定して次のノッカーの球に移動
+                              setKnockerShot(null);
+                              setSelectedPlayer(null);
+                              setShowReturnShotConfig(false);
+                              setSelectedAreas([]);
+                              setSelectedShotType('clear');
+                              setSelectedShotTypes(['clear']);
+                              setReturnTarget(null);
+                              
+                              console.log('ショット確定 - 次のノッカーの球に移動', returnShot);
+                            }}
+                            disabled={!returnTarget}
+                            className={`w-full py-3 px-4 rounded-lg font-medium text-sm transition-colors ${
+                              returnTarget 
+                                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            }`}
+                          >
+                            🏸 ショット確定・次のノッカーの球へ
+                          </button>
                         </div>
                       </div>
                     )}
@@ -972,45 +1134,106 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                   <div>
                     <h4 className="font-medium text-gray-900 mb-2">ショット履歴</h4>
                     <div className="space-y-1 max-h-32 overflow-y-auto">
-                      {formData.visualInfo.shotTrajectories.map((shot, index) => (
-                        <div key={shot.id} className="flex items-center justify-between p-2 bg-gray-50 rounded text-xs">
-                          <div className="flex items-center space-x-2">
-                            <span className="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
-                              {index + 1}
-                            </span>
-                            <span>{shot.shotType}</span>
-                            <span className="text-gray-500">{shot.shotBy}</span>
+                      {formData.visualInfo.shotTrajectories.map((shot, index) => {
+                        const shotType = SHOT_TYPES.find(t => t.id === shot.shotType);
+                        const hasMultipleTypes = shot.shotTypes && shot.shotTypes.length > 1;
+                        
+                        return (
+                          <div key={shot.id} className="bg-gray-50 rounded p-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2 flex-1">
+                                <span className="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xs">
+                                  {index + 1}
+                                </span>
+                                <div className="flex items-center space-x-1">
+                                  {shotType?.icon && <span style={{ color: shotType.color }}>{shotType.icon}</span>}
+                                  <span className="text-xs font-medium">{shotType?.name || shot.shotType}</span>
+                                  {hasMultipleTypes && (
+                                    <span className="text-xs text-blue-600">
+                                      +{shot.shotTypes!.length - 1}種
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-xs text-gray-500">{shot.shotBy === 'knocker' ? 'ノッカー' : 'プレイヤー'}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <button
+                                  onClick={() => {
+                                    const currentMemo = shot.memo || '';
+                                    const newMemo = prompt('ショットのメモを入力:', currentMemo);
+                                    if (newMemo !== null) {
+                                      const updatedShots = formData.visualInfo.shotTrajectories?.map(s => 
+                                        s.id === shot.id ? { ...s, memo: newMemo } : s
+                                      ) || [];
+                                      setFormData(prev => ({
+                                        ...prev,
+                                        visualInfo: {
+                                          ...prev.visualInfo,
+                                          shotTrajectories: updatedShots
+                                        }
+                                      }));
+                                    }
+                                  }}
+                                  className={`p-1 rounded ${
+                                    shot.memo ? 'text-blue-500 bg-blue-100' : 'text-gray-400 hover:text-blue-500'
+                                  }`}
+                                  title="メモを追加/編集"
+                                >
+                                  📝
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    // 履歴保存
+                                    saveHistory();
+                                    
+                                    const newShots = formData.visualInfo.shotTrajectories?.filter(s => s.id !== shot.id) || [];
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      visualInfo: {
+                                        ...prev.visualInfo,
+                                        shotTrajectories: newShots
+                                      }
+                                    }));
+                                    
+                                    // ノッカーショットを削除した場合、状態をリセット
+                                    if (knockerShot && shot.id === knockerShot.id) {
+                                      setKnockerShot(null);
+                                      setSelectedPlayer(null);
+                                      setShowReturnShotConfig(false);
+                                      setSelectedAreas([]);
+                                      setReturnTarget(null);
+                                    }
+                                  }}
+                                  className="p-1 text-red-500 hover:bg-red-100 rounded"
+                                  title="ショットを削除"
+                                >
+                                  <FaTrash className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                            {/* 複数球種表示 */}
+                            {hasMultipleTypes && (
+                              <div className="mt-1 flex flex-wrap gap-1">
+                                {shot.shotTypes!.map(typeId => {
+                                  const type = SHOT_TYPES.find(t => t.id === typeId);
+                                  return type ? (
+                                    <span key={typeId} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-200 rounded text-xs">
+                                      {type.icon}
+                                      {type.name}
+                                    </span>
+                                  ) : null;
+                                })}
+                              </div>
+                            )}
+                            {/* メモ表示 */}
+                            {shot.memo && (
+                              <div className="mt-1 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                                📝 {shot.memo}
+                              </div>
+                            )}
                           </div>
-                          <button
-                            onClick={() => {
-                              // 履歴保存
-                              saveHistory();
-                              
-                              const newShots = formData.visualInfo.shotTrajectories?.filter(s => s.id !== shot.id) || [];
-                              setFormData(prev => ({
-                                ...prev,
-                                visualInfo: {
-                                  ...prev.visualInfo,
-                                  shotTrajectories: newShots
-                                }
-                              }));
-                              
-                              // ノッカーショットを削除した場合、状態をリセット
-                              if (knockerShot && shot.id === knockerShot.id) {
-                                setKnockerShot(null);
-                                setSelectedPlayer(null);
-                                setShowReturnShotConfig(false);
-                                setSelectedAreas([]);
-                                
-                                // プレイヤーの位置も元に戻す必要があれば処理
-                              }
-                            }}
-                            className="p-1 text-red-500"
-                          >
-                            <FaTrash className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
