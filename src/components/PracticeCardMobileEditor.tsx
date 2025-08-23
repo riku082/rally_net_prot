@@ -64,29 +64,33 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
   const [returnTarget, setReturnTarget] = useState<{x: number, y: number} | null>(null); // 返球先座標
   const [history, setHistory] = useState<any[]>([]); // 履歴管理
 
-  // コートエリア定義（PC版と同じ、座標付き）
+  // コートエリア定義（コートサイズ244×536に基づく）
+  const COURT_WIDTH = 244;
+  const COURT_HEIGHT = 536;
+  const HALF_COURT_HEIGHT = COURT_HEIGHT / 2; // 268
+  
   const COURT_AREAS = [
-    // 上側コート（相手側）- y座標は小さい値（上側）
-    { id: 'opp_bl', name: '相手後左', x: 61, y: 30, width: 61, height: 45 }, // 後衛左
-    { id: 'opp_bc', name: '相手後中', x: 122, y: 30, width: 61, height: 45 }, // 後衛中央
-    { id: 'opp_br', name: '相手後右', x: 183, y: 30, width: 61, height: 45 }, // 後衛右
-    { id: 'opp_ml', name: '相手中左', x: 61, y: 75, width: 61, height: 45 }, // 中衛左
-    { id: 'opp_mc', name: '相手中央', x: 122, y: 75, width: 61, height: 45 }, // 中衛中央
-    { id: 'opp_mr', name: '相手中右', x: 183, y: 75, width: 61, height: 45 }, // 中衛右
-    { id: 'opp_fl', name: '相手前左', x: 61, y: 120, width: 61, height: 45 }, // 前衛左
-    { id: 'opp_fc', name: '相手前中', x: 122, y: 120, width: 61, height: 45 }, // 前衛中央
-    { id: 'opp_fr', name: '相手前右', x: 183, y: 120, width: 61, height: 45 }, // 前衛右
+    // 上側コート（相手側）- 0〜268ピクセル
+    { id: 'opp_fl', name: '相手前左', x: 0, y: 0, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'opp_fc', name: '相手前中', x: COURT_WIDTH/3, y: 0, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'opp_fr', name: '相手前右', x: 2*COURT_WIDTH/3, y: 0, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'opp_ml', name: '相手中左', x: 0, y: HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'opp_mc', name: '相手中央', x: COURT_WIDTH/3, y: HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'opp_mr', name: '相手中右', x: 2*COURT_WIDTH/3, y: HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'opp_bl', name: '相手後左', x: 0, y: 2*HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'opp_bc', name: '相手後中', x: COURT_WIDTH/3, y: 2*HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'opp_br', name: '相手後右', x: 2*COURT_WIDTH/3, y: 2*HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
     
-    // 下側コート（自分側）- y座標は大きい値（下側）
-    { id: 'own_fl', name: '自分前左', x: 61, y: 320, width: 61, height: 45 }, // 前衛左
-    { id: 'own_fc', name: '自分前中', x: 122, y: 320, width: 61, height: 45 }, // 前衛中央
-    { id: 'own_fr', name: '自分前右', x: 183, y: 320, width: 61, height: 45 }, // 前衛右
-    { id: 'own_ml', name: '自分中左', x: 61, y: 365, width: 61, height: 45 }, // 中衛左
-    { id: 'own_mc', name: '自分中央', x: 122, y: 365, width: 61, height: 45 }, // 中衛中央
-    { id: 'own_mr', name: '自分中右', x: 183, y: 365, width: 61, height: 45 }, // 中衛右
-    { id: 'own_bl', name: '自分後左', x: 61, y: 410, width: 61, height: 45 }, // 後衛左
-    { id: 'own_bc', name: '自分後中', x: 122, y: 410, width: 61, height: 45 }, // 後衛中央
-    { id: 'own_br', name: '自分後右', x: 183, y: 410, width: 61, height: 45 }, // 後衛右
+    // 下側コート（自分側）- 268〜536ピクセル
+    { id: 'own_fl', name: '自分前左', x: 0, y: HALF_COURT_HEIGHT, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'own_fc', name: '自分前中', x: COURT_WIDTH/3, y: HALF_COURT_HEIGHT, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'own_fr', name: '自分前右', x: 2*COURT_WIDTH/3, y: HALF_COURT_HEIGHT, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'own_ml', name: '自分中左', x: 0, y: HALF_COURT_HEIGHT + HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'own_mc', name: '自分中央', x: COURT_WIDTH/3, y: HALF_COURT_HEIGHT + HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'own_mr', name: '自分中右', x: 2*COURT_WIDTH/3, y: HALF_COURT_HEIGHT + HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'own_bl', name: '自分後左', x: 0, y: HALF_COURT_HEIGHT + 2*HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'own_bc', name: '自分後中', x: COURT_WIDTH/3, y: HALF_COURT_HEIGHT + 2*HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'own_br', name: '自分後右', x: 2*COURT_WIDTH/3, y: HALF_COURT_HEIGHT + 2*HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
   ];
 
   // ショットタイプ定義（PC版と同じ、アイコン付き）
