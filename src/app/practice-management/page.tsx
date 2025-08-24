@@ -694,7 +694,7 @@ function PracticeManagementContent() {
                 </div>
 
                 {/* タブコンテンツ */}
-                <div className="p-6">
+                <div className={activeView === 'calendar' ? 'p-3 h-[calc(100vh-200px)]' : 'p-6'}>
                   {activeView === 'calendar' && (
                     <PracticeCalendar
                       practices={practices}

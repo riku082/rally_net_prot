@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Practice, PracticeCard } from '@/types/practice';
-import { FaChevronLeft, FaChevronRight, FaCalendarAlt, FaClock, FaEdit } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight, FaCalendarAlt, FaClock, FaEdit, FaChartBar, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { GiShuttlecock } from 'react-icons/gi';
 
 interface PracticeCalendarProps {
@@ -26,6 +26,7 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([]);
+  const [showStats, setShowStats] = useState(false);
 
   const months = [
     '1月', '2月', '3月', '4月', '5月', '6月',
@@ -100,15 +101,6 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
     onDateClick(day.date, day.practices);
   };
 
-  const getPracticeIndicatorColor = (practices: Practice[]) => {
-    if (practices.length === 0) return '';
-    
-    // Color based on practice count instead of intensity
-    if (practices.length === 1) return 'bg-blue-100 border-blue-300';
-    if (practices.length === 2) return 'bg-purple-100 border-purple-300';
-    return 'bg-indigo-100 border-indigo-300';
-  };
-
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -141,155 +133,195 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
   const monthlyStats = getMonthlyStats();
 
   return (
-    <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 p-3 sm:p-4 lg:p-6">
+    <div className="h-full flex flex-col">
       {/* ヘッダー */}
-      <div className="flex flex-col space-y-3 sm:space-y-4 lg:space-y-0 lg:flex-row justify-between items-start lg:items-center mb-4 sm:mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full lg:w-auto">
-          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 flex items-center">
-            <FaCalendarAlt className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 mr-2 text-blue-600" />
-            練習カレンダー
-          </h2>
-          <div className="flex items-center justify-center space-x-2 sm:space-x-3">
+      <div className="flex items-center justify-between mb-4 px-2">
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
             <button
               onClick={() => navigateMonth('prev')}
-              className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="前月"
             >
-              <FaChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" style={{ color: '#000000' }} />
+              <FaChevronLeft className="w-4 h-4 text-gray-600" />
             </button>
-            <h3 className="text-base sm:text-lg font-semibold text-gray-800 min-w-[100px] sm:min-w-[120px] text-center" style={{ color: '#000000' }}>
+            <h3 className="text-lg font-semibold text-gray-800 min-w-[140px] text-center">
               {currentDate.getFullYear()}年 {months[currentDate.getMonth()]}
             </h3>
             <button
               onClick={() => navigateMonth('next')}
-              className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="次月"
             >
-              <FaChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" style={{ color: '#000000' }} />
+              <FaChevronRight className="w-4 h-4 text-gray-600" />
             </button>
           </div>
-        </div>
-        
-        <div className="flex items-center space-x-2 sm:space-x-3 w-full lg:w-auto">
           <button
             onClick={goToToday}
-            className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex-1 lg:flex-none"
-            style={{ color: '#000000' }}
+            className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
           >
             今日
           </button>
         </div>
+        
+        <button
+          onClick={() => setShowStats(!showStats)}
+          className="flex items-center space-x-2 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+        >
+          <FaChartBar className="w-4 h-4" />
+          <span>統計</span>
+          {showStats ? <FaChevronUp className="w-3 h-3" /> : <FaChevronDown className="w-3 h-3" />}
+        </button>
       </div>
 
-      {/* 月次統計 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6">
-        <div className="bg-blue-50 rounded-lg p-2 sm:p-3">
-          <div className="flex items-center">
-            <GiShuttlecock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mr-1 sm:mr-2" />
-            <div>
-              <p className="text-xs text-blue-600 font-medium">練習回数</p>
-              <p className="text-sm sm:text-lg font-bold text-blue-800">{monthlyStats.totalPractices}</p>
+      {/* 月次統計 - 折りたたみ可能 */}
+      {showStats && (
+        <div className="bg-gray-50 rounded-lg p-4 mb-4 animate-in slide-in-from-top duration-200">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="bg-white rounded-lg p-3 shadow-sm">
+              <div className="flex items-center">
+                <GiShuttlecock className="w-5 h-5 text-blue-600 mr-2" />
+                <div>
+                  <p className="text-xs text-gray-600 font-medium">練習回数</p>
+                  <p className="text-lg font-bold text-gray-900">{monthlyStats.totalPractices}回</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg p-3 shadow-sm">
+              <div className="flex items-center">
+                <FaClock className="w-5 h-5 text-green-600 mr-2" />
+                <div>
+                  <p className="text-xs text-gray-600 font-medium">総時間</p>
+                  <p className="text-lg font-bold text-gray-900">{formatDuration(monthlyStats.totalDuration)}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg p-3 shadow-sm">
+              <div className="flex items-center">
+                <FaCalendarAlt className="w-5 h-5 text-purple-600 mr-2" />
+                <div>
+                  <p className="text-xs text-gray-600 font-medium">練習日数</p>
+                  <p className="text-lg font-bold text-gray-900">{monthlyStats.practiceDays}日</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg p-3 shadow-sm">
+              <div className="flex items-center">
+                <FaClock className="w-5 h-5 text-orange-600 mr-2" />
+                <div>
+                  <p className="text-xs text-gray-600 font-medium">平均時間</p>
+                  <p className="text-lg font-bold text-gray-900">{formatDuration(monthlyStats.avgDuration)}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        
-        <div className="bg-green-50 rounded-lg p-2 sm:p-3">
-          <div className="flex items-center">
-            <FaClock className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mr-1 sm:mr-2" />
-            <div>
-              <p className="text-xs text-green-600 font-medium">総時間</p>
-              <p className="text-sm sm:text-lg font-bold text-green-800">{formatDuration(monthlyStats.totalDuration)}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-purple-50 rounded-lg p-2 sm:p-3">
-          <div className="flex items-center">
-            <FaCalendarAlt className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 mr-1 sm:mr-2" />
-            <div>
-              <p className="text-xs text-purple-600 font-medium">練習日数</p>
-              <p className="text-sm sm:text-lg font-bold text-purple-800">{monthlyStats.practiceDays}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-orange-50 rounded-lg p-2 sm:p-3">
-          <div className="flex items-center">
-            <FaClock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 mr-1 sm:mr-2" />
-            <div>
-              <p className="text-xs text-orange-600 font-medium">平均時間</p>
-              <p className="text-sm sm:text-lg font-bold text-orange-800">{formatDuration(monthlyStats.avgDuration)}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      )}
 
       {/* カレンダーグリッド */}
-      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
-        {/* 曜日ヘッダー */}
-        {weekdays.map(day => (
-          <div key={day} className="p-2 sm:p-3 text-center font-medium text-gray-600 text-xs sm:text-sm" style={{ color: '#000000' }}>
-            {day}
-          </div>
-        ))}
-        
-        {/* 日付セル */}
-        {calendarDays.map((day, index) => (
-          <div
-            key={index}
-            onClick={() => handleDateClick(day)}
-            className={`min-h-[60px] sm:min-h-[80px] p-0.5 sm:p-1 border rounded cursor-pointer transition-all duration-200 hover:shadow-md ${
-              !day.isCurrentMonth 
-                ? 'bg-gray-50 text-gray-400' 
-                : day.isToday
-                ? 'bg-blue-50 border-blue-300'
-                : selectedDate && isSameDay(day.date, selectedDate)
-                ? 'bg-blue-100 border-blue-400'
-                : day.practices.length > 0
-                ? getPracticeIndicatorColor(day.practices)
-                : 'bg-white border-gray-200 hover:bg-gray-50'
-            }`}
-          >
-            <div className="flex flex-col h-full">
-              <div className="text-xs sm:text-sm font-medium mb-0.5 sm:mb-1 text-center sm:text-left" style={{ color: '#000000' }}>
-                {day.date.getDate()}
+      <div className="flex-1 bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="grid grid-cols-7 h-full">
+          {/* 曜日ヘッダー */}
+          <div className="col-span-7 grid grid-cols-7 border-b border-gray-200">
+            {weekdays.map((day, index) => (
+              <div 
+                key={day} 
+                className={`py-3 text-center font-medium text-sm ${
+                  index === 0 ? 'text-red-500' : index === 6 ? 'text-blue-500' : 'text-gray-700'
+                }`}
+              >
+                {day}
               </div>
-              
-              {day.practices.length > 0 && (
-                <div className="flex-1 space-y-0.5 sm:space-y-1">
-                  {day.practices.slice(0, window.innerWidth < 640 ? 1 : 2).map(practice => (
-                    <div
-                      key={practice.id}
-                      className="bg-white bg-opacity-80 rounded px-0.5 sm:px-1 py-0.5 text-xs truncate"
-                      title={`${practice.title} (${formatDuration(practice.duration)})`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="truncate flex-1">{practice.title}</span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEditPractice(practice);
-                          }}
-                          className="ml-0.5 sm:ml-1 text-gray-500 hover:text-blue-600 hidden sm:block"
-                        >
-                          <FaEdit className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+            ))}
+          </div>
+          
+          {/* 日付セル */}
+          {calendarDays.map((day, index) => {
+            const dayOfWeek = day.date.getDay();
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+            
+            return (
+              <div
+                key={index}
+                onClick={() => handleDateClick(day)}
+                className={`
+                  border-r border-b border-gray-200 p-2 cursor-pointer transition-all duration-200
+                  hover:bg-gray-50 relative overflow-hidden
+                  ${!day.isCurrentMonth ? 'bg-gray-50 text-gray-400' : ''}
+                  ${day.isToday ? 'bg-blue-50' : ''}
+                  ${selectedDate && isSameDay(day.date, selectedDate) ? 'bg-blue-100' : ''}
+                  ${(index + 1) % 7 === 0 ? 'border-r-0' : ''}
+                `}
+                style={{ minHeight: 'calc((100vh - 280px) / 6)' }}
+              >
+                <div className="flex flex-col h-full">
+                  <div className={`
+                    text-sm font-medium mb-1
+                    ${!day.isCurrentMonth ? 'text-gray-400' : ''}
+                    ${day.isToday ? 'text-blue-600 font-bold' : ''}
+                    ${isWeekend && day.isCurrentMonth ? (dayOfWeek === 0 ? 'text-red-500' : 'text-blue-500') : ''}
+                  `}>
+                    {day.date.getDate()}
+                  </div>
                   
-                  {day.practices.length > (window.innerWidth < 640 ? 1 : 2) && (
-                    <div className="text-xs text-gray-600 px-0.5 sm:px-1" style={{ color: '#000000' }}>
-                      +{day.practices.length - (window.innerWidth < 640 ? 1 : 2)} 件
+                  {day.practices.length > 0 && (
+                    <div className="flex-1 space-y-1 overflow-y-auto">
+                      {day.practices.slice(0, 3).map(practice => (
+                        <div
+                          key={practice.id}
+                          className="group relative"
+                        >
+                          <div
+                            className={`
+                              rounded px-2 py-1 text-xs cursor-pointer
+                              transition-all duration-200 hover:shadow-sm
+                              ${
+                                practice.type === 'basic_practice' ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
+                                practice.type === 'game_practice' ? 'bg-green-100 text-green-700 hover:bg-green-200' :
+                                practice.type === 'physical_training' ? 'bg-orange-100 text-orange-700 hover:bg-orange-200' :
+                                'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              }
+                            `}
+                            title={`${practice.title} (${practice.startTime}-${practice.endTime})`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="truncate flex-1 font-medium">
+                                {practice.startTime && (
+                                  <span className="text-xs opacity-75">{practice.startTime.slice(0, 5)} </span>
+                                )}
+                                {practice.title}
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onEditPractice(practice);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 ml-1 text-gray-500 hover:text-blue-600 transition-opacity"
+                              >
+                                <FaEdit className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {day.practices.length > 3 && (
+                        <div className="text-xs text-gray-500 px-2 font-medium">
+                          他{day.practices.length - 3}件
+                        </div>
+                      )}
                     </div>
                   )}
+                  
                 </div>
-              )}
-              
-            </div>
-          </div>
-        ))}
+              </div>
+            );
+          })}
+        </div>
       </div>
-
     </div>
   );
 };
