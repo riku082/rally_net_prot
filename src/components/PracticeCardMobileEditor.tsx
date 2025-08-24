@@ -837,11 +837,31 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                             // ②矢印を表示（ショット追加）
                             console.log('Creating knocker shot:', newShot);
                             setFormData(prev => {
+                              const previousShots = prev.visualInfo.shotTrajectories || [];
+                              const newShots = [...previousShots, newShot];
+                              
+                              // 前回のノッカーショットがある場合、プレイヤーの移動矢印を追加
+                              const previousKnockerShot = [...previousShots].reverse().find(s => s.shotBy === 'knocker');
+                              if (previousKnockerShot) {
+                                // プレイヤーの移動を表す黄色矢印を追加
+                                const movementArrow = {
+                                  id: `movement_${Date.now()}`,
+                                  from: { x: previousKnockerShot.to.x, y: previousKnockerShot.to.y },
+                                  to: { x: coord.x, y: coord.y },
+                                  shotType: 'movement',
+                                  isMovement: true,
+                                  shotBy: 'player' as const,
+                                  order: newShots.length,
+                                  description: 'プレイヤー移動'
+                                };
+                                newShots.push(movementArrow);
+                              }
+                              
                               const updated = {
                                 ...prev,
                                 visualInfo: {
                                   ...prev.visualInfo,
-                                  shotTrajectories: [...(prev.visualInfo.shotTrajectories || []), newShot]
+                                  shotTrajectories: newShots
                                 }
                               };
                               console.log('Updated formData with shots:', updated.visualInfo.shotTrajectories);
@@ -1209,24 +1229,36 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                       {formData.visualInfo.shotTrajectories.map((shot, index) => {
                         const shotType = SHOT_TYPES.find(t => t.id === shot.shotType);
                         const hasMultipleTypes = shot.shotTypes && shot.shotTypes.length > 1;
+                        const isMovement = shot.isMovement;
                         
                         return (
-                          <div key={shot.id} className="bg-gray-50 rounded p-2">
+                          <div key={shot.id} className={`rounded p-2 ${isMovement ? 'bg-yellow-50' : 'bg-gray-50'}`}>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-2 flex-1">
-                                <span className="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xs">
+                                <span className={`w-5 h-5 rounded-full text-white flex items-center justify-center font-bold text-xs ${isMovement ? 'bg-yellow-500' : 'bg-blue-500'}`}>
                                   {index + 1}
                                 </span>
                                 <div className="flex items-center space-x-1">
-                                  {shotType?.icon && <span style={{ color: shotType.color }}>{shotType.icon}</span>}
-                                  <span className="text-xs font-medium">{shotType?.name || shot.shotType}</span>
-                                  {hasMultipleTypes && (
-                                    <span className="text-xs text-blue-600">
-                                      +{shot.shotTypes!.length - 1}種
-                                    </span>
+                                  {isMovement ? (
+                                    <>
+                                      <span>→</span>
+                                      <span className="text-xs font-medium">プレイヤー移動</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      {shotType?.icon && <span style={{ color: shotType.color }}>{shotType.icon}</span>}
+                                      <span className="text-xs font-medium">{shotType?.name || shot.shotType}</span>
+                                      {hasMultipleTypes && (
+                                        <span className="text-xs text-blue-600">
+                                          +{shot.shotTypes!.length - 1}種
+                                        </span>
+                                      )}
+                                    </>
                                   )}
                                 </div>
-                                <span className="text-xs text-gray-500">{shot.shotBy === 'knocker' ? 'ノッカー' : 'プレイヤー'}</span>
+                                <span className="text-xs text-gray-500">
+                                  {isMovement ? '移動' : (shot.shotBy === 'knocker' ? 'ノッカー' : 'プレイヤー')}
+                                </span>
                               </div>
                               <div className="flex items-center space-x-1">
                                 <button

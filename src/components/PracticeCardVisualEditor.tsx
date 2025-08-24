@@ -1330,7 +1330,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             
             {/* ショット軌道 - visualInfoから直接レンダリング */}
             {mobileShotTrajectories.map((shot, index) => {
-              const color = shot.shotBy === 'knocker' ? '#000000' : '#10B981';
+              const color = shot.isMovement ? '#FCD34D' : (shot.shotBy === 'knocker' ? '#000000' : '#10B981');
               return (
                 <g key={shot.id}>
                   <defs>
@@ -1352,6 +1352,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                     y2={shot.to.y}
                     stroke={color}
                     strokeWidth="2"
+                    strokeDasharray={shot.isMovement ? "5,3" : undefined}
                     markerEnd={`url(#arrow-${shot.id})`}
                     opacity="0.8"
                   />
@@ -1537,7 +1538,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               
               {/* ショット表示（モバイル版） */}
               {shotTrajectories.map((shot) => {
-                const color = shot.shotBy === 'knocker' ? '#000000' : '#10B981';
+                const color = shot.isMovement ? '#FCD34D' : (shot.shotBy === 'knocker' ? '#000000' : '#10B981');
                 return (
                   <g key={shot.id}>
                     <defs>
@@ -1585,6 +1586,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                       x2={shot.to.x}
                       y2={shot.to.y}
                       stroke={color}
+                      strokeDasharray={shot.isMovement ? "5,3" : undefined}
                       strokeWidth="2"
                       markerEnd={`url(#arrowhead-${shot.id})`}
                     />
