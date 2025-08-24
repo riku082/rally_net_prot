@@ -516,12 +516,12 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                         // ノッカーを追加配置
                         const knockerCount = formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker').length || 0;
                         const positions = [
-                          { x: 122, y: 50 },  // 中央
-                          { x: 61, y: 50 },   // 左
-                          { x: 183, y: 50 },  // 右
-                          { x: 122, y: 100 }, // 中央前
-                          { x: 61, y: 100 },  // 左前
-                          { x: 183, y: 100 }, // 右前
+                          { x: 122, y: 134 },  // 上半コート中央（268/2）
+                          { x: 61, y: 134 },   // 上半コート左
+                          { x: 183, y: 134 },  // 上半コート右
+                          { x: 122, y: 100 },  // 中央やや前
+                          { x: 61, y: 100 },   // 左やや前
+                          { x: 183, y: 100 },  // 右やや前
                         ];
                         const pos = positions[knockerCount % positions.length];
                         const newKnocker = {
@@ -595,12 +595,12 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                           // プレイヤーを追加（下側）
                           const playerCount = formData.visualInfo.playerPositions?.filter(p => p.role === 'player').length || 0;
                           const positions = [
-                            { x: 122, y: 400 }, // 中央
-                            { x: 61, y: 400 },  // 左
-                            { x: 183, y: 400 }, // 右
-                            { x: 122, y: 450 }, // 後方中央
-                            { x: 61, y: 450 },  // 後方左
-                            { x: 183, y: 450 }, // 後方右
+                            { x: 122, y: 402 }, // 下半コート中央（268 + 268/2）
+                            { x: 61, y: 402 },  // 下半コート左
+                            { x: 183, y: 402 }, // 下半コート右
+                            { x: 122, y: 436 }, // 中央やや後
+                            { x: 61, y: 436 },  // 左やや後
+                            { x: 183, y: 436 }, // 右やや後
                           ];
                           const pos = positions[playerCount % positions.length];
                           const newPlayer = {
