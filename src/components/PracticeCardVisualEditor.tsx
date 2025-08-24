@@ -427,11 +427,27 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
     }
     
     // 通常モードの処理
-    if (inputMode !== 'shot' || !courtRef.current) return;
+    if (inputMode !== 'shot') return;
 
-    const rect = courtRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left - COURT_PADDING;
-    const y = e.clientY - rect.top - COURT_PADDING;
+    // SVG要素の場合とDIV要素の場合で処理を分ける
+    let x: number, y: number;
+    
+    if ((e.target as Element).tagName === 'svg' || (e.target as Element).closest('svg')) {
+      // SVG内でのクリック（PC版ノック練習）
+      const svg = ((e.target as Element).tagName === 'svg' ? e.target : (e.target as Element).closest('svg')) as SVGElement;
+      const rect = svg.getBoundingClientRect();
+      const scaleX = COURT_WIDTH / rect.width;
+      const scaleY = COURT_HEIGHT / rect.height;
+      x = (e.clientX - rect.left) * scaleX;
+      y = (e.clientY - rect.top) * scaleY;
+    } else if (courtRef.current) {
+      // DIV要素でのクリック（通常のコート）
+      const rect = courtRef.current.getBoundingClientRect();
+      x = e.clientX - rect.left - COURT_PADDING;
+      y = e.clientY - rect.top - COURT_PADDING;
+    } else {
+      return;
+    }
 
     if (x < 0 || x > COURT_WIDTH || y < 0 || y > COURT_HEIGHT) return;
     
