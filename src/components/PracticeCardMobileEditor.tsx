@@ -548,28 +548,31 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                       >
                         ノッカー追加
                       </button>
-                      {formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker').length > 0 && (
-                        <button
-                          onClick={() => {
-                            // 最後のノッカーを削除
-                            const knockers = formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker') || [];
-                            if (knockers.length > 0) {
-                              const lastKnocker = knockers[knockers.length - 1];
-                              const newPositions = formData.visualInfo.playerPositions?.filter(p => p.id !== lastKnocker.id) || [];
-                              setFormData(prev => ({
-                                ...prev,
-                                visualInfo: {
-                                  ...prev.visualInfo,
-                                  playerPositions: newPositions
-                                }
-                              }));
-                            }
-                          }}
-                          className="flex-1 py-2 px-3 bg-red-100 text-red-700 rounded text-sm font-medium active:bg-red-200"
-                        >
-                          ノッカー削除
-                        </button>
-                      )}
+                      <button
+                        onClick={() => {
+                          // 最後のノッカーを削除
+                          const knockers = formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker') || [];
+                          if (knockers.length > 0) {
+                            const lastKnocker = knockers[knockers.length - 1];
+                            const newPositions = formData.visualInfo.playerPositions?.filter(p => p.id !== lastKnocker.id) || [];
+                            setFormData(prev => ({
+                              ...prev,
+                              visualInfo: {
+                                ...prev.visualInfo,
+                                playerPositions: newPositions
+                              }
+                            }));
+                          }
+                        }}
+                        disabled={!formData.visualInfo.playerPositions?.some(p => p.role === 'knocker')}
+                        className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+                          formData.visualInfo.playerPositions?.some(p => p.role === 'knocker')
+                            ? 'bg-red-100 text-red-700 active:bg-red-200'
+                            : 'bg-gray-200 text-gray-400'
+                        }`}
+                      >
+                        削除
+                      </button>
                     </div>
                   </div>
 
