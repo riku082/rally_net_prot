@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      await firestoreDb.createPractice(practice);
+      await firestoreDb.addPractice(practice);
       
       // コミュニティ練習の場合、共有記録も作成
       if (fromCommunityPractice && communityId && communityPracticeId) {
@@ -68,7 +68,9 @@ export async function POST(request: NextRequest) {
           isActive: true
         };
         
-        await firestoreDb.createSharedPractice(sharedPractice);
+        // TODO: 共有記録の保存機能を実装
+        // await firestoreDb.createSharedPractice(sharedPractice);
+        console.log('共有記録:', sharedPractice);
       }
       
       return NextResponse.json({ success: true, practiceId });

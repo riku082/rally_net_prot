@@ -60,33 +60,37 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
   const [showReturnShotConfig, setShowReturnShotConfig] = useState(false); // 返球設定画面
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]); // 選択されたエリア
   const [selectedShotType, setSelectedShotType] = useState('clear'); // 選択されたショットタイプ
-  const [selectedShotTypes, setSelectedShotTypes] = useState<string[]>(['clear']); // 複数選択対応
+  const [selectedShotTypes, setSelectedShotTypes] = useState<string[]>([]); // 複数選択対応（デフォルトは未選択）
   const [returnTarget, setReturnTarget] = useState<{x: number, y: number} | null>(null); // 返球先座標
   const [history, setHistory] = useState<any[]>([]); // 履歴管理
 
-  // コートエリア定義（PC版と同じ、座標付き）
+  // コートエリア定義（コートサイズ244×536に基づく）
+  const COURT_WIDTH = 244;
+  const COURT_HEIGHT = 536;
+  const HALF_COURT_HEIGHT = COURT_HEIGHT / 2; // 268
+  
   const COURT_AREAS = [
-    // 上側コート（相手側）- y座標は小さい値（上側）
-    { id: 'opp_bl', name: '相手後左', x: 61, y: 30, width: 61, height: 45 }, // 後衛左
-    { id: 'opp_bc', name: '相手後中', x: 122, y: 30, width: 61, height: 45 }, // 後衛中央
-    { id: 'opp_br', name: '相手後右', x: 183, y: 30, width: 61, height: 45 }, // 後衛右
-    { id: 'opp_ml', name: '相手中左', x: 61, y: 75, width: 61, height: 45 }, // 中衛左
-    { id: 'opp_mc', name: '相手中央', x: 122, y: 75, width: 61, height: 45 }, // 中衛中央
-    { id: 'opp_mr', name: '相手中右', x: 183, y: 75, width: 61, height: 45 }, // 中衛右
-    { id: 'opp_fl', name: '相手前左', x: 61, y: 120, width: 61, height: 45 }, // 前衛左
-    { id: 'opp_fc', name: '相手前中', x: 122, y: 120, width: 61, height: 45 }, // 前衛中央
-    { id: 'opp_fr', name: '相手前右', x: 183, y: 120, width: 61, height: 45 }, // 前衛右
+    // 上側コート（相手側）- 0〜268ピクセル
+    { id: 'opp_fl', name: '相手前左', x: 0, y: 0, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'opp_fc', name: '相手前中', x: COURT_WIDTH/3, y: 0, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'opp_fr', name: '相手前右', x: 2*COURT_WIDTH/3, y: 0, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'opp_ml', name: '相手中左', x: 0, y: HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'opp_mc', name: '相手中央', x: COURT_WIDTH/3, y: HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'opp_mr', name: '相手中右', x: 2*COURT_WIDTH/3, y: HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'opp_bl', name: '相手後左', x: 0, y: 2*HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'opp_bc', name: '相手後中', x: COURT_WIDTH/3, y: 2*HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'opp_br', name: '相手後右', x: 2*COURT_WIDTH/3, y: 2*HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
     
-    // 下側コート（自分側）- y座標は大きい値（下側）
-    { id: 'own_fl', name: '自分前左', x: 61, y: 320, width: 61, height: 45 }, // 前衛左
-    { id: 'own_fc', name: '自分前中', x: 122, y: 320, width: 61, height: 45 }, // 前衛中央
-    { id: 'own_fr', name: '自分前右', x: 183, y: 320, width: 61, height: 45 }, // 前衛右
-    { id: 'own_ml', name: '自分中左', x: 61, y: 365, width: 61, height: 45 }, // 中衛左
-    { id: 'own_mc', name: '自分中央', x: 122, y: 365, width: 61, height: 45 }, // 中衛中央
-    { id: 'own_mr', name: '自分中右', x: 183, y: 365, width: 61, height: 45 }, // 中衛右
-    { id: 'own_bl', name: '自分後左', x: 61, y: 410, width: 61, height: 45 }, // 後衛左
-    { id: 'own_bc', name: '自分後中', x: 122, y: 410, width: 61, height: 45 }, // 後衛中央
-    { id: 'own_br', name: '自分後右', x: 183, y: 410, width: 61, height: 45 }, // 後衛右
+    // 下側コート（自分側）- 268〜536ピクセル
+    { id: 'own_fl', name: '自分前左', x: 0, y: HALF_COURT_HEIGHT, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'own_fc', name: '自分前中', x: COURT_WIDTH/3, y: HALF_COURT_HEIGHT, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'own_fr', name: '自分前右', x: 2*COURT_WIDTH/3, y: HALF_COURT_HEIGHT, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'own_ml', name: '自分中左', x: 0, y: HALF_COURT_HEIGHT + HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'own_mc', name: '自分中央', x: COURT_WIDTH/3, y: HALF_COURT_HEIGHT + HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'own_mr', name: '自分中右', x: 2*COURT_WIDTH/3, y: HALF_COURT_HEIGHT + HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'own_bl', name: '自分後左', x: 0, y: HALF_COURT_HEIGHT + 2*HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'own_bc', name: '自分後中', x: COURT_WIDTH/3, y: HALF_COURT_HEIGHT + 2*HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
+    { id: 'own_br', name: '自分後右', x: 2*COURT_WIDTH/3, y: HALF_COURT_HEIGHT + 2*HALF_COURT_HEIGHT/3, width: COURT_WIDTH/3, height: HALF_COURT_HEIGHT/3 },
   ];
 
   // ショットタイプ定義（PC版と同じ、アイコン付き）
@@ -220,7 +224,7 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
     setSelectedAreas(last.selectedAreas);
     setShotInputMode(last.shotInputMode);
     setSelectedShotType(last.selectedShotType);
-    setSelectedShotTypes(last.selectedShotTypes || ['clear']);
+    setSelectedShotTypes(last.selectedShotTypes || []);
     setReturnTarget(last.returnTarget);
     setHistory(prev => prev.slice(0, -1));
   };
@@ -500,7 +504,7 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                         ① ノッカー配置
                       </h4>
                       <span className="text-sm text-blue-700">
-                        {formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker').length || 0}/1
+                        {formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker').length || 0}人
                       </span>
                     </div>
                     <p className="text-xs text-blue-700 mb-2">
@@ -508,17 +512,27 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                     </p>
                     <button
                       onClick={() => {
-                        // ノッカーを自動配置（上側中央）
+                        // ノッカーを追加配置
+                        const knockerCount = formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker').length || 0;
+                        const positions = [
+                          { x: 122, y: 50 },  // 中央
+                          { x: 61, y: 50 },   // 左
+                          { x: 183, y: 50 },  // 右
+                          { x: 122, y: 100 }, // 中央前
+                          { x: 61, y: 100 },  // 左前
+                          { x: 183, y: 100 }, // 右前
+                        ];
+                        const pos = positions[knockerCount % positions.length];
                         const newKnocker = {
                           id: `knocker_${Date.now()}`,
-                          x: 122, // 中央
-                          y: 50, // 上側
-                          label: 'K1',
+                          x: pos.x,
+                          y: pos.y,
+                          label: `K${knockerCount + 1}`,
                           role: 'knocker' as const,
                           color: '#3B82F6'
                         };
                         const newPositions = [
-                          ...formData.visualInfo.playerPositions?.filter(p => p.role !== 'knocker') || [],
+                          ...formData.visualInfo.playerPositions || [],
                           newKnocker
                         ];
                         setFormData(prev => ({
@@ -529,17 +543,32 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                           }
                         }));
                       }}
-                      disabled={formData.visualInfo.playerPositions?.some(p => p.role === 'knocker')}
-                      className={`w-full py-2 px-3 rounded text-sm font-medium transition-colors ${
-                        formData.visualInfo.playerPositions?.some(p => p.role === 'knocker')
-                          ? 'bg-gray-200 text-gray-400'
-                          : 'bg-blue-600 text-white active:bg-blue-700'
-                      }`}
+                      className="w-full py-2 px-3 bg-blue-600 text-white rounded text-sm font-medium active:bg-blue-700"
                     >
-                      {formData.visualInfo.playerPositions?.some(p => p.role === 'knocker')
-                        ? '✅ 配置済み'
-                        : 'ノッカーを配置'}
+                      ノッカー追加
                     </button>
+                    {formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker').length > 0 && (
+                      <button
+                        onClick={() => {
+                          // 最後のノッカーを削除
+                          const knockers = formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker') || [];
+                          if (knockers.length > 0) {
+                            const lastKnocker = knockers[knockers.length - 1];
+                            const newPositions = formData.visualInfo.playerPositions?.filter(p => p.id !== lastKnocker.id) || [];
+                            setFormData(prev => ({
+                              ...prev,
+                              visualInfo: {
+                                ...prev.visualInfo,
+                                playerPositions: newPositions
+                              }
+                            }));
+                          }
+                        }}
+                        className="mt-2 w-full py-2 px-3 bg-red-100 text-red-700 rounded text-sm font-medium active:bg-red-200"
+                      >
+                        ノッカー削除
+                      </button>
+                    )}
                   </div>
 
                   {/* プレイヤー配置 */}
@@ -747,11 +776,27 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                     mobileMode="shots"
                     mobileSelectedAreas={shotInputMode === 'area' ? selectedAreas : []}
                     onAreaSelect={shotInputMode === 'area' ? (areaId) => {
-                      setSelectedAreas(prev => 
-                        prev.includes(areaId)
+                      setSelectedAreas(prev => {
+                        const newAreas = prev.includes(areaId)
                           ? prev.filter(id => id !== areaId)
-                          : [...prev, areaId]
-                      );
+                          : [...prev, areaId];
+                        
+                        // エリアが選択されたら、最初のエリアの中央を返球先として設定
+                        if (newAreas.length > 0) {
+                          const firstArea = COURT_AREAS.find(area => area.id === newAreas[0]);
+                          if (firstArea) {
+                            setReturnTarget({
+                              x: firstArea.x + firstArea.width / 2,
+                              y: firstArea.y + firstArea.height / 2
+                            });
+                          }
+                        } else {
+                          // エリアが全て解除されたら返球先もクリア
+                          setReturnTarget(null);
+                        }
+                        
+                        return newAreas;
+                      });
                     } : undefined}
                     onShotStart={(coord: any) => {
                       // プレイヤータップの場合
@@ -1028,43 +1073,26 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                         <div className="mt-4">
                           <button
                             onClick={() => {
-                              // エリア選択モードの場合、選択されたエリアを返球先として使用
-                              if (shotInputMode === 'area' && selectedAreas.length > 0) {
-                                const firstArea = COURT_AREAS.find(area => area.id === selectedAreas[0]);
-                                if (firstArea) {
-                                  // エリアの中央座標を返球先として設定
-                                  const areaReturnTarget = {
-                                    x: firstArea.x + firstArea.width / 2,
-                                    y: firstArea.y + firstArea.height / 2
-                                  };
-                                  setReturnTarget(areaReturnTarget);
-                                }
-                              }
-                              
                               if (!selectedPlayer) {
                                 alert('プレイヤーを選択してください');
                                 return;
                               }
                               
-                              if (!returnTarget && selectedAreas.length === 0) {
-                                alert('返球先を設定するか、エリアを選択してください');
+                              // 返球先の確認（ピンポイントモードまたはエリアモード）
+                              if (!returnTarget) {
+                                if (shotInputMode === 'area' && selectedAreas.length === 0) {
+                                  alert('エリアを選択してください');
+                                } else if (shotInputMode === 'pinpoint') {
+                                  alert('返球先をタップして設定してください');
+                                } else {
+                                  alert('返球先を設定してください');
+                                }
                                 return;
                               }
                               
-                              // 最終的な返球先を決定
-                              let finalReturnTarget = returnTarget;
-                              if (!finalReturnTarget && selectedAreas.length > 0) {
-                                const firstArea = COURT_AREAS.find(area => area.id === selectedAreas[0]);
-                                if (firstArea) {
-                                  finalReturnTarget = {
-                                    x: firstArea.x + firstArea.width / 2,
-                                    y: firstArea.y + firstArea.height / 2
-                                  };
-                                }
-                              }
-                              
-                              if (!finalReturnTarget) {
-                                alert('返球先を設定してください');
+                              // 球種が選択されていない場合はエラー
+                              if (selectedShotTypes.length === 0) {
+                                alert('球種を選択してください');
                                 return;
                               }
                               
@@ -1075,7 +1103,7 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                               const returnShot = {
                                 id: `shot_${Date.now()}`,
                                 from: { x: selectedPlayer.x, y: selectedPlayer.y },
-                                to: { x: finalReturnTarget.x, y: finalReturnTarget.y },
+                                to: { x: returnTarget.x, y: returnTarget.y },
                                 shotType: selectedShotTypes[0], // 最初の球種を代表として使用
                                 shotTypes: selectedShotTypes.length > 1 ? selectedShotTypes : undefined, // 複数ある場合のみ設定
                                 shotBy: 'player' as const,
@@ -1099,14 +1127,14 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                               setShowReturnShotConfig(false);
                               setSelectedAreas([]);
                               setSelectedShotType('clear');
-                              setSelectedShotTypes(['clear']);
+                              setSelectedShotTypes([]);
                               setReturnTarget(null);
                               
                               console.log('ショット確定 - 次のノッカーの球に移動', returnShot);
                             }}
-                            disabled={!selectedPlayer || (!returnTarget && selectedAreas.length === 0)}
+                            disabled={!selectedPlayer || !returnTarget || selectedShotTypes.length === 0}
                             className={`w-full py-3 px-4 rounded-lg font-medium text-sm transition-colors ${
-                              (selectedPlayer && (returnTarget || selectedAreas.length > 0))
+                              (selectedPlayer && returnTarget && selectedShotTypes.length > 0)
                                 ? 'bg-blue-600 text-white hover:bg-blue-700' 
                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             }`}
