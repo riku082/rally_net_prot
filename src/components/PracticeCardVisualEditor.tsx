@@ -488,7 +488,26 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               order: currentShotNumber,
               memo: ''
             };
-            setShotTrajectories([...shotTrajectories, newShot]);
+            
+            // 前回のノッカーショットがある場合、プレイヤーの移動矢印を追加
+            const previousKnockerShot = [...shotTrajectories].reverse().find(s => s.shotBy === 'knocker');
+            if (previousKnockerShot) {
+              const movementArrow: ShotTrajectory = {
+                id: `movement_${Date.now()}`,
+                from: { x: previousKnockerShot.to.x, y: previousKnockerShot.to.y },
+                to: { x, y },
+                shotType: 'movement',
+                isMovement: true,
+                shotBy: 'player',
+                order: currentShotNumber,
+                description: 'プレイヤー移動',
+                memo: ''
+              };
+              setShotTrajectories([...shotTrajectories, movementArrow, newShot]);
+            } else {
+              setShotTrajectories([...shotTrajectories, newShot]);
+            }
+            
             setLatestShotLanding({ x, y });
             setIsWaitingForPlayer(true);
             // currentShotNumberはまだ増やさない（プレイヤー移動後に増やす）
@@ -2138,7 +2157,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               {/* 既存のショット軌道 */}
               {shotTrajectories.map((shot) => {
                 const shotType = SHOT_TYPES.find(t => t.id === shot.shotType);
-                const color = shot.shotBy === 'knocker' ? '#000000' : (shotType?.color || '#10B981');
+                const color = shot.isMovement ? '#FCD34D' : (shot.shotBy === 'knocker' ? '#000000' : (shotType?.color || '#10B981'));
                 
                 // エリアターゲットの場合、複数エリアを塗りつぶす
                 const targetAreaIds = shot.targetArea ? shot.targetArea.split(',') : [];
@@ -2186,6 +2205,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                   y2={shot.to.y}
                   stroke={color}
                   strokeWidth="2"
+                  strokeDasharray={shot.isMovement ? "5,3" : undefined}
                   markerEnd={`url(#arrow-${shot.id})`}
                 />
                 
@@ -3263,12 +3283,13 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
               .map((shot) => {
                 const shotType = SHOT_TYPES.find(t => t.id === shot.shotType);
                 const targetArea = shot.targetArea ? COURT_AREAS.find(a => a.id === shot.targetArea) : null;
-                const shotByLabel = shot.shotBy === 'knocker' ? 'ノック' : 
-                                  shot.shotBy === 'opponent' ? '相手' : 'プレイヤー';
-                const bgColor = shot.shotBy === 'knocker' ? 'bg-gray-50' : 
-                              shot.shotBy === 'opponent' ? 'bg-red-50' : 'bg-green-50';
-                const borderColor = shot.shotBy === 'knocker' ? 'border-gray-300' : 
-                                  shot.shotBy === 'opponent' ? 'border-red-200' : 'border-green-200';
+                const isMovement = shot.isMovement;
+                const shotByLabel = isMovement ? '移動' : (shot.shotBy === 'knocker' ? 'ノック' : 
+                                  shot.shotBy === 'opponent' ? '相手' : 'プレイヤー');
+                const bgColor = isMovement ? 'bg-yellow-50' : (shot.shotBy === 'knocker' ? 'bg-gray-50' : 
+                              shot.shotBy === 'opponent' ? 'bg-red-50' : 'bg-green-50');
+                const borderColor = isMovement ? 'border-yellow-300' : (shot.shotBy === 'knocker' ? 'border-gray-300' : 
+                                  shot.shotBy === 'opponent' ? 'border-red-200' : 'border-green-200');
                 
                 return (
                   <div 
@@ -3280,8 +3301,8 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                       <div 
                         className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
                         style={{ 
-                          backgroundColor: shot.shotBy === 'knocker' ? '#000000' : 
-                                         (shotType?.color || '#10B981') 
+                          backgroundColor: isMovement ? '#FCD34D' : (shot.shotBy === 'knocker' ? '#000000' : 
+                                         (shotType?.color || '#10B981'))
                         }}
                       >
                         {shot.order}
@@ -3289,9 +3310,9 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-medium text-gray-800">
-                            {shotByLabel}
+                            {isMovement ? 'プレイヤー移動' : shotByLabel}
                           </span>
-                          {shot.shotTypes && shot.shotTypes.length > 1 ? (
+                          {!isMovement && shot.shotTypes && shot.shotTypes.length > 1 ? (
                             <div className="flex flex-wrap gap-1">
                               {shot.shotTypes.map(typeId => {
                                 const type = SHOT_TYPES.find(t => t.id === typeId);
@@ -3308,7 +3329,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                               })}
                               <span className="text-xs text-gray-500 ml-1">({shot.shotTypes.length}種類)</span>
                             </div>
-                          ) : shotType ? (
+                          ) : !isMovement && shotType ? (
                             <span 
                               className="text-xs px-2 py-1 rounded-full text-white flex items-center gap-1"
                               style={{ backgroundColor: shotType.color }}
