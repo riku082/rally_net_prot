@@ -1146,7 +1146,7 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             }`}
                           >
-                            🏸 ショット確定・次のノッカーの球へ
+                            🏸 返球を確定して次の配球へ
                           </button>
                         </div>
                       </div>
@@ -1416,7 +1416,10 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
             }`}
           >
             <FiChevronLeft className="w-5 h-5 mr-1" />
-            戻る
+            {currentStep === 'players' && '基本情報に戻る'}
+            {currentStep === 'shots' && 'プレイヤー配置に戻る'}
+            {currentStep === 'preview' && 'ショット入力に戻る'}
+            {currentStep === 'basic' && '戻る'}
           </button>
 
           {currentStep === 'preview' ? (
@@ -1433,7 +1436,9 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
               onClick={goNext}
               className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg font-medium active:bg-blue-600"
             >
-              次へ
+              {currentStep === 'basic' && 'プレイヤー配置へ'}
+              {currentStep === 'players' && 'ショット入力へ'}
+              {currentStep === 'shots' && '内容を確認'}
               <FiChevronRight className="w-5 h-5 ml-1" />
             </button>
           )}
