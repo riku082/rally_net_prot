@@ -1,0 +1,64 @@
+{
+  "branches": {
+    "practice-card": {
+      "description": "練習カード機能開発",
+      "allowed_paths": [
+        "src/components/Practice*",
+        "src/components/Court*",
+        "src/app/practice*",
+        "src/app/api/practice*",
+        "src/types/practice.ts",
+        "DEVELOPMENT_LOG.md",
+        "DEVELOPMENT_SUMMARY.md",
+        "LOG_MANAGEMENT_GUIDE.md",
+        "scripts/daily-log.sh"
+      ]
+    },
+    "authentication": {
+      "description": "認証機能開発",
+      "allowed_paths": [
+        "src/context/AuthContext.tsx",
+        "src/utils/auth.ts",
+        "src/app/auth/*",
+        "src/components/EmailVerification*",
+        "src/components/AuthGuard.tsx",
+        "firestore.rules",
+        "src/app/api/auth/*"
+      ]
+    },
+    "news": {
+      "description": "ニュース機能開発",
+      "allowed_paths": [
+        "src/app/news/*",
+        "src/app/api/news/*",
+        "src/app/api/badminton-news/*",
+        "src/components/News*",
+        "src/types/news.ts"
+      ]
+    },
+    "UI": {
+      "description": "UI/UXデザイン改善",
+      "allowed_paths": [
+        "src/components/UI/*",
+        "src/styles/*",
+        "src/app/globals.css",
+        "tailwind.config.js",
+        "public/images/*",
+        "public/icons/*"
+      ]
+    },
+    "main": {
+      "description": "メインブランチ（全ファイル編集可能）",
+      "allowed_paths": ["*"]
+    }
+  },
+  "exceptions": {
+    "always_allowed": [
+      "README.md",
+      "package.json",
+      "package-lock.json",
+      ".gitignore",
+      "CLAUDE.md"
+    ]
+  }
+}

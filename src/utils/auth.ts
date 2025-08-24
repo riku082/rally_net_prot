@@ -29,6 +29,8 @@ const getJapaneseErrorMessage = (error: AuthError): string => {
       return 'このメールアドレスは登録されていません。';
     case 'auth/wrong-password':
       return 'パスワードが間違っています。';
+    case 'auth/invalid-login-credentials':
+      return 'メールアドレスまたはパスワードが間違っています。';
     case 'auth/email-already-in-use':
       return 'このメールアドレスは既に使用されています。';
     case 'auth/weak-password':
@@ -140,10 +142,13 @@ export const signInWithEmail = async (email: string, password: string) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return { user: userCredential.user, error: null };
   } catch (error: unknown) {
+    console.error('ログインエラー:', error);
     if (error instanceof Error) {
       // Firebase AuthErrorの場合は日本語メッセージに変換
       if ('code' in error) {
-        return { user: null, error: getJapaneseErrorMessage(error as AuthError) };
+        const authError = error as AuthError;
+        console.error('エラーコード:', authError.code);
+        return { user: null, error: getJapaneseErrorMessage(authError) };
       }
       return { user: null, error: error.message };
     }

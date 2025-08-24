@@ -510,17 +510,18 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                     <p className="text-xs text-blue-700 mb-2">
                       コート上側（相手側）をタップしてノッカーを配置
                     </p>
-                    <button
-                      onClick={() => {
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
                         // ノッカーを追加配置
                         const knockerCount = formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker').length || 0;
                         const positions = [
-                          { x: 122, y: 50 },  // 中央
-                          { x: 61, y: 50 },   // 左
-                          { x: 183, y: 50 },  // 右
-                          { x: 122, y: 100 }, // 中央前
-                          { x: 61, y: 100 },  // 左前
-                          { x: 183, y: 100 }, // 右前
+                          { x: 122, y: 134 },  // 上半コート中央（268/2）
+                          { x: 61, y: 134 },   // 上半コート左
+                          { x: 183, y: 134 },  // 上半コート右
+                          { x: 122, y: 100 },  // 中央やや前
+                          { x: 61, y: 100 },   // 左やや前
+                          { x: 183, y: 100 },  // 右やや前
                         ];
                         const pos = positions[knockerCount % positions.length];
                         const newKnocker = {
@@ -542,12 +543,11 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                             playerPositions: newPositions
                           }
                         }));
-                      }}
-                      className="w-full py-2 px-3 bg-blue-600 text-white rounded text-sm font-medium active:bg-blue-700"
-                    >
-                      ノッカー追加
-                    </button>
-                    {formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker').length > 0 && (
+                        }}
+                        className="flex-1 py-2 px-3 bg-blue-600 text-white rounded text-sm font-medium active:bg-blue-700"
+                      >
+                        ノッカー追加
+                      </button>
                       <button
                         onClick={() => {
                           // 最後のノッカーを削除
@@ -564,11 +564,16 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                             }));
                           }
                         }}
-                        className="mt-2 w-full py-2 px-3 bg-red-100 text-red-700 rounded text-sm font-medium active:bg-red-200"
+                        disabled={!formData.visualInfo.playerPositions?.some(p => p.role === 'knocker')}
+                        className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+                          formData.visualInfo.playerPositions?.some(p => p.role === 'knocker')
+                            ? 'bg-red-100 text-red-700 active:bg-red-200'
+                            : 'bg-gray-200 text-gray-400'
+                        }`}
                       >
-                        ノッカー削除
+                        削除
                       </button>
-                    )}
+                    </div>
                   </div>
 
                   {/* プレイヤー配置 */}
@@ -590,12 +595,12 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                           // プレイヤーを追加（下側）
                           const playerCount = formData.visualInfo.playerPositions?.filter(p => p.role === 'player').length || 0;
                           const positions = [
-                            { x: 122, y: 400 }, // 中央
-                            { x: 61, y: 400 },  // 左
-                            { x: 183, y: 400 }, // 右
-                            { x: 122, y: 450 }, // 後方中央
-                            { x: 61, y: 450 },  // 後方左
-                            { x: 183, y: 450 }, // 後方右
+                            { x: 122, y: 402 }, // 下半コート中央（268 + 268/2）
+                            { x: 61, y: 402 },  // 下半コート左
+                            { x: 183, y: 402 }, // 下半コート右
+                            { x: 122, y: 436 }, // 中央やや後
+                            { x: 61, y: 436 },  // 左やや後
+                            { x: 183, y: 436 }, // 右やや後
                           ];
                           const pos = positions[playerCount % positions.length];
                           const newPlayer = {
@@ -832,11 +837,31 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                             // ②矢印を表示（ショット追加）
                             console.log('Creating knocker shot:', newShot);
                             setFormData(prev => {
+                              const previousShots = prev.visualInfo.shotTrajectories || [];
+                              const newShots = [...previousShots, newShot];
+                              
+                              // 前回のノッカーショットがある場合、プレイヤーの移動矢印を追加
+                              const previousKnockerShot = [...previousShots].reverse().find(s => s.shotBy === 'knocker');
+                              if (previousKnockerShot) {
+                                // プレイヤーの移動を表す黄色矢印を追加
+                                const movementArrow = {
+                                  id: `movement_${Date.now()}`,
+                                  from: { x: previousKnockerShot.to.x, y: previousKnockerShot.to.y },
+                                  to: { x: coord.x, y: coord.y },
+                                  shotType: 'movement',
+                                  isMovement: true,
+                                  shotBy: 'player' as const,
+                                  order: newShots.length,
+                                  description: 'プレイヤー移動'
+                                };
+                                newShots.push(movementArrow);
+                              }
+                              
                               const updated = {
                                 ...prev,
                                 visualInfo: {
                                   ...prev.visualInfo,
-                                  shotTrajectories: [...(prev.visualInfo.shotTrajectories || []), newShot]
+                                  shotTrajectories: newShots
                                 }
                               };
                               console.log('Updated formData with shots:', updated.visualInfo.shotTrajectories);
@@ -1000,47 +1025,6 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                           </div>
                         )}
                         
-                        {/* 球種選択（複数選択対応） */}
-                        <div className="mb-4">
-                          <p className="text-xs text-green-700 mb-2">球種を選択（複数可）:</p>
-                          <div className="grid grid-cols-3 gap-1">
-                            {SHOT_TYPES.map(shotType => {
-                              const isSelected = selectedShotTypes.includes(shotType.id);
-                              return (
-                                <button
-                                  key={shotType.id}
-                                  onClick={() => {
-                                    setSelectedShotTypes(prev => 
-                                      prev.includes(shotType.id)
-                                        ? prev.filter(id => id !== shotType.id)
-                                        : [...prev, shotType.id]
-                                    );
-                                    // メインのショットタイプも更新
-                                    if (!isSelected && selectedShotTypes.length === 0) {
-                                      setSelectedShotType(shotType.id);
-                                    }
-                                  }}
-                                  className={`py-2 px-2 rounded text-xs font-medium transition flex items-center gap-1 justify-center ${
-                                    isSelected
-                                      ? 'text-white shadow-sm'
-                                      : 'bg-gray-100 text-gray-700'
-                                  }`}
-                                  style={isSelected ? { backgroundColor: shotType.color } : {}}
-                                >
-                                  {shotType.icon}
-                                  <span>{shotType.name}</span>
-                                  {isSelected && <span className="ml-1">✓</span>}
-                                </button>
-                              );
-                            })}
-                          </div>
-                          {selectedShotTypes.length > 1 && (
-                            <p className="text-xs text-green-600 mt-1">
-                              {selectedShotTypes.length}種類選択中: {selectedShotTypes.map(id => SHOT_TYPES.find(t => t.id === id)?.name).join(', ')}
-                            </p>
-                          )}
-                        </div>
-                        
                         <div className="bg-green-100 rounded p-3">
                           <p className="text-sm text-green-800 font-medium">
                             ⑤ コートをタップして返球先を設定
@@ -1066,6 +1050,49 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                             <p className="text-xs text-blue-700">
                               座標: ({Math.round(returnTarget.x)}, {Math.round(returnTarget.y)})
                             </p>
+                          </div>
+                        )}
+                        
+                        {/* 球種選択（複数選択対応） - 返球先設定後に表示 */}
+                        {returnTarget && (
+                          <div className="mb-4 mt-4">
+                            <p className="text-xs text-green-700 mb-2">球種を選択（複数可）:</p>
+                            <div className="grid grid-cols-3 gap-1">
+                              {SHOT_TYPES.map(shotType => {
+                                const isSelected = selectedShotTypes.includes(shotType.id);
+                                return (
+                                  <button
+                                    key={shotType.id}
+                                    onClick={() => {
+                                      setSelectedShotTypes(prev => 
+                                        prev.includes(shotType.id)
+                                          ? prev.filter(id => id !== shotType.id)
+                                          : [...prev, shotType.id]
+                                      );
+                                      // メインのショットタイプも更新
+                                      if (!isSelected && selectedShotTypes.length === 0) {
+                                        setSelectedShotType(shotType.id);
+                                      }
+                                    }}
+                                    className={`py-2 px-2 rounded text-xs font-medium transition flex items-center gap-1 justify-center ${
+                                      isSelected
+                                        ? 'text-white shadow-sm'
+                                        : 'bg-gray-100 text-gray-700'
+                                    }`}
+                                    style={isSelected ? { backgroundColor: shotType.color } : {}}
+                                  >
+                                    {shotType.icon}
+                                    <span>{shotType.name}</span>
+                                    {isSelected && <span className="ml-1">✓</span>}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {selectedShotTypes.length > 1 && (
+                              <p className="text-xs text-green-600 mt-1">
+                                {selectedShotTypes.length}種類選択中: {selectedShotTypes.map(id => SHOT_TYPES.find(t => t.id === id)?.name).join(', ')}
+                              </p>
+                            )}
                           </div>
                         )}
                         
@@ -1139,7 +1166,7 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             }`}
                           >
-                            🏸 ショット確定・次のノッカーの球へ
+                            🏸 返球を確定して次の配球へ
                           </button>
                         </div>
                       </div>
@@ -1202,24 +1229,36 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                       {formData.visualInfo.shotTrajectories.map((shot, index) => {
                         const shotType = SHOT_TYPES.find(t => t.id === shot.shotType);
                         const hasMultipleTypes = shot.shotTypes && shot.shotTypes.length > 1;
+                        const isMovement = shot.isMovement;
                         
                         return (
-                          <div key={shot.id} className="bg-gray-50 rounded p-2">
+                          <div key={shot.id} className={`rounded p-2 ${isMovement ? 'bg-yellow-50' : 'bg-gray-50'}`}>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-2 flex-1">
-                                <span className="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xs">
+                                <span className={`w-5 h-5 rounded-full text-white flex items-center justify-center font-bold text-xs ${isMovement ? 'bg-yellow-500' : 'bg-blue-500'}`}>
                                   {index + 1}
                                 </span>
                                 <div className="flex items-center space-x-1">
-                                  {shotType?.icon && <span style={{ color: shotType.color }}>{shotType.icon}</span>}
-                                  <span className="text-xs font-medium">{shotType?.name || shot.shotType}</span>
-                                  {hasMultipleTypes && (
-                                    <span className="text-xs text-blue-600">
-                                      +{shot.shotTypes!.length - 1}種
-                                    </span>
+                                  {isMovement ? (
+                                    <>
+                                      <span>→</span>
+                                      <span className="text-xs font-medium">プレイヤー移動</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      {shotType?.icon && <span style={{ color: shotType.color }}>{shotType.icon}</span>}
+                                      <span className="text-xs font-medium">{shotType?.name || shot.shotType}</span>
+                                      {hasMultipleTypes && (
+                                        <span className="text-xs text-blue-600">
+                                          +{shot.shotTypes!.length - 1}種
+                                        </span>
+                                      )}
+                                    </>
                                   )}
                                 </div>
-                                <span className="text-xs text-gray-500">{shot.shotBy === 'knocker' ? 'ノッカー' : 'プレイヤー'}</span>
+                                <span className="text-xs text-gray-500">
+                                  {isMovement ? '移動' : (shot.shotBy === 'knocker' ? 'ノッカー' : 'プレイヤー')}
+                                </span>
                               </div>
                               <div className="flex items-center space-x-1">
                                 <button
@@ -1409,7 +1448,10 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
             }`}
           >
             <FiChevronLeft className="w-5 h-5 mr-1" />
-            戻る
+            {currentStep === 'players' && '基本情報に戻る'}
+            {currentStep === 'shots' && 'プレイヤー配置に戻る'}
+            {currentStep === 'preview' && 'ショット入力に戻る'}
+            {currentStep === 'basic' && '戻る'}
           </button>
 
           {currentStep === 'preview' ? (
@@ -1426,7 +1468,9 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
               onClick={goNext}
               className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg font-medium active:bg-blue-600"
             >
-              次へ
+              {currentStep === 'basic' && 'プレイヤー配置へ'}
+              {currentStep === 'players' && 'ショット入力へ'}
+              {currentStep === 'shots' && '内容を確認'}
               <FiChevronRight className="w-5 h-5 ml-1" />
             </button>
           )}

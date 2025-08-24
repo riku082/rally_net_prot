@@ -283,9 +283,10 @@ export interface ShotTrajectory {
   id: string;
   from: { x: number; y: number };
   to: { x: number; y: number };
-  shotType: string; // 'smash', 'clear', 'drop' など（主要なタイプ）
+  shotType?: string; // 'smash', 'clear', 'drop', 'movement' など（主要なタイプ）
   shotTypes?: string[]; // 複数のショットタイプ（同じコースに複数の球種がある場合）
   shotBy?: 'knocker' | 'player' | 'opponent'; // 誰が打ったか
+  isMovement?: boolean; // プレイヤーの移動を表す矢印かどうか
   order?: number; // 練習手順での順序
   description?: string;
   targetArea?: string; // エリア選択時のターゲットエリアID
