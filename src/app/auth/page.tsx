@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmail, signUpWithEmailVerification, signInWithGoogle } from '@/utils/auth';
+import { signInWithEmail, signUpWithEmailVerification, signInWithGoogle, handleGoogleRedirectResult } from '@/utils/auth';
 import { firestoreDb } from '@/utils/db';
 import Image from 'next/image';
 
@@ -13,6 +13,23 @@ const AuthPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingRedirect, setCheckingRedirect] = useState(true);
+
+  // Googleリダイレクト認証の結果を処理
+  useEffect(() => {
+    const handleRedirect = async () => {
+      const { user, error: redirectError } = await handleGoogleRedirectResult();
+      if (user) {
+        console.log('Googleリダイレクト認証成功');
+        await checkProfileAndRedirect(user.uid);
+      } else if (redirectError) {
+        setError(redirectError);
+      }
+      setCheckingRedirect(false);
+    };
+    
+    handleRedirect();
+  }, []);
 
   const checkProfileAndRedirect = async (userId: string) => {
     try {
@@ -70,17 +87,26 @@ const AuthPage: React.FC = () => {
     }
   };
 
-  const handleGoogleAuth = async () => {
+  const handleGoogleAuth = async (e: React.MouseEvent) => {
+    // ボタンのデフォルト動作を防ぐ
+    e.preventDefault();
+    e.stopPropagation();
+    
     setLoading(true);
     setError('');
 
     try {
-      const { user, error: authError } = await signInWithGoogle();
+      const result = await signInWithGoogle();
       
-      if (authError) {
-        setError(authError);
-      } else if (user) {
-        await checkProfileAndRedirect(user.uid);
+      if (result.redirecting) {
+        // リダイレクト方式で認証中
+        setError('');
+        // リダイレクトが完了するまでローディングを維持
+        return;
+      } else if (result.error) {
+        setError(result.error);
+      } else if (result.user) {
+        await checkProfileAndRedirect(result.user.uid);
       }
     } catch {
       setError('Google認証に失敗しました');
@@ -90,6 +116,18 @@ const AuthPage: React.FC = () => {
   };
 
 
+
+  // リダイレクト認証を確認中
+  if (checkingRedirect) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-theme-primary mx-auto"></div>
+          <p className="mt-4 text-lg font-semibold text-gray-700">認証を確認中...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">

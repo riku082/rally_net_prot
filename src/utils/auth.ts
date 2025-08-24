@@ -1,6 +1,8 @@
 import { auth } from './firebase';
 import {
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -71,15 +73,58 @@ const getJapaneseErrorMessage = (error: AuthError): string => {
   }
 };
 
-// Google認証
-export const signInWithGoogle = async () => {
+// Google認証（ポップアップ方式）
+export const signInWithGoogle = async (useRedirect = false) => {
   try {
     const provider = new GoogleAuthProvider();
+    // Google認証のスコープを設定
+    provider.addScope('profile');
+    provider.addScope('email');
+    
+    // リダイレクト方式を使用する場合
+    if (useRedirect) {
+      await signInWithRedirect(auth, provider);
+      return { user: null, error: null, redirecting: true };
+    }
+    
+    // ポップアップ方式を使用
     const userCredential = await signInWithPopup(auth, provider);
+    console.log('Google認証成功:', userCredential.user.email);
     return { user: userCredential.user, error: null };
   } catch (error: unknown) {
+    console.error('Google認証エラー:', error);
     if (error instanceof Error) {
       // Firebase AuthErrorの場合は日本語メッセージに変換
+      if ('code' in error) {
+        const authError = error as AuthError;
+        console.error('エラーコード:', authError.code);
+        
+        // ポップアップブロックの場合、リダイレクト方式を試す
+        if (authError.code === 'auth/popup-blocked' && !useRedirect) {
+          console.log('ポップアップがブロックされたため、リダイレクト方式を試します');
+          return signInWithGoogle(true);
+        }
+        
+        return { user: null, error: getJapaneseErrorMessage(authError) };
+      }
+      return { user: null, error: error.message };
+    }
+    return { user: null, error: '認証に失敗しました。' };
+  }
+};
+
+// Google認証のリダイレクト結果を処理
+export const handleGoogleRedirectResult = async () => {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      console.log('Googleリダイレクト認証成功:', result.user.email);
+      return { user: result.user, error: null };
+    }
+    return { user: null, error: null };
+  } catch (error: unknown) {
+    console.error('Googleリダイレクトエラー:', error);
+    if (error instanceof Error) {
       if ('code' in error) {
         return { user: null, error: getJapaneseErrorMessage(error as AuthError) };
       }
