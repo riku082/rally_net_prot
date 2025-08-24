@@ -11,6 +11,11 @@ service cloud.firestore {
       return request.auth != null;
     }
     
+    // メール認証済みユーザーかチェック
+    function isEmailVerified() {
+      return isAuthenticated() && request.auth.token.email_verified == true;
+    }
+    
     // ユーザー自身のデータかチェック
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
@@ -77,17 +82,19 @@ service cloud.firestore {
     
     // 練習カード
     match /practiceCards/{cardId} {
-      // 読み取り: 自分のカードまたは公開カード
+      // 読み取り: 自分のカードまたは公開カード（認証済みユーザーは閲覧可能）
       allow read: if isAuthenticated() && (
         isResourceOwner() ||
         (resource != null && resource.data.get('isPublic', false) == true)
       );
       
-      allow create: if isNewResourceOwner() && 
+      // 作成・更新・削除: メール認証済みユーザーのみ
+      allow create: if isEmailVerified() && 
+                       isNewResourceOwner() && 
                        isValidString(request.resource.data.title, 1, 100) &&
                        request.resource.data.difficulty in ['beginner', 'intermediate', 'advanced'];
-      allow update: if isResourceOwner();
-      allow delete: if isResourceOwner();
+      allow update: if isEmailVerified() && isResourceOwner();
+      allow delete: if isEmailVerified() && isResourceOwner();
     }
     
     // === MBTI診断結果 ===
@@ -127,23 +134,25 @@ service cloud.firestore {
     
     // フレンドシップ
     match /friendships/{friendshipId} {
+      // 読み取り: 認証済みユーザーは関連データを閲覧可能
       allow read: if isAuthenticated() && 
                      resource != null && (
                        request.auth.uid == resource.data.fromUserId || 
                        request.auth.uid == resource.data.toUserId
                      );
       
-      allow create: if isAuthenticated() && 
+      // 作成・更新・削除: メール認証済みユーザーのみ
+      allow create: if isEmailVerified() && 
                        request.auth.uid == request.resource.data.fromUserId &&
                        request.resource.data.fromUserId != request.resource.data.toUserId;
       
-      allow update: if isAuthenticated() && 
+      allow update: if isEmailVerified() && 
                        resource != null && (
                          request.auth.uid == resource.data.fromUserId || 
                          request.auth.uid == resource.data.toUserId
                        );
       
-      allow delete: if isAuthenticated() && 
+      allow delete: if isEmailVerified() && 
                        resource != null && (
                          request.auth.uid == resource.data.fromUserId || 
                          request.auth.uid == resource.data.toUserId
@@ -152,21 +161,23 @@ service cloud.firestore {
     
     // フレンドリクエスト
     match /friendRequests/{requestId} {
+      // 読み取り: 認証済みユーザーは関連データを閲覧可能
       allow read: if isAuthenticated() && 
                      resource != null && (
                        request.auth.uid == resource.data.fromUserId || 
                        request.auth.uid == resource.data.toUserId
                      );
       
-      allow create: if isAuthenticated() && 
+      // 作成・更新・削除: メール認証済みユーザーのみ
+      allow create: if isEmailVerified() && 
                        request.auth.uid == request.resource.data.fromUserId &&
                        request.resource.data.fromUserId != request.resource.data.toUserId;
       
-      allow update: if isAuthenticated() && 
+      allow update: if isEmailVerified() && 
                        resource != null && 
                        request.auth.uid == resource.data.toUserId;
       
-      allow delete: if isAuthenticated() && 
+      allow delete: if isEmailVerified() && 
                        resource != null && (
                          request.auth.uid == resource.data.fromUserId || 
                          request.auth.uid == resource.data.toUserId
@@ -177,10 +188,12 @@ service cloud.firestore {
     
     // 試合記録
     match /matches/{matchId} {
+      // 読み取り: 認証済みユーザーは自分のデータを閲覧可能
       allow read: if isResourceOwner();
-      allow create: if isNewResourceOwner();
-      allow update: if isResourceOwner();
-      allow delete: if isResourceOwner();
+      // 作成・更新・削除: メール認証済みユーザーのみ
+      allow create: if isEmailVerified() && isNewResourceOwner();
+      allow update: if isEmailVerified() && isResourceOwner();
+      allow delete: if isEmailVerified() && isResourceOwner();
     }
     
     // ユーザー設定
@@ -204,12 +217,14 @@ service cloud.firestore {
     
     // フィードバック
     match /feedbacks/{feedbackId} {
+      // 読み取り: 認証済みユーザーは自分のデータを閲覧可能
       allow read: if isResourceOwner();
-      allow create: if isAuthenticated() && 
+      // 作成・更新・削除: メール認証済みユーザーのみ
+      allow create: if isEmailVerified() && 
                        isNewResourceOwner() &&
                        isValidString(request.resource.data.message, 1, 1000);
-      allow update: if isResourceOwner();
-      allow delete: if isResourceOwner();
+      allow update: if isEmailVerified() && isResourceOwner();
+      allow delete: if isEmailVerified() && isResourceOwner();
     }
     
     // === 公開コンテンツ ===

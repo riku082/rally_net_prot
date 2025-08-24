@@ -11,8 +11,10 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean; // Firebase認証状態の読み込み中
   profileLoading: boolean; // プロフィール情報の読み込み中
+  isEmailVerified: boolean; // メール認証済みかどうか
   refreshProfile: () => Promise<void>;
   setProfileDirectly: (profile: UserProfile | null) => void;
+  refreshEmailVerification: () => Promise<void>; // メール認証状態を更新
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -20,8 +22,10 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: true,
   profileLoading: true,
+  isEmailVerified: false,
   refreshProfile: async () => {},
   setProfileDirectly: () => {},
+  refreshEmailVerification: async () => {},
 });
 
 export const useAuth = () => {
@@ -41,6 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
 
   const refreshProfile = async () => {
     if (user) {
@@ -62,12 +67,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setProfileLoading(false);
   };
 
+  const refreshEmailVerification = async () => {
+    if (user) {
+      await user.reload();
+      setIsEmailVerified(user.emailVerified);
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChange(async (user) => {
       setUser(user);
       setLoading(false);
 
       if (user) {
+        // メール認証状態を設定
+        setIsEmailVerified(user.emailVerified);
+        
         // ユーザーがログインしている場合、プロフィールを取得
         setProfileLoading(true);
         try {
@@ -80,8 +95,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setProfileLoading(false);
         }
       } else {
-        // ユーザーがログアウトしている場合、プロフィールをクリア
+        // ユーザーがログアウトしている場合、プロフィールとメール認証状態をクリア
         setProfile(null);
+        setIsEmailVerified(false);
         setProfileLoading(false);
       }
     });
@@ -90,7 +106,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, profileLoading, refreshProfile, setProfileDirectly }}>
+    <AuthContext.Provider value={{ user, profile, loading, profileLoading, isEmailVerified, refreshProfile, setProfileDirectly, refreshEmailVerification }}>
       {children}
     </AuthContext.Provider>
   );

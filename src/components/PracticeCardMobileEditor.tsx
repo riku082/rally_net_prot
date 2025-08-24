@@ -1005,47 +1005,6 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                           </div>
                         )}
                         
-                        {/* 球種選択（複数選択対応） */}
-                        <div className="mb-4">
-                          <p className="text-xs text-green-700 mb-2">球種を選択（複数可）:</p>
-                          <div className="grid grid-cols-3 gap-1">
-                            {SHOT_TYPES.map(shotType => {
-                              const isSelected = selectedShotTypes.includes(shotType.id);
-                              return (
-                                <button
-                                  key={shotType.id}
-                                  onClick={() => {
-                                    setSelectedShotTypes(prev => 
-                                      prev.includes(shotType.id)
-                                        ? prev.filter(id => id !== shotType.id)
-                                        : [...prev, shotType.id]
-                                    );
-                                    // メインのショットタイプも更新
-                                    if (!isSelected && selectedShotTypes.length === 0) {
-                                      setSelectedShotType(shotType.id);
-                                    }
-                                  }}
-                                  className={`py-2 px-2 rounded text-xs font-medium transition flex items-center gap-1 justify-center ${
-                                    isSelected
-                                      ? 'text-white shadow-sm'
-                                      : 'bg-gray-100 text-gray-700'
-                                  }`}
-                                  style={isSelected ? { backgroundColor: shotType.color } : {}}
-                                >
-                                  {shotType.icon}
-                                  <span>{shotType.name}</span>
-                                  {isSelected && <span className="ml-1">✓</span>}
-                                </button>
-                              );
-                            })}
-                          </div>
-                          {selectedShotTypes.length > 1 && (
-                            <p className="text-xs text-green-600 mt-1">
-                              {selectedShotTypes.length}種類選択中: {selectedShotTypes.map(id => SHOT_TYPES.find(t => t.id === id)?.name).join(', ')}
-                            </p>
-                          )}
-                        </div>
-                        
                         <div className="bg-green-100 rounded p-3">
                           <p className="text-sm text-green-800 font-medium">
                             ⑤ コートをタップして返球先を設定
@@ -1071,6 +1030,49 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                             <p className="text-xs text-blue-700">
                               座標: ({Math.round(returnTarget.x)}, {Math.round(returnTarget.y)})
                             </p>
+                          </div>
+                        )}
+                        
+                        {/* 球種選択（複数選択対応） - 返球先設定後に表示 */}
+                        {returnTarget && (
+                          <div className="mb-4 mt-4">
+                            <p className="text-xs text-green-700 mb-2">球種を選択（複数可）:</p>
+                            <div className="grid grid-cols-3 gap-1">
+                              {SHOT_TYPES.map(shotType => {
+                                const isSelected = selectedShotTypes.includes(shotType.id);
+                                return (
+                                  <button
+                                    key={shotType.id}
+                                    onClick={() => {
+                                      setSelectedShotTypes(prev => 
+                                        prev.includes(shotType.id)
+                                          ? prev.filter(id => id !== shotType.id)
+                                          : [...prev, shotType.id]
+                                      );
+                                      // メインのショットタイプも更新
+                                      if (!isSelected && selectedShotTypes.length === 0) {
+                                        setSelectedShotType(shotType.id);
+                                      }
+                                    }}
+                                    className={`py-2 px-2 rounded text-xs font-medium transition flex items-center gap-1 justify-center ${
+                                      isSelected
+                                        ? 'text-white shadow-sm'
+                                        : 'bg-gray-100 text-gray-700'
+                                    }`}
+                                    style={isSelected ? { backgroundColor: shotType.color } : {}}
+                                  >
+                                    {shotType.icon}
+                                    <span>{shotType.name}</span>
+                                    {isSelected && <span className="ml-1">✓</span>}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {selectedShotTypes.length > 1 && (
+                              <p className="text-xs text-green-600 mt-1">
+                                {selectedShotTypes.length}種類選択中: {selectedShotTypes.map(id => SHOT_TYPES.find(t => t.id === id)?.name).join(', ')}
+                              </p>
+                            )}
                           </div>
                         )}
                         

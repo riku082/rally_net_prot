@@ -4,14 +4,17 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { sendVerificationEmail, checkEmailVerification } from '@/utils/auth';
 import { FaEnvelope, FaCheckCircle, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
+import EmailVerificationSuccess from './EmailVerificationSuccess';
 
 const EmailVerificationBanner: React.FC = () => {
-  const { user } = useAuth();
+  const { user, refreshEmailVerification } = useAuth();
   const [isVerified, setIsVerified] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error' | 'info'>('info');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [hasJustVerified, setHasJustVerified] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -49,8 +52,16 @@ const EmailVerificationBanner: React.FC = () => {
       setMessageType('error');
     } else if (result.verified) {
       setIsVerified(true);
-      setMessage('メールアドレスの認証が完了しました！');
-      setMessageType('success');
+      setHasJustVerified(true);
+      setShowSuccessModal(true);
+      
+      // AuthContextのメール認証状態を更新
+      await refreshEmailVerification();
+      
+      // 3秒後にページをリロード
+      setTimeout(() => {
+        window.location.reload();
+      }, 3000);
     } else {
       setMessage('メールアドレスがまだ認証されていません。メールボックスをご確認ください。');
       setMessageType('info');
@@ -59,13 +70,35 @@ const EmailVerificationBanner: React.FC = () => {
     setIsChecking(false);
   };
 
-  // 認証済みまたはユーザーが存在しない場合は非表示
-  if (!user || isVerified) {
+  // URLパラメータで認証完了を検出
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('verified') === 'true' && user && !isVerified) {
+      handleCheckVerification();
+    }
+  }, [user]);
+
+  // 認証済みまたはユーザーが存在しない場合
+  if (!user) {
+    return null;
+  }
+
+  // 認証済みで、今認証したわけではない場合は非表示
+  if (isVerified && !hasJustVerified) {
     return null;
   }
 
   return (
-    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+    <>
+      <EmailVerificationSuccess 
+        show={showSuccessModal} 
+        onClose={() => setShowSuccessModal(false)}
+        autoClose={true}
+        autoCloseDelay={3000}
+      />
+      
+      {!hasJustVerified && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
       <div className="flex items-start space-x-3">
         <FaExclamationTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
         <div className="flex-1">
@@ -119,6 +152,8 @@ const EmailVerificationBanner: React.FC = () => {
         </div>
       </div>
     </div>
+      )}
+    </>
   );
 };
 
