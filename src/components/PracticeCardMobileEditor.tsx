@@ -510,8 +510,9 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                     <p className="text-xs text-blue-700 mb-2">
                       コート上側（相手側）をタップしてノッカーを配置
                     </p>
-                    <button
-                      onClick={() => {
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
                         // ノッカーを追加配置
                         const knockerCount = formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker').length || 0;
                         const positions = [
@@ -542,33 +543,34 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                             playerPositions: newPositions
                           }
                         }));
-                      }}
-                      className="w-full py-2 px-3 bg-blue-600 text-white rounded text-sm font-medium active:bg-blue-700"
-                    >
-                      ノッカー追加
-                    </button>
-                    {formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker').length > 0 && (
-                      <button
-                        onClick={() => {
-                          // 最後のノッカーを削除
-                          const knockers = formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker') || [];
-                          if (knockers.length > 0) {
-                            const lastKnocker = knockers[knockers.length - 1];
-                            const newPositions = formData.visualInfo.playerPositions?.filter(p => p.id !== lastKnocker.id) || [];
-                            setFormData(prev => ({
-                              ...prev,
-                              visualInfo: {
-                                ...prev.visualInfo,
-                                playerPositions: newPositions
-                              }
-                            }));
-                          }
                         }}
-                        className="mt-2 w-full py-2 px-3 bg-red-100 text-red-700 rounded text-sm font-medium active:bg-red-200"
+                        className="flex-1 py-2 px-3 bg-blue-600 text-white rounded text-sm font-medium active:bg-blue-700"
                       >
-                        ノッカー削除
+                        ノッカー追加
                       </button>
-                    )}
+                      {formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker').length > 0 && (
+                        <button
+                          onClick={() => {
+                            // 最後のノッカーを削除
+                            const knockers = formData.visualInfo.playerPositions?.filter(p => p.role === 'knocker') || [];
+                            if (knockers.length > 0) {
+                              const lastKnocker = knockers[knockers.length - 1];
+                              const newPositions = formData.visualInfo.playerPositions?.filter(p => p.id !== lastKnocker.id) || [];
+                              setFormData(prev => ({
+                                ...prev,
+                                visualInfo: {
+                                  ...prev.visualInfo,
+                                  playerPositions: newPositions
+                                }
+                              }));
+                            }
+                          }}
+                          className="flex-1 py-2 px-3 bg-red-100 text-red-700 rounded text-sm font-medium active:bg-red-200"
+                        >
+                          ノッカー削除
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* プレイヤー配置 */}

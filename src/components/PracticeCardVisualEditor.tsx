@@ -1232,14 +1232,17 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                 const rect = (e.currentTarget as SVGElement).getBoundingClientRect();
                 const scaleX = COURT_WIDTH / rect.width;
                 const scaleY = COURT_HEIGHT / rect.height;
-                const clientX = 'touches' in e ? (e as any).touches[0].clientX : e.clientX;
-                const clientY = 'touches' in e ? (e as any).touches[0].clientY : e.clientY;
+                const clientX = e.clientX;
+                const clientY = e.clientY;
                 const newX = Math.max(0, Math.min(COURT_WIDTH, (clientX - rect.left) * scaleX - dragOffset.x));
                 const newY = Math.max(0, Math.min(COURT_HEIGHT, (clientY - rect.top) * scaleY - dragOffset.y));
                 const newPositions = mobilePlayerPositions.map(p => 
                   p.id === draggingPlayer ? { ...p, x: newX, y: newY } : p
                 );
-                onUpdate({ ...visualInfo, playerPositions: newPositions });
+                // requestAnimationFrameを使用してスムーズな更新
+                requestAnimationFrame(() => {
+                  onUpdate({ ...visualInfo, playerPositions: newPositions });
+                });
               }
             }}
             onPointerUp={() => {
