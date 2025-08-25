@@ -386,45 +386,45 @@ const PracticeCardList: React.FC<PracticeCardListProps> = ({
       
       {/* 詳細モーダル */}
       {selectedCard && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
-            <div className="p-3 sm:p-4 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900">練習カード詳細</h3>
+        <div className="fixed inset-0 bg-gray-100/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-auto max-w-fit max-h-[90vh] overflow-hidden">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50">
+              <h3 className="text-lg font-semibold text-gray-900">練習カード詳細</h3>
               <button
                 onClick={() => setSelectedCard(null)}
-                className="text-gray-400 hover:text-gray-600 p-1"
+                className="text-gray-500 hover:text-gray-700 hover:bg-white/50 rounded-lg p-1.5 transition-colors"
               >
-                <FaTimes className="w-4 h-4 sm:w-5 sm:h-5" />
+                <FaTimes className="w-5 h-5" />
               </button>
             </div>
             
-            <div className="p-3 sm:p-4 max-h-[85vh] sm:max-h-[70vh] overflow-y-auto space-y-3 sm:space-y-4">
+            <div className="p-4 sm:p-5 max-h-[calc(90vh-80px)] overflow-y-auto space-y-3 w-[90vw] sm:w-[80vw] md:w-[70vw] lg:w-[60vw] xl:w-[50vw] max-w-2xl">
               {/* カード基本情報 */}
               <div>
-                <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">{selectedCard.title}</h4>
-                <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-2 sm:mb-3">
+                <h4 className="text-lg font-bold text-gray-900 mb-2">{selectedCard.title}</h4>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${difficultyColors[selectedCard.difficulty]}`}>
                     {difficultyLabels[selectedCard.difficulty]}
                   </span>
-                  <span className="flex items-center text-xs sm:text-sm text-gray-600">
+                  <span className="flex items-center text-xs text-gray-600">
                     <FaClock className="w-3 h-3 mr-1" />
                     {formatDuration(selectedCard.drill.duration)}
                   </span>
                   {selectedCard.rating && (
-                    <span className="flex items-center text-xs sm:text-sm text-yellow-600">
+                    <span className="flex items-center text-xs text-yellow-600">
                       <FaStar className="w-3 h-3 mr-1" />
                       {selectedCard.rating.toFixed(1)}
                     </span>
                   )}
                 </div>
-                <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">{selectedCard.description}</p>
+                <p className="text-sm text-gray-700 mb-3">{selectedCard.description}</p>
               </div>
 
               {/* ビジュアル情報 */}
               {selectedCard.visualInfo && ((selectedCard.visualInfo.shotTrajectories && selectedCard.visualInfo.shotTrajectories.length > 0) || (selectedCard.visualInfo.playerPositions && selectedCard.visualInfo.playerPositions.length > 0)) && (
-                <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
-                  <h5 className="text-sm font-medium text-gray-700 mb-2 sm:mb-3">練習パターン</h5>
-                  <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
+                <div className="bg-white border border-gray-200 rounded-lg p-3">
+                  <h5 className="text-sm font-medium text-gray-700 mb-2">練習パターン</h5>
+                  <div className="flex flex-col lg:flex-row gap-3">
                     {/* コートシート */}
                     <div className="flex-1">
                       <div className="flex justify-center">
@@ -498,7 +498,7 @@ const PracticeCardList: React.FC<PracticeCardListProps> = ({
 
               {/* コート情報 */}
               {selectedCard.courtInfo && selectedCard.courtInfo.targetAreas && selectedCard.courtInfo.targetAreas.length > 0 && (
-                <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                <div className="bg-gray-50 rounded-lg p-3">
                   <h5 className="text-sm font-medium text-gray-700 mb-2">ターゲットエリア</h5>
                   <div className="flex flex-wrap gap-2">
                     <span className="text-xs text-gray-600">
@@ -554,9 +554,9 @@ const PracticeCardList: React.FC<PracticeCardListProps> = ({
 
               {/* ドリル情報 */}
               {selectedCard.drill && (
-                <div className="bg-blue-50 rounded-lg p-3 sm:p-4">
+                <div className="bg-blue-50 rounded-lg p-3">
                   <h5 className="text-sm font-medium text-blue-900 mb-2">ドリル詳細</h5>
-                  <div className="space-y-1 text-xs sm:text-sm text-blue-800">
+                  <div className="space-y-1 text-xs text-blue-800">
                     <p><span className="font-medium">名前:</span> {selectedCard.drill.name}</p>
                     {selectedCard.drill.sets && (
                       <p><span className="font-medium">セット数:</span> {selectedCard.drill.sets}セット</p>
@@ -572,9 +572,9 @@ const PracticeCardList: React.FC<PracticeCardListProps> = ({
               )}
 
               {/* 統計情報 */}
-              <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+              <div className="bg-gray-50 rounded-lg p-3">
                 <h5 className="text-sm font-medium text-gray-700 mb-2">使用統計</h5>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
+                <div className="grid grid-cols-3 gap-3">
                   <div>
                     <p className="text-xs text-gray-500">使用回数</p>
                     <p className="text-lg font-semibold text-gray-900">{selectedCard.usageCount}回</p>
