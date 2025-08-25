@@ -149,7 +149,9 @@ const PracticeCardViewer: React.FC<PracticeCardViewerProps> = ({ card, className
   const practiceTypeConfig = {
     knock_practice: { label: 'ノック練習', icon: <MdSportsBaseball className="w-5 h-5" /> },
     pattern_practice: { label: 'パターン練習', icon: <FaBullseye className="w-5 h-5" /> },
-    footwork_practice: { label: 'フットワーク練習', icon: <FaLayerGroup className="w-5 h-5" /> }
+    footwork_practice: { label: 'フットワーク練習', icon: <FaLayerGroup className="w-5 h-5" /> },
+    game_practice: { label: 'ゲーム練習', icon: <MdSportsBaseball className="w-5 h-5" /> },
+    serve_practice: { label: 'サーブ練習', icon: <MdSportsBaseball className="w-5 h-5" /> }
   };
 
   const config = difficultyConfig[card.difficulty];
@@ -204,7 +206,7 @@ const PracticeCardViewer: React.FC<PracticeCardViewerProps> = ({ card, className
       <div className="flex flex-col lg:flex-row">
         {/* 左側：コート図 */}
         <div className="w-full lg:w-1/2 p-4 sm:p-6 lg:border-r border-gray-200">
-          {card.visualInfo && (card.visualInfo.playerPositions?.length > 0 || card.visualInfo.shotTrajectories?.length > 0) && (
+          {card.visualInfo && ((card.visualInfo.playerPositions?.length || 0) > 0 || (card.visualInfo.shotTrajectories?.length || 0) > 0) && (
             <div>
               <h4 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">練習配置</h4>
               <div className="bg-gray-100 rounded-lg p-2 sm:p-4 overflow-x-auto">

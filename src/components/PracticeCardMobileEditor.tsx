@@ -38,6 +38,25 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
   const [currentShot, setCurrentShot] = useState<any>(null); // 現在選択中のショット開始点
   const [isWaitingForPlayer, setIsWaitingForPlayer] = useState(false); // プレイヤーの返球待ち
   const [shotMode, setShotMode] = useState<'knocker' | 'player'>('knocker'); // 現在のショットモード
+  const [windowSize, setWindowSize] = useState({ 
+    width: typeof window !== 'undefined' ? window.innerWidth : 375, 
+    height: typeof window !== 'undefined' ? window.innerHeight : 667 
+  });
+  
+  // ウィンドウサイズの監視
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    
+    // 初期サイズを設定
+    setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   // フォームデータ
   const [formData, setFormData] = useState({
@@ -480,7 +499,13 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
             {/* コート表示エリア (55%) */}
             <div className="h-[55%] bg-green-50 p-2 overflow-hidden">
               <div className="h-full w-full flex items-center justify-center">
-                <div style={{ transform: 'scale(0.65)', transformOrigin: 'center' }}>
+                <div style={{ 
+                  transform: `scale(${Math.min(
+                    (windowSize.width - 32) / 280,
+                    (windowSize.height * 0.55 - 32) / 580
+                  )})`,
+                  transformOrigin: 'center' 
+                }}>
                   <PracticeCardVisualEditor
                     visualInfo={formData.visualInfo}
                     practiceType={formData.practiceType}
@@ -772,14 +797,33 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                 ショット数: {formData.visualInfo.shotTrajectories?.length || 0}
               </div>
               <div className="h-full w-full flex items-center justify-center">
-                <div style={{ transform: 'scale(0.6)', transformOrigin: 'center' }}>
-                  <PracticeCardVisualEditor
-                    visualInfo={formData.visualInfo}
-                    practiceType={formData.practiceType}
-                    onUpdate={(visualInfo) => setFormData(prev => ({ ...prev, visualInfo }))}
-                    courtType="singles"
-                    mobileMode="shots"
-                    mobileSelectedAreas={shotInputMode === 'area' ? selectedAreas : []}
+                {/* レスポンシブスケール計算 */}
+                <div 
+                  className="relative"
+                  style={{ 
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <div 
+                    style={{ 
+                      transform: `scale(${Math.min(
+                        (windowSize.width - 32) / 280,  // 幅に基づくスケール (244px court + padding)
+                        (windowSize.height * 0.5 - 32) / 580  // 高さに基づくスケール (536px court + padding)
+                      )})`,
+                      transformOrigin: 'center'
+                    }}
+                  >
+                    <PracticeCardVisualEditor
+                      visualInfo={formData.visualInfo}
+                      practiceType={formData.practiceType}
+                      onUpdate={(visualInfo) => setFormData(prev => ({ ...prev, visualInfo }))}
+                      courtType="singles"
+                      mobileMode="shots"
+                      mobileSelectedAreas={shotInputMode === 'area' ? selectedAreas : []}
                     onAreaSelect={shotInputMode === 'area' ? (areaId) => {
                       setSelectedAreas(prev => {
                         // 重複を許可して常に追加
@@ -878,12 +922,12 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                         }
                       } else if (currentShot) {
                         // パターン練習
-                        const newShot = {
+                        const newShot: any = {
                           id: `shot_${Date.now()}`,
                           from: { x: currentShot.x, y: currentShot.y },
                           to: { x: coord.x, y: coord.y },
                           shotType: 'clear',
-                          shotBy: currentShot.role === 'knocker' ? 'knocker' : 'player',
+                          shotBy: currentShot.role === 'knocker' ? 'knocker' : 'player' as 'knocker' | 'player',
                           order: (formData.visualInfo.shotTrajectories?.length || 0) + 1,
                           memo: ''
                         };
@@ -900,6 +944,7 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                       }
                     }}
                   />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1387,7 +1432,15 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                 <div className="mt-4 p-2 bg-gray-50 rounded">
                   <div className="text-xs text-gray-500 mb-2">コート配置</div>
                   <div className="flex justify-center">
-                    <div style={{ transform: 'scale(0.4)', transformOrigin: 'center', marginTop: '-60px', marginBottom: '-60px' }}>
+                    <div style={{ 
+                      transform: `scale(${Math.min(
+                        (windowSize.width - 64) / 600,
+                        0.4
+                      )})`,
+                      transformOrigin: 'center',
+                      marginTop: '-60px',
+                      marginBottom: '-60px'
+                    }}>
                       <PracticeCardVisualEditor
                         visualInfo={formData.visualInfo}
                         practiceType={formData.practiceType}

@@ -577,13 +577,13 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
           const oppositeTeam = currentTeam === 'red' ? 'green' : 'red';
           
           // 反対側のチームで、着地点に最も近いプレイヤーを探す
-          let nearestPlayer = null;
+          let nearestPlayer: any = null;
           let minDistance = Infinity;
           
           playerPositions.forEach(player => {
             if (player.role === 'player' || player.role === 'opponent') {
               const playerTeam = player.team || (player.id.includes('red') ? 'red' : 'green');
-              if (playerTeam === oppositeTeam) {
+              if (playerTeam === oppositeTeam && currentShot.to) {
                 const distance = Math.sqrt(
                   Math.pow(player.x - currentShot.to.x, 2) + Math.pow(player.y - currentShot.to.y, 2)
                 );
@@ -595,11 +595,11 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             }
           });
           
-          if (nearestPlayer) {
+          if (nearestPlayer && currentShot.to) {
             // プレイヤーを着地点に移動
             setPlayerPositions(prev => 
               prev.map(p => p.id === nearestPlayer.id 
-                ? { ...p, x: currentShot.to.x, y: currentShot.to.y } 
+                ? { ...p, x: currentShot.to!.x, y: currentShot.to!.y } 
                 : p
               )
             );
@@ -901,15 +901,16 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
       const target = targetPlayers[targetIndex];
       
       // プレイヤーのショット設定を取得
-      const shotTypes = playerShotSettings[shooter.id] || [];
-      if (shotTypes.length === 0) {
+      const playerShots = playerShotSettings[shooter.id] || [];
+      let shotTypesArray: string[] = playerShots.map(s => s.shotType).filter((type): type is string => type !== undefined);
+      if (shotTypesArray.length === 0) {
         // ショット設定がない場合はデフォルトでクリアを使用
-        shotTypes.push('clear');
+        shotTypesArray = ['clear'];
       }
       
       // ランダムなショットタイプを選択
-      const shotTypeIndex = Math.floor(Math.random() * shotTypes.length);
-      const shotType = shotTypes[shotTypeIndex];
+      const shotTypeIndex = Math.floor(Math.random() * shotTypesArray.length);
+      const shotType = shotTypesArray[shotTypeIndex];
       
       // ターゲットの位置をコート内でランダムに調整
       const targetX = Math.max(20, Math.min(COURT_WIDTH - 20, target.x + (Math.random() - 0.5) * 80));
@@ -998,7 +999,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
         } else if (currentShot.from) {
           const currentPlayer = playerPositions.find(p => p.id === currentShot.from?.id);
           fromPos = currentPlayer ? { x: currentPlayer.x, y: currentPlayer.y } : { x: currentShot.from.x, y: currentShot.from.y };
-          shotByRole = currentShot.from.role || 'player';
+          shotByRole = 'player';
         }
         
         selectedPoints.forEach((point, index) => {
@@ -1030,7 +1031,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
             if (shotTypes.length > 0) {
               const newShot: ShotTrajectory = {
                 id: `shot_${Date.now()}_${shotIndex}`,
-                from: { x: currentShot.from.x, y: currentShot.from.y },
+                from: { x: currentShot.from?.x || 0, y: currentShot.from?.y || 0 },
                 to: point,
                 shotType: shotTypes[0],
                 shotTypes: shotTypes.length > 1 ? shotTypes : undefined,
@@ -1049,7 +1050,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
           if (currentShot.nextPlayer) {
             // nextPlayerを着地点に移動
             setPlayerPositions(prev => 
-              prev.map(p => p.id === currentShot.nextPlayer.id 
+              prev.map(p => p.id === currentShot.nextPlayer!.id 
                 ? { ...p, x: selectedPoints[0].x, y: selectedPoints[0].y } 
                 : p
               )
@@ -2964,7 +2965,7 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                       e.stopPropagation();
                       setShotInputMode('area');
                       // エリアモードに切り替えた時、プレイヤーが選択されていなければ選択
-                      if (!currentShot.from && practiceType === 'pattern_practice') {
+                      if (!currentShot.from && (practiceType as string) === 'pattern_practice') {
                         const player = playerPositions.find(p => p.role === 'player');
                         if (player) {
                           setCurrentShot({ from: player });
@@ -3052,7 +3053,8 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                                 backgroundColor: isSelected ? type.color : type.color + '20',
                                 borderColor: type.color,
                                 borderWidth: '1px',
-                                ringColor: isSelected ? type.color : 'transparent'
+                                outline: isSelected ? `2px solid ${type.color}` : 'none',
+                                outlineOffset: '2px'
                               }}
                             >
                               {React.cloneElement(type.icon, { className: 'w-4 h-4 flex-shrink-0' })}
@@ -3099,7 +3101,8 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
                                 backgroundColor: isSelected ? type.color : type.color + '20',
                                 borderColor: type.color,
                                 borderWidth: '1px',
-                                ringColor: isSelected ? type.color : 'transparent'
+                                outline: isSelected ? `2px solid ${type.color}` : 'none',
+                                outlineOffset: '2px'
                               }}
                             >
                               {React.cloneElement(type.icon, { className: 'w-4 h-4 flex-shrink-0' })}

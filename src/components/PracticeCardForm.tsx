@@ -264,7 +264,7 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
                   onChange={(e) => {
                     setUseVisualEditor(e.target.checked);
                     if (!e.target.checked) {
-                      setFormData(prev => ({ ...prev, practiceType: undefined, visualInfo: undefined }));
+                      setFormData(prev => ({ ...prev, practiceType: 'knock_practice', visualInfo: { shotTrajectories: [], playerPositions: [] } }));
                     }
                   }}
                   className="mr-2 sm:mr-3 h-5 w-5 sm:h-6 sm:w-6 text-purple-600 rounded focus:ring-purple-500 focus:ring-2 flex-shrink-0 mt-0.5 sm:mt-0"

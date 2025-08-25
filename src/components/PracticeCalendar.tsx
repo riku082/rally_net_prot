@@ -135,30 +135,30 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
   return (
     <div className="h-full flex flex-col">
       {/* ヘッダー */}
-      <div className="flex items-center justify-between mb-4 px-2">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3 px-2">
+        <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-4">
+          <div className="flex items-center">
             <button
               onClick={() => navigateMonth('prev')}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
               aria-label="前月"
             >
-              <FaChevronLeft className="w-4 h-4 text-gray-600" />
+              <FaChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
             </button>
-            <h3 className="text-lg font-semibold text-gray-800 min-w-[140px] text-center">
+            <h3 className="text-sm sm:text-lg font-semibold text-gray-800 min-w-[110px] sm:min-w-[140px] text-center">
               {currentDate.getFullYear()}年 {months[currentDate.getMonth()]}
             </h3>
             <button
               onClick={() => navigateMonth('next')}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
               aria-label="次月"
             >
-              <FaChevronRight className="w-4 h-4 text-gray-600" />
+              <FaChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
             </button>
           </div>
           <button
             onClick={goToToday}
-            className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+            className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
           >
             今日
           </button>
@@ -166,54 +166,54 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
         
         <button
           onClick={() => setShowStats(!showStats)}
-          className="flex items-center space-x-2 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+          className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
         >
-          <FaChartBar className="w-4 h-4" />
+          <FaChartBar className="w-3 h-3 sm:w-4 sm:h-4" />
           <span>統計</span>
-          {showStats ? <FaChevronUp className="w-3 h-3" /> : <FaChevronDown className="w-3 h-3" />}
+          {showStats ? <FaChevronUp className="w-2 h-2 sm:w-3 sm:h-3" /> : <FaChevronDown className="w-2 h-2 sm:w-3 sm:h-3" />}
         </button>
       </div>
 
       {/* 月次統計 - 折りたたみ可能 */}
       {showStats && (
-        <div className="bg-gray-50 rounded-lg p-4 mb-4 animate-in slide-in-from-top duration-200">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="bg-white rounded-lg p-3 shadow-sm">
+        <div className="bg-gray-50 rounded-lg p-2 sm:p-4 mb-3 sm:mb-4 animate-in slide-in-from-top duration-200">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+            <div className="bg-white rounded-lg p-2 sm:p-3 shadow-sm">
               <div className="flex items-center">
-                <GiShuttlecock className="w-5 h-5 text-blue-600 mr-2" />
+                <GiShuttlecock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mr-1 sm:mr-2" />
                 <div>
-                  <p className="text-xs text-gray-600 font-medium">練習回数</p>
-                  <p className="text-lg font-bold text-gray-900">{monthlyStats.totalPractices}回</p>
+                  <p className="text-[10px] sm:text-xs text-gray-600 font-medium">練習回数</p>
+                  <p className="text-sm sm:text-lg font-bold text-gray-900">{monthlyStats.totalPractices}回</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-white rounded-lg p-3 shadow-sm">
+            <div className="bg-white rounded-lg p-2 sm:p-3 shadow-sm">
               <div className="flex items-center">
-                <FaClock className="w-5 h-5 text-green-600 mr-2" />
+                <FaClock className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mr-1 sm:mr-2" />
                 <div>
-                  <p className="text-xs text-gray-600 font-medium">総時間</p>
-                  <p className="text-lg font-bold text-gray-900">{formatDuration(monthlyStats.totalDuration)}</p>
+                  <p className="text-[10px] sm:text-xs text-gray-600 font-medium">総時間</p>
+                  <p className="text-sm sm:text-lg font-bold text-gray-900">{formatDuration(monthlyStats.totalDuration)}</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-white rounded-lg p-3 shadow-sm">
+            <div className="bg-white rounded-lg p-2 sm:p-3 shadow-sm">
               <div className="flex items-center">
-                <FaCalendarAlt className="w-5 h-5 text-purple-600 mr-2" />
+                <FaCalendarAlt className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 mr-1 sm:mr-2" />
                 <div>
-                  <p className="text-xs text-gray-600 font-medium">練習日数</p>
-                  <p className="text-lg font-bold text-gray-900">{monthlyStats.practiceDays}日</p>
+                  <p className="text-[10px] sm:text-xs text-gray-600 font-medium">練習日数</p>
+                  <p className="text-sm sm:text-lg font-bold text-gray-900">{monthlyStats.practiceDays}日</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-white rounded-lg p-3 shadow-sm">
+            <div className="bg-white rounded-lg p-2 sm:p-3 shadow-sm">
               <div className="flex items-center">
-                <FaClock className="w-5 h-5 text-orange-600 mr-2" />
+                <FaClock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 mr-1 sm:mr-2" />
                 <div>
-                  <p className="text-xs text-gray-600 font-medium">平均時間</p>
-                  <p className="text-lg font-bold text-gray-900">{formatDuration(monthlyStats.avgDuration)}</p>
+                  <p className="text-[10px] sm:text-xs text-gray-600 font-medium">平均時間</p>
+                  <p className="text-sm sm:text-lg font-bold text-gray-900">{formatDuration(monthlyStats.avgDuration)}</p>
                 </div>
               </div>
             </div>
@@ -222,14 +222,14 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
       )}
 
       {/* カレンダーグリッド */}
-      <div className="flex-1 bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="grid grid-cols-7 h-full">
+      <div className="flex-1 bg-white rounded-lg border border-gray-200 overflow-auto">
+        <div className="grid grid-cols-7 min-h-full">
           {/* 曜日ヘッダー */}
-          <div className="col-span-7 grid grid-cols-7 border-b border-gray-200">
+          <div className="col-span-7 grid grid-cols-7 border-b border-gray-200 sticky top-0 bg-white z-10">
             {weekdays.map((day, index) => (
               <div 
                 key={day} 
-                className={`py-3 text-center font-medium text-sm ${
+                className={`py-2 sm:py-3 text-center font-medium text-xs sm:text-sm ${
                   index === 0 ? 'text-red-500' : index === 6 ? 'text-blue-500' : 'text-gray-700'
                 }`}
               >
@@ -248,18 +248,21 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
                 key={index}
                 onClick={() => handleDateClick(day)}
                 className={`
-                  border-r border-b border-gray-200 p-2 cursor-pointer transition-all duration-200
-                  hover:bg-gray-50 relative overflow-hidden
+                  border-r border-b border-gray-200 p-1 sm:p-2 cursor-pointer transition-all duration-200
+                  hover:bg-gray-50 relative
                   ${!day.isCurrentMonth ? 'bg-gray-50 text-gray-400' : ''}
                   ${day.isToday ? 'bg-blue-50' : ''}
                   ${selectedDate && isSameDay(day.date, selectedDate) ? 'bg-blue-100' : ''}
                   ${(index + 1) % 7 === 0 ? 'border-r-0' : ''}
                 `}
-                style={{ minHeight: 'calc((100vh - 280px) / 6)' }}
+                style={{ 
+                  minHeight: 'max(80px, calc((100vh - 350px) / 6))',
+                  maxHeight: 'max(120px, calc((100vh - 350px) / 6))'
+                }}
               >
                 <div className="flex flex-col h-full">
                   <div className={`
-                    text-sm font-medium mb-1
+                    text-xs sm:text-sm font-medium mb-0.5 sm:mb-1
                     ${!day.isCurrentMonth ? 'text-gray-400' : ''}
                     ${day.isToday ? 'text-blue-600 font-bold' : ''}
                     ${isWeekend && day.isCurrentMonth ? (dayOfWeek === 0 ? 'text-red-500' : 'text-blue-500') : ''}
@@ -268,15 +271,15 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
                   </div>
                   
                   {day.practices.length > 0 && (
-                    <div className="flex-1 space-y-1 overflow-y-auto">
-                      {day.practices.slice(0, 3).map(practice => (
+                    <div className="flex-1 space-y-0.5 sm:space-y-1 overflow-y-auto">
+                      {day.practices.slice(0, window.innerWidth < 640 ? 2 : 3).map(practice => (
                         <div
                           key={practice.id}
                           className="group relative"
                         >
                           <div
                             className={`
-                              rounded px-2 py-1 text-xs cursor-pointer
+                              rounded px-1 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs cursor-pointer
                               transition-all duration-200 hover:shadow-sm
                               ${
                                 practice.type === 'basic_practice' ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
@@ -289,9 +292,11 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
                           >
                             <div className="flex items-center justify-between">
                               <span className="truncate flex-1 font-medium">
-                                {practice.startTime && (
-                                  <span className="text-xs opacity-75">{practice.startTime.slice(0, 5)} </span>
-                                )}
+                                <span className="hidden sm:inline">
+                                  {practice.startTime && (
+                                    <span className="opacity-75">{practice.startTime.slice(0, 5)} </span>
+                                  )}
+                                </span>
                                 {practice.title}
                               </span>
                               <button
@@ -299,18 +304,18 @@ const PracticeCalendar: React.FC<PracticeCalendarProps> = ({
                                   e.stopPropagation();
                                   onEditPractice(practice);
                                 }}
-                                className="opacity-0 group-hover:opacity-100 ml-1 text-gray-500 hover:text-blue-600 transition-opacity"
+                                className="opacity-0 group-hover:opacity-100 ml-0.5 sm:ml-1 text-gray-500 hover:text-blue-600 transition-opacity hidden sm:block"
                               >
-                                <FaEdit className="w-3 h-3" />
+                                <FaEdit className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                               </button>
                             </div>
                           </div>
                         </div>
                       ))}
                       
-                      {day.practices.length > 3 && (
-                        <div className="text-xs text-gray-500 px-2 font-medium">
-                          他{day.practices.length - 3}件
+                      {day.practices.length > (window.innerWidth < 640 ? 2 : 3) && (
+                        <div className="text-[10px] sm:text-xs text-gray-500 px-1 sm:px-2 font-medium">
+                          他{day.practices.length - (window.innerWidth < 640 ? 2 : 3)}件
                         </div>
                       )}
                     </div>

@@ -157,7 +157,7 @@ function PracticeManagementContent() {
             shotTrajectories: [
               { 
                 id: 's1', 
-                from: { id: 'p2', x: 122, y: 136, label: 'P2', role: 'opponent', color: '#EF4444' },
+                from: { x: 122, y: 136 },
                 to: { x: 122, y: 450 },
                 shotType: 'clear',
                 shotBy: 'player',
@@ -166,7 +166,7 @@ function PracticeManagementContent() {
               },
               { 
                 id: 's2', 
-                from: { id: 'p1', x: 122, y: 400, label: 'P1', role: 'player', color: '#10B981' },
+                from: { x: 122, y: 400 },
                 to: { x: 61, y: 268 },
                 shotType: 'smash',
                 shotBy: 'player',
@@ -175,7 +175,7 @@ function PracticeManagementContent() {
               },
               { 
                 id: 's3', 
-                from: { id: 'p2', x: 122, y: 136, label: 'P2', role: 'opponent', color: '#EF4444' },
+                from: { x: 122, y: 136 },
                 to: { x: 122, y: 450 },
                 shotType: 'receive',
                 shotBy: 'player',
@@ -184,7 +184,7 @@ function PracticeManagementContent() {
               },
               { 
                 id: 's4', 
-                from: { id: 'p1', x: 122, y: 400, label: 'P1', role: 'player', color: '#10B981' },
+                from: { x: 122, y: 400 },
                 to: { x: 183, y: 268 },
                 shotType: 'smash',
                 shotBy: 'player',
@@ -193,7 +193,7 @@ function PracticeManagementContent() {
               },
               { 
                 id: 's5', 
-                from: { id: 'p2', x: 122, y: 136, label: 'P2', role: 'opponent', color: '#EF4444' },
+                from: { x: 122, y: 136 },
                 to: { x: 122, y: 350 },
                 shotType: 'drive',
                 shotBy: 'player',
@@ -202,7 +202,7 @@ function PracticeManagementContent() {
               },
               { 
                 id: 's6', 
-                from: { id: 'p1', x: 122, y: 400, label: 'P1', role: 'player', color: '#10B981' },
+                from: { x: 122, y: 400 },
                 to: { x: 122, y: 186 },
                 shotType: 'drive',
                 shotBy: 'player',
@@ -250,7 +250,7 @@ function PracticeManagementContent() {
             shotTrajectories: [
               { 
                 id: 's1', 
-                from: { id: 'p1', x: 122, y: 400, label: 'P1', role: 'player', color: '#10B981' },
+                from: { x: 122, y: 400 },
                 to: { x: 61, y: 100 },
                 shotType: 'clear',
                 shotBy: 'player',
@@ -298,7 +298,7 @@ function PracticeManagementContent() {
             shotTrajectories: [
               { 
                 id: 's1', 
-                from: { id: 'k1', x: 122, y: 50, label: 'K1', role: 'knocker', color: '#3B82F6' },
+                from: { x: 122, y: 50 },
                 to: { x: 122, y: 450 },
                 shotType: 'clear',
                 shotBy: 'knocker',
@@ -306,7 +306,7 @@ function PracticeManagementContent() {
               },
               { 
                 id: 's2', 
-                from: { id: 'p1', x: 122, y: 450, label: 'P1', role: 'player', color: '#10B981' },
+                from: { x: 122, y: 450 },
                 to: { x: 122, y: 50 },
                 shotType: 'clear',
                 shotBy: 'player',
@@ -356,7 +356,7 @@ function PracticeManagementContent() {
             shotTrajectories: [
               { 
                 id: 's1', 
-                from: { id: 'p1', x: 61, y: 450, label: 'P1', role: 'player', color: '#10B981' },
+                from: { x: 61, y: 450 },
                 to: { x: 183, y: 300 },
                 shotType: 'drop',
                 shotBy: 'player',
@@ -365,7 +365,7 @@ function PracticeManagementContent() {
               },
               { 
                 id: 's2', 
-                from: { id: 'p4', x: 183, y: 86, label: 'P4', role: 'opponent', color: '#EF4444' },
+                from: { x: 183, y: 86 },
                 to: { x: 61, y: 236 },
                 shotType: 'hairpin',
                 shotBy: 'player',
@@ -374,7 +374,7 @@ function PracticeManagementContent() {
               },
               { 
                 id: 's3', 
-                from: { id: 'p2', x: 183, y: 450, label: 'P2', role: 'player', color: '#10B981' },
+                from: { x: 183, y: 450 },
                 to: { x: 183, y: 300 },
                 shotType: 'hairpin',
                 shotBy: 'player',
@@ -383,7 +383,7 @@ function PracticeManagementContent() {
               },
               { 
                 id: 's4', 
-                from: { id: 'p3', x: 61, y: 86, label: 'P3', role: 'opponent', color: '#EF4444' },
+                from: { x: 61, y: 86 },
                 to: { x: 61, y: 236 },
                 shotType: 'push',
                 shotBy: 'player',
@@ -392,7 +392,7 @@ function PracticeManagementContent() {
               },
               { 
                 id: 's5', 
-                from: { id: 'p1', x: 61, y: 450, label: 'P1', role: 'player', color: '#10B981' },
+                from: { x: 61, y: 450 },
                 to: { x: 122, y: 100 },
                 shotType: 'lob',
                 shotBy: 'player',
@@ -694,7 +694,7 @@ function PracticeManagementContent() {
                 </div>
 
                 {/* タブコンテンツ */}
-                <div className={activeView === 'calendar' ? 'p-3 h-[calc(100vh-200px)]' : 'p-6'}>
+                <div className={activeView === 'calendar' ? 'p-2 sm:p-3 h-[calc(100vh-180px)] sm:h-[calc(100vh-200px)]' : 'p-6'}>
                   {activeView === 'calendar' && (
                     <PracticeCalendar
                       practices={practices}
