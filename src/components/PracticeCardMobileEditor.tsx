@@ -782,9 +782,8 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                     mobileSelectedAreas={shotInputMode === 'area' ? selectedAreas : []}
                     onAreaSelect={shotInputMode === 'area' ? (areaId) => {
                       setSelectedAreas(prev => {
-                        const newAreas = prev.includes(areaId)
-                          ? prev.filter(id => id !== areaId)
-                          : [...prev, areaId];
+                        // 重複を許可して常に追加
+                        const newAreas = [...prev, areaId];
                         
                         // エリアが選択されたら、最初のエリアの中央を返球先として設定
                         if (newAreas.length > 0) {

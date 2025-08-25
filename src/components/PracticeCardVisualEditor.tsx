@@ -670,13 +670,9 @@ const PracticeCardVisualEditor: React.FC<PracticeCardVisualEditorProps> = ({
       setIsSelectingTargets(true);
       setSelectedAreas([areaId]);
     } else {
-      // エリアの追加/削除
+      // エリアの追加（重複を許可）
       saveToHistory('selectTarget');
-      if (selectedAreas.includes(areaId)) {
-        setSelectedAreas(selectedAreas.filter(a => a !== areaId));
-      } else {
-        setSelectedAreas([...selectedAreas, areaId]);
-      }
+      setSelectedAreas([...selectedAreas, areaId]);
     }
   };
 
