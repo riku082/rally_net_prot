@@ -496,13 +496,14 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
         {/* ステップ2: プレイヤー配置 */}
         {currentStep === 'players' && (
           <div className="h-full flex flex-col">
-            {/* コート表示エリア (55%) */}
-            <div className="h-[55%] bg-green-50 p-2 overflow-hidden">
+            {/* コート表示エリア */}
+            <div className="flex-1 min-h-[50vh] bg-green-50 overflow-hidden">
               <div className="h-full w-full flex items-center justify-center">
                 <div style={{ 
                   transform: `scale(${Math.min(
-                    (windowSize.width - 32) / 280,
-                    (windowSize.height * 0.55 - 32) / 580
+                    (windowSize.width - 20) / 244,
+                    (windowSize.height * 0.45) / 536,
+                    0.8
                   )})`,
                   transformOrigin: 'center' 
                 }}>
@@ -517,8 +518,8 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
               </div>
             </div>
             
-            {/* 操作パネル (45%) */}
-            <div className="h-[45%] bg-white border-t border-gray-200 overflow-y-auto">
+            {/* 操作パネル */}
+            <div className="flex-shrink-0 h-[45vh] bg-white border-t border-gray-200 overflow-y-auto">
               {formData.practiceType === 'knock_practice' ? (
                 // ノック練習の場合
                 <div className="p-4 space-y-4">
@@ -780,7 +781,7 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
         {currentStep === 'shots' && (
           <div className="h-full flex flex-col">
             {/* コート表示エリア */}
-            <div className="h-1/2 bg-green-50 p-2 overflow-hidden relative">
+            <div className="flex-1 min-h-[45vh] bg-green-50 overflow-hidden relative">
               {/* 戻るボタン */}
               {history.length > 0 && (
                 <button
@@ -811,8 +812,9 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                   <div 
                     style={{ 
                       transform: `scale(${Math.min(
-                        (windowSize.width - 32) / 280,  // 幅に基づくスケール (244px court + padding)
-                        (windowSize.height * 0.5 - 32) / 580  // 高さに基づくスケール (536px court + padding)
+                        (windowSize.width - 20) / 244,  // 幅に基づくスケール (244px court width)
+                        (windowSize.height * 0.42) / 536,  // 高さに基づくスケール (536px court height, 42% of screen)
+                        0.75  // 最大スケールを0.75に制限
                       )})`,
                       transformOrigin: 'center'
                     }}
@@ -950,7 +952,7 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
             </div>
             
             {/* 操作パネル */}
-            <div className="h-1/2 bg-white border-t border-gray-200 overflow-y-auto">
+            <div className="flex-shrink-0 h-[45vh] bg-white border-t border-gray-200 overflow-y-auto">
               <div className="p-4 space-y-4">
                 
                 {/* ノック練習フロー */}
@@ -1434,8 +1436,8 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                   <div className="flex justify-center">
                     <div style={{ 
                       transform: `scale(${Math.min(
-                        (windowSize.width - 64) / 600,
-                        0.4
+                        (windowSize.width - 80) / 600,
+                        0.35
                       )})`,
                       transformOrigin: 'center',
                       marginTop: '-60px',
