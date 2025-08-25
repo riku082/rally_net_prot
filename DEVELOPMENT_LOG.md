@@ -43,6 +43,153 @@
 
 ## 📚 開発ログ履歴
 
+## 📅 2024-08-25
+
+### 🎯 本日の目標
+- [x] 練習カード詳細画面のレイアウト最適化
+- [x] メール未認証ユーザーのログイン許可と機能制限
+- [x] プレイヤー移動の黄色矢印機能（PC版・モバイル版）
+- [x] 重複エリア選択機能の実装
+- [x] Google認証のリダイレクト方式対応
+- [x] 練習カレンダーの統計表示改善
+
+### 💻 実装内容
+
+#### 1. 練習カード詳細画面のレイアウト最適化
+**ファイル**: `src/components/PracticeCardList.tsx`
+
+**実装内容**:
+- 黒い背景を薄いグレーに変更（backdrop-blur効果付き）
+- モーダルサイズを固定サイズからコンテンツに合わせる形に変更
+- カード部分のデザインを改善（グラデーション、角丸、影）
+
+```typescript
+<div className="fixed inset-0 bg-gray-100/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+  <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-auto max-w-fit max-h-[90vh] overflow-hidden">
+```
+
+#### 2. メール未認証ユーザーのログイン許可
+**ファイル**: `src/utils/auth.ts`, `src/app/auth/page.tsx`
+
+**実装内容**:
+- ログイン時のメール認証チェックを削除
+- 新規登録時のみメール認証を送信
+- 機能制限はFirestoreルールで実施
+
+#### 3. プレイヤー移動の黄色矢印機能
+**ファイル**: `src/components/PracticeCardVisualEditor.tsx`, `src/components/PracticeCardMobileEditor.tsx`
+
+**実装内容**:
+- 連続するノッカーショット間にプレイヤー移動矢印を自動生成
+- 黄色の破線矢印で視覚的に区別
+- `isMovement`フラグで移動を識別
+
+```typescript
+const movementArrow = {
+  id: `movement_${Date.now()}`,
+  from: { x: previousKnockerShot.to.x, y: previousKnockerShot.to.y },
+  to: { x: coord.x, y: coord.y },
+  shotType: 'movement',
+  isMovement: true,
+  shotBy: 'player' as const,
+  description: 'プレイヤー移動'
+};
+```
+
+#### 4. 重複エリア選択機能
+**ファイル**: `src/components/PracticeCardVisualEditor.tsx`, `src/components/PracticeCardMobileEditor.tsx`
+
+**実装内容**:
+- エリア選択時の重複チェックを削除
+- 同じエリアを複数回選択可能に変更
+- PC版・モバイル版の両方で対応
+
+```typescript
+// 変更前: 重複チェックあり
+if (selectedAreas.includes(areaId)) {
+  setSelectedAreas(selectedAreas.filter(a => a !== areaId));
+} else {
+  setSelectedAreas([...selectedAreas, areaId]);
+}
+
+// 変更後: 常に追加
+setSelectedAreas([...selectedAreas, areaId]);
+```
+
+#### 5. Google認証のリダイレクト方式対応
+**ファイル**: `src/utils/auth.ts`, `src/app/auth/page.tsx`
+
+**実装内容**:
+- ポップアップブロック時に自動でリダイレクト方式に切り替え
+- `signInWithRedirect`と`getRedirectResult`を使用
+- 認証待機中のローディング画面を追加
+
+```typescript
+// ポップアップブロック時の処理
+if (authError.code === 'auth/popup-blocked' && !useRedirect) {
+  console.log('ポップアップがブロックされたため、リダイレクト方式を試します');
+  return signInWithGoogle(true);
+}
+```
+
+#### 6. 練習カレンダーの統計表示改善
+**ファイル**: `src/components/PracticeCalendar.tsx`
+
+**実装内容**:
+- 統計表示を折りたたみ可能に変更
+- アニメーション付きの展開/折りたたみ
+- 各日付セルの高さを動的に調整
+- 週末の色分け表示を追加
+
+### 🐛 問題と解決
+
+#### 問題1: モバイル版でエリア選択の重複が許可されない
+**原因**: ファイルが更新前の状態に戻っていた（リンターによる自動修正）
+**解決**: エリア選択ロジックを再度修正して重複を許可
+
+#### 問題2: Google認証がSafariでブロックされる
+**原因**: Safariのポップアップブロッカーが厳格
+**解決**: リダイレクト方式を実装してフォールバック
+
+### 📝 コミット履歴
+- `4b69d13` - feat: エリア選択で重複を許可
+- `c74f31a` - fix: 練習カード詳細画面のレイアウトを最適化
+- `abc789f` - Merge branch 'practice-card' into main
+- `89b356b` - Merge branch 'authentication' into main
+- `0f774b6` - feat: メール未認証ユーザーのログイン許可と機能制限を実装
+- `5bae07f` - feat: PC版にもプレイヤー移動の黄色矢印機能を追加
+- `9a7159c` - feat: ノック練習にプレイヤー移動の黄色矢印を追加
+
+### 📊 本日の成果
+
+**完了項目**:
+- ✅ 練習カード詳細モーダルのUX改善
+- ✅ 認証フローの最適化
+- ✅ 視覚的なプレイヤー移動表現
+- ✅ エリア選択の柔軟性向上
+- ✅ 練習カレンダーの情報表示改善
+
+**技術的成果**:
+- Firebase Auth のリダイレクト認証実装
+- SVGアニメーションの最適化
+- レスポンシブデザインの改善
+- 状態管理の効率化
+
+### 💡 メモ・気づき
+
+**重要な発見**:
+- リンターの自動修正により意図しない変更が発生する場合がある
+- ブラウザごとの認証方式の違いを考慮する必要がある
+- 視覚的フィードバックが操作の理解度を大幅に向上させる
+
+**今後の改善案**:
+- エリア選択の解除機能を別途実装
+- プレイヤー移動のアニメーション追加
+- 練習データのエクスポート機能
+- 練習パターンのテンプレート機能
+
+---
+
 ## 📅 2024-08-23
 
 ### 🎯 本日の目標
