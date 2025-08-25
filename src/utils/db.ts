@@ -1037,7 +1037,7 @@ export const firestoreDb = {
       id: `${community.id}_${community.createdBy}`,
       communityId: community.id,
       userId: community.createdBy,
-      role: 'owner',
+      role: CommunityRole.OWNER,
       joinedAt: Date.now(),
       isActive: true
     };

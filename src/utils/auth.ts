@@ -76,7 +76,7 @@ const getJapaneseErrorMessage = (error: AuthError): string => {
 };
 
 // Google認証（ポップアップ方式）
-export const signInWithGoogle = async (useRedirect = false) => {
+export const signInWithGoogle = async (useRedirect = false): Promise<{ user: any; error: any; redirecting?: boolean }> => {
   try {
     const provider = new GoogleAuthProvider();
     // Google認証のスコープを設定

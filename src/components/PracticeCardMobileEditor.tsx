@@ -38,6 +38,25 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
   const [currentShot, setCurrentShot] = useState<any>(null); // 現在選択中のショット開始点
   const [isWaitingForPlayer, setIsWaitingForPlayer] = useState(false); // プレイヤーの返球待ち
   const [shotMode, setShotMode] = useState<'knocker' | 'player'>('knocker'); // 現在のショットモード
+  const [windowSize, setWindowSize] = useState({ 
+    width: typeof window !== 'undefined' ? window.innerWidth : 375, 
+    height: typeof window !== 'undefined' ? window.innerHeight : 667 
+  });
+  
+  // ウィンドウサイズの監視
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    
+    // 初期サイズを設定
+    setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   // フォームデータ
   const [formData, setFormData] = useState({
@@ -477,10 +496,17 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
         {/* ステップ2: プレイヤー配置 */}
         {currentStep === 'players' && (
           <div className="h-full flex flex-col">
-            {/* コート表示エリア (55%) */}
-            <div className="h-[55%] bg-green-50 p-2 overflow-hidden">
+            {/* コート表示エリア */}
+            <div className="flex-1 min-h-[50vh] bg-green-50 overflow-hidden">
               <div className="h-full w-full flex items-center justify-center">
-                <div style={{ transform: 'scale(0.65)', transformOrigin: 'center' }}>
+                <div style={{ 
+                  transform: `scale(${Math.min(
+                    (windowSize.width - 20) / 244,
+                    (windowSize.height * 0.45) / 536,
+                    0.8
+                  )})`,
+                  transformOrigin: 'center' 
+                }}>
                   <PracticeCardVisualEditor
                     visualInfo={formData.visualInfo}
                     practiceType={formData.practiceType}
@@ -492,8 +518,8 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
               </div>
             </div>
             
-            {/* 操作パネル (45%) */}
-            <div className="h-[45%] bg-white border-t border-gray-200 overflow-y-auto">
+            {/* 操作パネル */}
+            <div className="flex-shrink-0 h-[45vh] bg-white border-t border-gray-200 overflow-y-auto">
               {formData.practiceType === 'knock_practice' ? (
                 // ノック練習の場合
                 <div className="p-4 space-y-4">
@@ -755,7 +781,7 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
         {currentStep === 'shots' && (
           <div className="h-full flex flex-col">
             {/* コート表示エリア */}
-            <div className="h-1/2 bg-green-50 p-2 overflow-hidden relative">
+            <div className="flex-1 min-h-[45vh] bg-green-50 overflow-hidden relative">
               {/* 戻るボタン */}
               {history.length > 0 && (
                 <button
@@ -772,14 +798,34 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                 ショット数: {formData.visualInfo.shotTrajectories?.length || 0}
               </div>
               <div className="h-full w-full flex items-center justify-center">
-                <div style={{ transform: 'scale(0.6)', transformOrigin: 'center' }}>
-                  <PracticeCardVisualEditor
-                    visualInfo={formData.visualInfo}
-                    practiceType={formData.practiceType}
-                    onUpdate={(visualInfo) => setFormData(prev => ({ ...prev, visualInfo }))}
-                    courtType="singles"
-                    mobileMode="shots"
-                    mobileSelectedAreas={shotInputMode === 'area' ? selectedAreas : []}
+                {/* レスポンシブスケール計算 */}
+                <div 
+                  className="relative"
+                  style={{ 
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <div 
+                    style={{ 
+                      transform: `scale(${Math.min(
+                        (windowSize.width - 20) / 244,  // 幅に基づくスケール (244px court width)
+                        (windowSize.height * 0.42) / 536,  // 高さに基づくスケール (536px court height, 42% of screen)
+                        0.75  // 最大スケールを0.75に制限
+                      )})`,
+                      transformOrigin: 'center'
+                    }}
+                  >
+                    <PracticeCardVisualEditor
+                      visualInfo={formData.visualInfo}
+                      practiceType={formData.practiceType}
+                      onUpdate={(visualInfo) => setFormData(prev => ({ ...prev, visualInfo }))}
+                      courtType="singles"
+                      mobileMode="shots"
+                      mobileSelectedAreas={shotInputMode === 'area' ? selectedAreas : []}
                     onAreaSelect={shotInputMode === 'area' ? (areaId) => {
                       setSelectedAreas(prev => {
                         // 重複を許可して常に追加
@@ -878,12 +924,12 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                         }
                       } else if (currentShot) {
                         // パターン練習
-                        const newShot = {
+                        const newShot: any = {
                           id: `shot_${Date.now()}`,
                           from: { x: currentShot.x, y: currentShot.y },
                           to: { x: coord.x, y: coord.y },
                           shotType: 'clear',
-                          shotBy: currentShot.role === 'knocker' ? 'knocker' : 'player',
+                          shotBy: currentShot.role === 'knocker' ? 'knocker' : 'player' as 'knocker' | 'player',
                           order: (formData.visualInfo.shotTrajectories?.length || 0) + 1,
                           memo: ''
                         };
@@ -900,12 +946,13 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                       }
                     }}
                   />
+                  </div>
                 </div>
               </div>
             </div>
             
             {/* 操作パネル */}
-            <div className="h-1/2 bg-white border-t border-gray-200 overflow-y-auto">
+            <div className="flex-shrink-0 h-[45vh] bg-white border-t border-gray-200 overflow-y-auto">
               <div className="p-4 space-y-4">
                 
                 {/* ノック練習フロー */}
@@ -1387,7 +1434,15 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                 <div className="mt-4 p-2 bg-gray-50 rounded">
                   <div className="text-xs text-gray-500 mb-2">コート配置</div>
                   <div className="flex justify-center">
-                    <div style={{ transform: 'scale(0.4)', transformOrigin: 'center', marginTop: '-60px', marginBottom: '-60px' }}>
+                    <div style={{ 
+                      transform: `scale(${Math.min(
+                        (windowSize.width - 80) / 600,
+                        0.35
+                      )})`,
+                      transformOrigin: 'center',
+                      marginTop: '-60px',
+                      marginBottom: '-60px'
+                    }}>
                       <PracticeCardVisualEditor
                         visualInfo={formData.visualInfo}
                         practiceType={formData.practiceType}
