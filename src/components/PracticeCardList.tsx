@@ -386,8 +386,8 @@ const PracticeCardList: React.FC<PracticeCardListProps> = ({
       
       {/* 詳細モーダル */}
       {selectedCard && (
-        <div className="fixed inset-0 bg-gray-100/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-2xl max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 bg-gray-100/80 backdrop-blur-sm flex items-center justify-center z-50 p-2">
+          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 w-[400px] max-h-[600px] overflow-hidden">
             <div className="px-3 py-2 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50">
               <h3 className="text-sm font-semibold text-gray-900">練習カード詳細</h3>
               <button
