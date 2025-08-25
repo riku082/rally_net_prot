@@ -386,19 +386,19 @@ const PracticeCardList: React.FC<PracticeCardListProps> = ({
       
       {/* 詳細モーダル */}
       {selectedCard && (
-        <div className="fixed inset-0 bg-gray-100/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 w-auto m-2">
-            <div className="px-2 py-1 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="fixed inset-0 bg-gray-100/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-2xl max-h-[90vh] overflow-hidden">
+            <div className="px-3 py-2 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50">
               <h3 className="text-sm font-semibold text-gray-900">練習カード詳細</h3>
               <button
                 onClick={() => setSelectedCard(null)}
-                className="text-gray-500 hover:text-gray-700 hover:bg-white/50 rounded p-0.5 transition-colors"
+                className="text-gray-500 hover:text-gray-700 hover:bg-white/50 rounded p-1 transition-colors"
               >
                 <FaTimes className="w-4 h-4" />
               </button>
             </div>
             
-            <div className="p-2 max-h-[calc(100vh-60px)] overflow-y-auto space-y-1.5 w-auto max-w-xl">
+            <div className="p-3 overflow-y-auto max-h-[calc(90vh-50px)] space-y-2">
               {/* カード基本情報 */}
               <div>
                 <h4 className="text-lg font-bold text-gray-900 mb-1">{selectedCard.title}</h4>
@@ -422,17 +422,17 @@ const PracticeCardList: React.FC<PracticeCardListProps> = ({
 
               {/* ビジュアル情報 */}
               {selectedCard.visualInfo && ((selectedCard.visualInfo.shotTrajectories && selectedCard.visualInfo.shotTrajectories.length > 0) || (selectedCard.visualInfo.playerPositions && selectedCard.visualInfo.playerPositions.length > 0)) && (
-                <div className="bg-white border border-gray-200 rounded p-1">
-                  <h5 className="text-xs font-medium text-gray-700 mb-0.5">練習パターン</h5>
-                  <div className="flex flex-col lg:flex-row gap-1">
+                <div className="bg-white border border-gray-200 rounded-lg p-2">
+                  <h5 className="text-xs font-medium text-gray-700 mb-1">練習パターン</h5>
+                  <div className="flex flex-col lg:flex-row gap-2">
                     {/* コートシート */}
                     <div className="flex-1">
                       <div className="flex justify-center">
                         <PracticeCardMiniCourt
                           shotTrajectories={selectedCard.visualInfo.shotTrajectories || []}
                           playerPositions={selectedCard.visualInfo.playerPositions || []}
-                          width={250}
-                          height={437}
+                          width={180}
+                          height={315}
                         />
                       </div>
                     </div>
@@ -441,7 +441,7 @@ const PracticeCardList: React.FC<PracticeCardListProps> = ({
                     {selectedCard.visualInfo.shotTrajectories && selectedCard.visualInfo.shotTrajectories.length > 0 && (
                       <div className="flex-1">
                         <h6 className="text-xs font-medium text-gray-600 mb-1">ショット詳細</h6>
-                        <div className="space-y-0.5 max-h-[200px] lg:max-h-[437px] overflow-y-auto">
+                        <div className="space-y-0.5 max-h-[150px] lg:max-h-[300px] overflow-y-auto">
                         {selectedCard.visualInfo.shotTrajectories.map((shot, index) => {
                           // ショットタイプの定義（色情報付き）
                           const SHOT_TYPES = [
@@ -498,8 +498,8 @@ const PracticeCardList: React.FC<PracticeCardListProps> = ({
 
               {/* コート情報 */}
               {selectedCard.courtInfo && selectedCard.courtInfo.targetAreas && selectedCard.courtInfo.targetAreas.length > 0 && (
-                <div className="bg-gray-50 rounded p-1">
-                  <h5 className="text-xs font-medium text-gray-700 mb-0.5">ターゲットエリア</h5>
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <h5 className="text-xs font-medium text-gray-700 mb-1">ターゲットエリア</h5>
                   <div className="flex flex-wrap gap-2">
                     <span className="text-xs text-gray-600">
                       {selectedCard.courtInfo.courtType === 'singles' ? 'シングルス' : 'ダブルス'}コート
@@ -554,9 +554,9 @@ const PracticeCardList: React.FC<PracticeCardListProps> = ({
 
               {/* ドリル情報 */}
               {selectedCard.drill && (
-                <div className="bg-blue-50 rounded p-1">
-                  <h5 className="text-xs font-medium text-blue-900 mb-0.5">ドリル詳細</h5>
-                  <div className="space-y-0.5 text-[10px] text-blue-800">
+                <div className="bg-blue-50 rounded-lg p-2">
+                  <h5 className="text-xs font-medium text-blue-900 mb-1">ドリル詳細</h5>
+                  <div className="space-y-0.5 text-xs text-blue-800">
                     <p><span className="font-medium">名前:</span> {selectedCard.drill.name}</p>
                     {selectedCard.drill.sets && (
                       <p><span className="font-medium">セット数:</span> {selectedCard.drill.sets}セット</p>
@@ -572,22 +572,22 @@ const PracticeCardList: React.FC<PracticeCardListProps> = ({
               )}
 
               {/* 統計情報 */}
-              <div className="bg-gray-50 rounded p-1">
-                <h5 className="text-xs font-medium text-gray-700 mb-0.5">使用統計</h5>
-                <div className="grid grid-cols-3 gap-1">
+              <div className="bg-gray-50 rounded-lg p-2">
+                <h5 className="text-xs font-medium text-gray-700 mb-1">使用統計</h5>
+                <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <p className="text-[10px] text-gray-500">使用回数</p>
+                    <p className="text-xs text-gray-500">使用回数</p>
                     <p className="text-sm font-semibold text-gray-900">{selectedCard.usageCount}回</p>
                   </div>
                   {selectedCard.lastUsed && (
                     <div>
-                      <p className="text-[10px] text-gray-500">最終使用</p>
+                      <p className="text-xs text-gray-500">最終使用</p>
                       <p className="text-xs font-medium text-gray-900">{formatLastUsed(selectedCard.lastUsed)}</p>
                     </div>
                   )}
                   {selectedCard.rating && (
                     <div>
-                      <p className="text-[10px] text-gray-500">評価</p>
+                      <p className="text-xs text-gray-500">評価</p>
                       <div className="flex items-center">
                         <FaStar className="w-3 h-3 text-yellow-500 mr-0.5" />
                         <span className="text-sm font-semibold text-gray-900">{selectedCard.rating.toFixed(1)}</span>
