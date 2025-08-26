@@ -420,6 +420,33 @@ const PracticeCardMobileEditor: React.FC<PracticeCardMobileEditorProps> = ({
                 ))}
               </div>
             </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                練習タイプ
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: 'knock_practice', label: 'ノック練習', desc: 'コーチが球出し', icon: '🎾' },
+                  { value: 'pattern_practice', label: 'パターン練習', desc: '決まったパターン', icon: '🎯' }
+                ].map((type) => (
+                  <button
+                    key={type.value}
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, practiceType: type.value as PracticeMenuType }))}
+                    className={`p-3 rounded-lg border-2 text-center transition-all hover:shadow-md ${
+                      formData.practiceType === type.value
+                        ? 'border-blue-500 bg-blue-50 shadow-lg'
+                        : 'border-gray-200 hover:border-blue-300'
+                    }`}
+                  >
+                    <div className="text-2xl mb-1">{type.icon}</div>
+                    <div className="font-medium text-sm">{type.label}</div>
+                    <div className="text-xs text-gray-500 mt-1">{type.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

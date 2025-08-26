@@ -40,7 +40,7 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
     difficulty: card?.difficulty || 'beginner' as PracticeDifficulty,
     equipment: card?.equipment || [''],
     courtInfo: card?.courtInfo || undefined,
-    practiceType: card?.practiceType || 'knock_practice',
+    practiceType: card?.practiceType || undefined as PracticeMenuType | undefined,
     visualInfo: card?.visualInfo || { shotTrajectories: [], playerPositions: [] },
     notes: card?.notes || '',
     tags: card?.tags || [''],
@@ -289,49 +289,44 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
             {/* ビジュアルエディター */}
             {useVisualEditor && (
               <div className="space-y-4">
-                {/* 練習タイプ選択 - 選択されていない場合のみ表示 */}
-                {!formData.practiceType && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      練習タイプ
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                      {[
-                        { value: 'knock_practice', label: 'ノック練習', description: 'コーチが球出しをして練習' },
-                        { value: 'pattern_practice', label: 'パターン練習', description: '決まった配球パターンを反復' },
-                        { value: 'footwork_practice', label: 'フットワーク', description: '足運びとポジショニング' },
-                      ].map((type) => (
-                        <button
-                          key={type.value}
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setFormData(prev => ({ ...prev, practiceType: type.value as PracticeMenuType }));
-                          }}
-                          className={`p-3 sm:p-4 border-2 rounded-lg transition-all flex flex-col items-center gap-1 sm:gap-2 ${
-                            formData.practiceType === type.value
-                              ? 'border-purple-500 bg-purple-50 ring-2 ring-purple-400'
-                              : 'border-gray-300 hover:border-purple-300 bg-white'
-                          }`}
-                        >
-                          <MdSportsBaseball className={`w-6 h-6 sm:w-8 sm:h-8 ${
-                            formData.practiceType === type.value ? 'text-purple-600' : 'text-gray-600'
-                          }`} />
-                          <span className={`text-sm sm:text-base font-medium ${
-                            formData.practiceType === type.value ? 'text-purple-700' : 'text-gray-700'
-                          }`}>
-                            {type.label}
-                          </span>
-                          <span className={`text-[10px] sm:text-xs text-center ${
-                            formData.practiceType === type.value ? 'text-purple-600' : 'text-gray-500'
-                          }`}>
-                            {type.description}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
+                {/* 練習タイプ選択 - 常に表示 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    練習タイプ
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      { value: 'knock_practice', label: 'ノック練習', description: 'コーチが球出しをして練習', icon: '🎾' },
+                      { value: 'pattern_practice', label: 'パターン練習', description: '決まった配球パターンを反復', icon: '🎯' },
+                    ].map((type) => (
+                      <button
+                        key={type.value}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFormData(prev => ({ ...prev, practiceType: type.value as PracticeMenuType }));
+                        }}
+                        className={`p-3 sm:p-4 border-2 rounded-lg transition-all flex flex-col items-center gap-1 sm:gap-2 hover:shadow-md ${
+                          formData.practiceType === type.value
+                            ? 'border-purple-500 bg-purple-50 ring-2 ring-purple-400 shadow-lg'
+                            : 'border-gray-300 hover:border-purple-300 bg-white'
+                        }`}
+                      >
+                        <span className="text-2xl sm:text-3xl">{type.icon}</span>
+                        <span className={`text-sm sm:text-base font-medium ${
+                          formData.practiceType === type.value ? 'text-purple-700' : 'text-gray-700'
+                        }`}>
+                          {type.label}
+                        </span>
+                        <span className={`text-[10px] sm:text-xs text-center ${
+                          formData.practiceType === type.value ? 'text-purple-600' : 'text-gray-500'
+                        }`}>
+                          {type.description}
+                        </span>
+                      </button>
+                    ))}
                   </div>
-                )}
+                </div>
                 
                 {/* ビジュアルエディタ */}
                 {formData.practiceType && (
