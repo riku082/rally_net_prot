@@ -24,6 +24,11 @@ function PracticeManagementContent() {
   // const router = useRouter(); // 将来的な機能拡張用
   const searchParams = useSearchParams();
   
+  // URLパラメータから取得
+  const eventId = searchParams.get('eventId');
+  const communityId = searchParams.get('communityId');
+  const initialDate = searchParams.get('date');
+  
   // データ状態
   const [practices, setPractices] = useState<Practice[]>([]);
   const [practiceCards, setPracticeCards] = useState<PracticeCard[]>([]);
@@ -52,6 +57,15 @@ function PracticeManagementContent() {
   useEffect(() => {
     loadData();
   }, [user]);
+  
+  // イベントIDがある場合、練習記録フォームを開く
+  useEffect(() => {
+    if (eventId && initialDate) {
+      setActiveView('records');
+      setFormInitialDate(initialDate);
+      setShowPracticeForm(true);
+    }
+  }, [eventId, initialDate]);
 
   const loadData = async () => {
     if (!user?.uid) return;
@@ -769,6 +783,8 @@ function PracticeManagementContent() {
               isLoading={isSaving}
               initialDate={formInitialDate}
               availableCards={practiceCards}
+              communityEventId={eventId || undefined}
+              communityId={communityId || undefined}
             />
           </div>
         </div>

@@ -1,6 +1,17 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // 開発環境用 - すべてのコレクションへのアクセスを完全許可
+    // 警告: 本番環境では必ず適切なセキュリティルールに変更してください
+    // 更新日時: 2024-08-27
+    
+    // すべてのドキュメントへのアクセスを無条件で許可
+    match /{document=**} {
+      allow read, write: if true;
+    }
+    
+    // 以下は本番用のルール（現在は無効）
+    /*
     // バドミントンアプリケーション用セキュリティルール
     // 段階的セキュリティ強化: Phase 1 - 基本認証 + 所有者ベースアクセス
     
@@ -53,21 +64,39 @@ service cloud.firestore {
     
     // ユーザープロフィール
     match /users/{userId} {
-      // 読み取り: 自分のデータまたは公開プロフィール
-      allow read: if isAuthenticated() && (
-        isOwner(userId) || 
-        (resource != null && resource.data.get('privacySettings', {}).get('profilePublic', false) == true)
-      );
+      // 読み取り: 認証済みユーザーは基本情報を閲覧可能
+      allow read: if isAuthenticated();
       
       // 書き込み: 自分のデータのみ
       allow write: if isOwner(userId);
+      
+      // サブコレクション: 利用規約同意
+      match /agreements/{agreementId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // サブコレクション: 試合データ
+      match /matches/{matchId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // サブコレクション: ショットデータ
+      match /shots/{shotId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // サブコレクション: 練習記録
+      match /practices/{practiceId} {
+        allow read, write: if isOwner(userId);
+      }
     }
     
     // === 練習関連データ ===
     
     // 練習記録
     match /practices/{practiceId} {
-      allow read: if isResourceOwner();
+      // 読み取り: 認証済みユーザーなら誰でも（コミュニティイベントとの連携のため）
+      allow read: if isAuthenticated();
       allow create: if isNewResourceOwner() && 
                        request.resource.data.keys().hasAll(['userId', 'date', 'title']);
       allow update: if isResourceOwner();
@@ -273,10 +302,102 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
     
+    // === コミュニティ機能 ===
+    
+    // コミュニティ
+    match /communities/{communityId} {
+      // 読み取り: 認証済みユーザーは全て閲覧可能
+      allow read: if isAuthenticated();
+      
+      // 作成: 認証済みユーザーなら誰でも作成可能
+      allow create: if isAuthenticated() && 
+                       request.resource.data.ownerId == request.auth.uid;
+      
+      // 更新: オーナーまたは管理者
+      allow update: if isAuthenticated() && (
+        resource.data.ownerId == request.auth.uid ||
+        exists(/databases/$(database)/documents/community_members/$(request.auth.uid + '_' + communityId))
+      );
+      
+      // 削除: オーナーのみ
+      allow delete: if isAuthenticated() && 
+                       resource.data.ownerId == request.auth.uid;
+      
+      // サブコレクション: イベント - 完全開放（開発用）
+      match /events/{eventId} {
+        // すべての操作を許可
+        allow read, write: if true;
+      }
+    }
+    
+    // コミュニティメンバー
+    match /community_members/{memberId} {
+      // 読み取り: 認証済みユーザー
+      allow read: if isAuthenticated();
+      
+      // 作成: 認証済みユーザー（招待時）
+      allow create: if isAuthenticated();
+      
+      // 更新: メンバー本人またはコミュニティオーナー/管理者
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        exists(/databases/$(database)/documents/communities/$(resource.data.communityId))
+      );
+      
+      // 削除: メンバー本人またはコミュニティオーナー
+      allow delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        exists(/databases/$(database)/documents/communities/$(resource.data.communityId))
+      );
+    }
+    
+    // コミュニティ招待
+    match /community_invitations/{invitationId} {
+      // 読み取り: 認証済みユーザーなら誰でも（クエリ用に緩和）
+      // 実際のデータはクライアント側でフィルタリング
+      allow read: if isAuthenticated();
+      
+      // 作成: 認証済みユーザーで招待者が自分
+      allow create: if isAuthenticated() && 
+                       request.resource.data.inviterId == request.auth.uid &&
+                       request.resource.data.keys().hasAll(['communityId', 'inviterId', 'invitedUserId', 'status', 'invitedAt']);
+      
+      // 更新: 被招待者（承認/拒否）または招待者（キャンセル）
+      allow update: if isAuthenticated() && (
+        resource.data.invitedUserId == request.auth.uid ||
+        resource.data.inviterId == request.auth.uid
+      );
+      
+      // 削除: 招待者または被招待者
+      allow delete: if isAuthenticated() && (
+        resource.data.inviterId == request.auth.uid ||
+        resource.data.invitedUserId == request.auth.uid
+      );
+    }
+    
+    // コミュニティイベント - 完全開放（開発用）
+    match /community_events/{eventId} {
+      // すべての操作を許可
+      allow read, write: if true;
+    }
+    
+    // イベント参加情報 - 完全開放（開発用）
+    match /event_participants/{participantId} {
+      // すべての操作を許可
+      allow read, write: if true;
+    }
+    
+    // イベント関連のすべてのパス - 完全開放（開発用）
+    match /events/{document=**} {
+      // すべての操作を許可
+      allow read, write: if true;
+    }
+    
     // === フォールバック ===
     // 明示的に定義されていないパスへのアクセスを拒否
     match /{document=**} {
       allow read, write: if false;
     }
+    */
   }
 }

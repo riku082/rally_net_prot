@@ -20,6 +20,10 @@ import {
   CommunityRole
 } from '@/types/community';
 import Link from 'next/link';
+import CommunityHeader from '@/components/community/CommunityHeader';
+import InviteFriendsModal from '@/components/community/InviteFriendsModal';
+import Sidebar from '@/components/Sidebar';
+import { usePathname } from 'next/navigation';
 import { 
   ChevronLeft,
   Users,
@@ -29,6 +33,7 @@ import {
   Mail,
   Search,
   UserPlus,
+  UserMinus,
   MoreVertical,
   UserX,
   Settings,
@@ -55,11 +60,13 @@ export default function MembersPage() {
   const communityId = params.communityId as string;
   const { user } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   
   const [community, setCommunity] = useState<Community | null>(null);
   const [members, setMembers] = useState<MemberInfo[]>([]);
   const [filteredMembers, setFilteredMembers] = useState<MemberInfo[]>([]);
   const [currentUserRole, setCurrentUserRole] = useState<string>('');
+  const [memberRole, setMemberRole] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -117,6 +124,7 @@ export default function MembersPage() {
         if (memberData.userId === user.uid) {
           userRole = memberData.role;
           setCurrentUserRole(memberData.role);
+          setMemberRole(memberData.role);
         }
 
         // ユーザー情報を取得（まずusersコレクションから）
@@ -238,6 +246,33 @@ export default function MembersPage() {
     }
   };
 
+  const handleLeaveCommunity = async () => {
+    if (!user || !confirm('このコミュニティから脱退しますか？')) return;
+    
+    try {
+      // 自分のメンバーシップを削除
+      const memberQuery = query(
+        collection(db, 'community_members'),
+        where('communityId', '==', communityId),
+        where('userId', '==', user.uid),
+        where('isActive', '==', true)
+      );
+      const memberSnapshot = await getDocs(memberQuery);
+      
+      if (!memberSnapshot.empty) {
+        await updateDoc(memberSnapshot.docs[0].ref, {
+          isActive: false,
+          leftAt: Date.now()
+        });
+        alert('コミュニティから脱退しました');
+        router.push('/community');
+      }
+    } catch (error) {
+      console.error('Error leaving community:', error);
+      alert('脱退処理に失敗しました');
+    }
+  };
+
   const handleRemoveMember = async (memberId: string, userName: string) => {
     if (!confirm(`${userName}さんをコミュニティから削除してもよろしいですか？`)) {
       return;
@@ -298,76 +333,45 @@ export default function MembersPage() {
   }
 
   return (
-    <div>
-      {/* ヘッダー */}
-      <div className="mb-6">
-        <Link
-          href={`/community/${communityId}`}
-          className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors mb-4"
-        >
-          <ChevronLeft className="h-5 w-5 mr-1" />
-          {community.name}に戻る
-        </Link>
+    <div className="flex min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+      <Sidebar activePath={pathname} />
+      <div className="flex-1 lg:ml-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* コミュニティヘッダー */}
+          <CommunityHeader 
+            community={community} 
+            memberRole={memberRole}
+            currentTab="members"
+          />
 
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              メンバー一覧
-            </h1>
-            <p className="mt-2 text-gray-600">
-              {community.name}のメンバー（{members.length}名）
-            </p>
+          {/* アクションボタン */}
+          <div className="mb-6 flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                メンバー一覧 ({members.length}名)
+              </h2>
+            </div>
+            <div className="flex gap-3">
+              {canManageMembers && (
+                <button
+                  onClick={() => setShowInviteModal(true)}
+                  className="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  <UserPlus className="h-5 w-5 mr-2" />
+                  フレンドを招待
+                </button>
+              )}
+              {currentUserRole === CommunityRole.MEMBER && (
+                <button
+                  onClick={handleLeaveCommunity}
+                  className="inline-flex items-center px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  <UserMinus className="h-5 w-5 mr-2" />
+                  コミュニティを脱退
+                </button>
+              )}
+            </div>
           </div>
-
-          {canManageMembers && (
-            <button
-              onClick={() => setShowInviteModal(true)}
-              className="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
-            >
-              <UserPlus className="h-5 w-5 mr-2" />
-              メンバーを招待
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ナビゲーションタブ */}
-      <div className="bg-white rounded-lg shadow-md mb-6">
-        <div className="flex border-b border-gray-200">
-          <Link
-            href={`/community/${communityId}`}
-            className="px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            ホーム
-          </Link>
-          <Link
-            href={`/community/${communityId}/calendar`}
-            className="px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            カレンダー
-          </Link>
-          <Link
-            href={`/community/${communityId}/events`}
-            className="px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            イベント一覧
-          </Link>
-          <Link
-            href={`/community/${communityId}/members`}
-            className="px-6 py-3 text-sm font-medium text-green-600 border-b-2 border-green-600"
-          >
-            メンバー
-          </Link>
-          {canManageMembers && (
-            <Link
-              href={`/community/${communityId}/settings`}
-              className="px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              設定
-            </Link>
-          )}
-        </div>
-      </div>
 
       {/* 検索ボックス */}
       <div className="bg-white rounded-lg shadow-md p-4 mb-6">
@@ -521,86 +525,18 @@ export default function MembersPage() {
         </div>
       )}
 
-      {/* 招待モーダル（後で実装） */}
-      {showInviteModal && (
-        <InviteMemberModal
-          communityId={communityId}
-          onClose={() => setShowInviteModal(false)}
-          onSuccess={() => {
-            setShowInviteModal(false);
-            fetchMembersData();
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-// 招待モーダルコンポーネント（仮実装）
-function InviteMemberModal({ 
-  communityId, 
-  onClose, 
-  onSuccess 
-}: { 
-  communityId: string;
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleInvite = async () => {
-    if (!email) return;
-    
-    setLoading(true);
-    try {
-      // TODO: 実際の招待処理を実装
-      alert(`${email}に招待を送信しました（未実装）`);
-      onSuccess();
-    } catch (error) {
-      console.error('Error inviting member:', error);
-      alert('招待の送信に失敗しました');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
-          メンバーを招待
-        </h2>
-        
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            メールアドレス
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            placeholder="user@example.com"
-          />
-        </div>
-
-        <div className="flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-          >
-            キャンセル
-          </button>
-          <button
-            onClick={handleInvite}
-            disabled={loading || !email}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-          >
-            {loading ? '送信中...' : '招待を送る'}
-          </button>
+      {/* フレンド招待モーダル */}
+      <InviteFriendsModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        communityId={communityId}
+        communityName={community.name}
+        onInviteSuccess={() => {
+          setShowInviteModal(false);
+          fetchMembersData();
+        }}
+      />
         </div>
       </div>
     </div>
   );
-}

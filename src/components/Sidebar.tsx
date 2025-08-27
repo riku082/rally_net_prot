@@ -89,9 +89,17 @@ const Sidebar: React.FC<{ activePath?: string }> = ({ activePath = '/' }) => {
       </nav>
       {/* プロフィールウィジェット */}
       <div className="mt-8 p-4 bg-gray-50 rounded-lg shadow flex flex-col items-center">
-        <FaUserCircle className="text-4xl text-gray-400 mb-2" />
+        {profile?.avatar || user?.photoURL ? (
+          <img
+            src={profile?.avatar || user?.photoURL}
+            alt={profile?.name || 'ユーザー'}
+            className="w-12 h-12 rounded-full object-cover mb-2"
+          />
+        ) : (
+          <FaUserCircle className="text-4xl text-gray-400 mb-2" />
+        )}
         <div className="text-sm font-semibold text-gray-800 mb-1">
-          {profile?.name || 'ユーザー'}
+          {profile?.name || user?.displayName || 'ユーザー'}
         </div>
         {profile?.playRegion && (
           <div className="text-xs text-gray-500 mb-2">

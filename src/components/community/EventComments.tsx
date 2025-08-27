@@ -40,51 +40,65 @@ export default function EventComments({ eventId, communityId }: EventCommentsPro
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showActions, setShowActions] = useState<string | null>(null);
-  const [userNames, setUserNames] = useState<Record<string, string>>({});
+  const [userProfiles, setUserProfiles] = useState<Record<string, any>>({});
 
   useEffect(() => {
-    if (!user || !eventId) return;
+    if (!eventId) return;
 
-    const unsubscribe = subscribeToComments();
-    return () => unsubscribe();
-  }, [user, eventId]);
-
-  const subscribeToComments = () => {
+    // コメントをリアルタイムで監視
     const commentsQuery = query(
-      collection(db, 'event_comments', eventId, 'comments'),
+      collection(db, 'event_comments'),
+      where('eventId', '==', eventId),
       orderBy('createdAt', 'desc')
     );
 
-    return onSnapshot(commentsQuery, async (snapshot) => {
-      const commentsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as EventComment[];
+    const unsubscribe = onSnapshot(
+      commentsQuery,
+      async (snapshot) => {
+        const commentsData: EventComment[] = [];
+        const userIds = new Set<string>();
+        
+        snapshot.forEach((doc) => {
+          const comment = {
+            id: doc.id,
+            ...doc.data()
+          } as EventComment;
+          commentsData.push(comment);
+          userIds.add(comment.userId);
+        });
 
-      // ユーザー名を取得
-      const uniqueUserIds = [...new Set(commentsData.map(c => c.userId))];
-      const names: Record<string, string> = {};
-      
-      for (const userId of uniqueUserIds) {
-        if (!userNames[userId]) {
-          const userDoc = await getDocs(
-            query(collection(db, 'users'), where('__name__', '==', userId))
-          );
-          if (!userDoc.empty) {
-            const userData = userDoc.docs[0].data();
-            names[userId] = userData.displayName || userData.name || 'ユーザー';
-          } else {
-            names[userId] = 'ユーザー';
+        // ユーザー情報を取得
+        const profiles: Record<string, any> = {};
+        for (const userId of userIds) {
+          if (!userProfiles[userId]) {
+            try {
+              // usersコレクションから取得
+              const userSnapshot = await getDocs(query(collection(db, 'users'), where('__name__', '==', userId)));
+              if (!userSnapshot.empty) {
+                profiles[userId] = userSnapshot.docs[0].data();
+              } else {
+                // userProfilesコレクションからも試す
+                const profileSnapshot = await getDocs(query(collection(db, 'userProfiles'), where('__name__', '==', userId)));
+                if (!profileSnapshot.empty) {
+                  profiles[userId] = profileSnapshot.docs[0].data();
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching user profile:', error);
+            }
           }
-        } else {
-          names[userId] = userNames[userId];
         }
+        
+        setUserProfiles(prev => ({ ...prev, ...profiles }));
+        setComments(commentsData);
+      },
+      (error) => {
+        console.error('Error fetching comments:', error);
       }
-      
-      setUserNames(prev => ({ ...prev, ...names }));
-      setComments(commentsData);
-    });
-  };
+    );
+
+    return () => unsubscribe();
+  }, [eventId]);
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,13 +110,13 @@ export default function EventComments({ eventId, communityId }: EventCommentsPro
     try {
       const commentData: Omit<EventComment, 'id'> = {
         eventId,
+        communityId,
         userId: user.uid,
-        userName: userNames[user.uid] || user.displayName || 'ユーザー',
         content: newComment.trim(),
         createdAt: Date.now()
       };
 
-      await addDoc(collection(db, 'event_comments', eventId, 'comments'), commentData);
+      await addDoc(collection(db, 'event_comments'), commentData);
       setNewComment('');
     } catch (error) {
       console.error('Error posting comment:', error);
@@ -119,7 +133,7 @@ export default function EventComments({ eventId, communityId }: EventCommentsPro
 
     try {
       await updateDoc(
-        doc(db, 'event_comments', eventId, 'comments', commentId),
+        doc(db, 'event_comments', commentId),
         {
           content: editingContent.trim(),
           updatedAt: Date.now()
@@ -139,7 +153,7 @@ export default function EventComments({ eventId, communityId }: EventCommentsPro
     if (!confirm('このコメントを削除してもよろしいですか？')) return;
 
     try {
-      await deleteDoc(doc(db, 'event_comments', eventId, 'comments', commentId));
+      await deleteDoc(doc(db, 'event_comments', commentId));
     } catch (error) {
       console.error('Error deleting comment:', error);
       alert('コメントの削除に失敗しました');
@@ -230,11 +244,11 @@ export default function EventComments({ eventId, communityId }: EventCommentsPro
           {comments.map((comment) => (
             <div key={comment.id} className="flex gap-3">
               <div className="flex-shrink-0">
-                {comment.userPhotoURL ? (
+                {userProfiles[comment.userId]?.avatarUrl || userProfiles[comment.userId]?.avatar || userProfiles[comment.userId]?.photoURL ? (
                   <img
-                    src={comment.userPhotoURL}
-                    alt={comment.userName || ''}
-                    className="h-10 w-10 rounded-full"
+                    src={userProfiles[comment.userId]?.avatarUrl || userProfiles[comment.userId]?.avatar || userProfiles[comment.userId]?.photoURL}
+                    alt={userProfiles[comment.userId]?.displayName || ''}
+                    className="h-10 w-10 rounded-full object-cover"
                   />
                 ) : (
                   <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
@@ -248,7 +262,7 @@ export default function EventComments({ eventId, communityId }: EventCommentsPro
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <span className="font-medium text-gray-900">
-                        {userNames[comment.userId] || comment.userName || 'ユーザー'}
+                        {userProfiles[comment.userId]?.displayName || userProfiles[comment.userId]?.name || 'ユーザー'}
                         {comment.userId === user?.uid && (
                           <span className="ml-2 text-xs text-gray-500">(自分)</span>
                         )}

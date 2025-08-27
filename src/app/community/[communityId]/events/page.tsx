@@ -10,13 +10,18 @@ import {
   getDocs,
   doc,
   getDoc,
-  orderBy
+  orderBy,
+  where
 } from 'firebase/firestore';
 import { 
   Community, 
   CommunityEvent,
-  EventStatus 
+  EventStatus,
+  CommunityMember
 } from '@/types/community';
+import CommunityHeader from '@/components/community/CommunityHeader';
+import Sidebar from '@/components/Sidebar';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
   ChevronLeft,
@@ -37,10 +42,12 @@ export default function EventsListPage() {
   const communityId = params.communityId as string;
   const { user } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   
   const [community, setCommunity] = useState<Community | null>(null);
   const [events, setEvents] = useState<CommunityEvent[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<CommunityEvent[]>([]);
+  const [memberRole, setMemberRole] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -74,6 +81,20 @@ export default function EventsListPage() {
         ...communityDoc.data()
       } as Community;
       setCommunity(communityData);
+
+      // ユーザーのロールを確認
+      const memberQuery = query(
+        collection(db, 'community_members'),
+        where('communityId', '==', communityId),
+        where('userId', '==', user.uid),
+        where('isActive', '==', true)
+      );
+      const memberSnapshot = await getDocs(memberQuery);
+      
+      if (!memberSnapshot.empty) {
+        const memberData = memberSnapshot.docs[0].data() as CommunityMember;
+        setMemberRole(memberData.role);
+      }
 
       // すべてのイベントを取得
       const eventsQuery = query(
@@ -181,66 +202,30 @@ export default function EventsListPage() {
   }
 
   return (
-    <div>
-      {/* ヘッダー */}
-      <div className="mb-6">
-        <Link
-          href={`/community/${communityId}`}
-          className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors mb-4"
-        >
-          <ChevronLeft className="h-5 w-5 mr-1" />
-          {community.name}に戻る
-        </Link>
+    <div className="flex min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+      <Sidebar activePath={pathname} />
+      <div className="flex-1 lg:ml-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* コミュニティヘッダー */}
+          <CommunityHeader 
+            community={community} 
+            memberRole={memberRole}
+            currentTab="events"
+          />
 
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+          {/* アクションボタン */}
+          <div className="mb-6 flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-900">
               イベント一覧
-            </h1>
-            <p className="mt-2 text-gray-600">
-              {community.name}のすべてのイベント
-            </p>
+            </h2>
+            <Link
+              href={`/community/${communityId}/events/new`}
+              className="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              イベント作成
+            </Link>
           </div>
-
-          <Link
-            href={`/community/${communityId}/events/new`}
-            className="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            イベント作成
-          </Link>
-        </div>
-      </div>
-
-      {/* ナビゲーションタブ */}
-      <div className="bg-white rounded-lg shadow-md mb-6">
-        <div className="flex border-b border-gray-200">
-          <Link
-            href={`/community/${communityId}`}
-            className="px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            ホーム
-          </Link>
-          <Link
-            href={`/community/${communityId}/calendar`}
-            className="px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            カレンダー
-          </Link>
-          <Link
-            href={`/community/${communityId}/events`}
-            className="px-6 py-3 text-sm font-medium text-green-600 border-b-2 border-green-600"
-          >
-            イベント一覧
-          </Link>
-          <Link
-            href={`/community/${communityId}/members`}
-            className="px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            メンバー
-          </Link>
-        </div>
-      </div>
 
       {/* フィルターと検索 */}
       <div className="bg-white rounded-lg shadow-md p-4 mb-6">
@@ -408,6 +393,8 @@ export default function EventsListPage() {
           })}
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }

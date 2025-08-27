@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import EventForm from '@/components/community/EventForm';
+import EventFormSimple from '@/components/community/EventFormSimple';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 
@@ -45,11 +45,17 @@ export default function NewEventPage() {
         </p>
       </div>
 
-      <EventForm
-        communityId={communityId}
-        onSuccess={handleSuccess}
-        onCancel={handleCancel}
-      />
+      <Suspense fallback={
+        <div className="flex justify-center items-center min-h-[200px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-600"></div>
+        </div>
+      }>
+        <EventFormSimple
+          communityId={communityId}
+          onSuccess={handleSuccess}
+          onCancel={handleCancel}
+        />
+      </Suspense>
     </div>
   );
 }

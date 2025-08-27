@@ -13,6 +13,8 @@ interface PracticeFormProps {
   isLoading?: boolean;
   initialDate?: string;
   availableCards?: PracticeCard[];
+  communityEventId?: string;
+  communityId?: string;
 }
 
 const PracticeForm: React.FC<PracticeFormProps> = ({ 
@@ -21,7 +23,9 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
   onCancel, 
   isLoading = false,
   initialDate,
-  availableCards = []
+  availableCards = [],
+  communityEventId,
+  communityId
 }) => {
   const [formData, setFormData] = useState({
     date: practice?.date || initialDate || new Date().toISOString().split('T')[0],
@@ -108,12 +112,22 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
       };
     }
     
-    onSave({
+    const practiceData: Omit<Practice, 'id' | 'userId' | 'createdAt' | 'updatedAt'> = {
       ...formData,
       duration,
       routine,
       skills: [],
-    });
+    };
+    
+    // コミュニティイベントとの連携
+    if (communityEventId) {
+      practiceData.communityEventId = communityEventId;
+    }
+    if (communityId) {
+      practiceData.communityId = communityId;
+    }
+    
+    onSave(practiceData);
   };
 
   return (

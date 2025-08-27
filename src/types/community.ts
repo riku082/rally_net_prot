@@ -148,6 +148,19 @@ export interface CommunityNotification {
   createdAt: number;
 }
 
+export interface EventComment {
+  id: string;
+  eventId: string;
+  communityId: string;
+  userId: string;
+  userName?: string;
+  userAvatar?: string;
+  content: string;
+  createdAt: number;
+  updatedAt?: number;
+  isEdited?: boolean;
+}
+
 export interface CommunityUserSettings {
   id: string;
   userId: string;
@@ -185,25 +198,28 @@ export interface CommunityEvent {
   endDateTime: string;   // ISO 8601形式
   location: string;
   maxParticipants?: number;
-  minParticipants?: number;
   createdBy: string;
   createdAt: number;
   updatedAt?: number;
   
-  // 練習カード関連
-  practiceRoutineId?: string; // 関連する練習ルーティン
-  practiceCardIds?: string[]; // 使用する練習カードID
+  // イベントタイプ
+  eventType: EventType;
   
-  // メタ情報
-  tags?: string[];
-  difficulty?: 'beginner' | 'intermediate' | 'advanced';
-  equipment?: string[];
-  notes?: string;
+  // 練習関連（eventType === 'practice'の場合）
+  practiceCardIds?: string[]; // 使用する練習カードID
+  createPracticeRecord?: boolean; // 練習記録を作成するか
+  practiceRecordId?: string; // 作成された練習記録ID
   
   // ステータス
   status: EventStatus;
   isCancelled?: boolean;
   cancellationReason?: string;
+}
+
+export enum EventType {
+  PRACTICE = 'practice',   // 練習
+  MATCH = 'match',        // 試合
+  OTHER = 'other'         // その他
 }
 
 export enum EventStatus {

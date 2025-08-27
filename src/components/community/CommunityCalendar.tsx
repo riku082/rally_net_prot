@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { CommunityEvent, EventStatus } from '@/types/community';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import DateEventModal from './DateEventModal';
 
 interface CommunityCalendarProps {
   communityId: string;
@@ -26,9 +28,11 @@ export default function CommunityCalendar({
   events, 
   onEventClick 
 }: CommunityCalendarProps) {
+  const router = useRouter();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // カレンダーの日付を生成
   const generateCalendarDays = () => {
@@ -247,12 +251,15 @@ export default function CommunityCalendar({
               <div
                 key={index}
                 className={`
-                  min-h-[100px] p-2 bg-white cursor-pointer hover:bg-gray-50 transition-colors
+                  group min-h-[100px] p-2 bg-white cursor-pointer hover:bg-gray-50 transition-colors
                   ${!isCurrentMonthDay && viewMode === 'month' ? 'bg-gray-50 text-gray-400' : ''}
                   ${isTodayDate ? 'ring-2 ring-green-500 ring-inset' : ''}
                   ${selectedDate && date.toDateString() === selectedDate.toDateString() ? 'bg-green-50' : ''}
                 `}
-                onClick={() => setSelectedDate(date)}
+                onClick={() => {
+                  setSelectedDate(date);
+                  setIsModalOpen(true);
+                }}
               >
                 <div className="flex justify-between items-start mb-1">
                   <span className={`text-sm font-medium ${
@@ -262,10 +269,12 @@ export default function CommunityCalendar({
                   } ${!isCurrentMonthDay ? 'text-gray-400' : ''}`}>
                     {date.getDate()}
                   </span>
-                  {dayEvents.length > 0 && (
+                  {dayEvents.length > 0 ? (
                     <span className="text-xs bg-green-100 text-green-700 px-1 rounded">
                       {dayEvents.length}
                     </span>
+                  ) : (
+                    <Plus className="h-3 w-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                   )}
                 </div>
 
@@ -303,73 +312,15 @@ export default function CommunityCalendar({
         </div>
       </div>
 
-      {/* 選択した日付のイベント詳細 */}
+      {/* DateEventModal */}
       {selectedDate && (
-        <div className="border-t border-gray-200 p-4">
-          <h3 className="font-semibold text-gray-900 mb-3">
-            {selectedDate.toLocaleDateString('ja-JP', { 
-              month: 'long', 
-              day: 'numeric', 
-              weekday: 'long' 
-            })}のイベント
-          </h3>
-          
-          {getEventsForDate(selectedDate).length === 0 ? (
-            <p className="text-gray-500 text-center py-4">
-              この日のイベントはありません
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {getEventsForDate(selectedDate).map((event) => (
-                <Link
-                  key={event.id}
-                  href={`/community/${communityId}/events/${event.id}`}
-                  className="block p-3 border border-gray-200 rounded-lg hover:border-green-500 hover:shadow-md transition-all"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-semibold text-gray-900">
-                        {event.title}
-                      </h4>
-                      <div className="mt-1 space-y-1">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Clock className="h-4 w-4 mr-1" />
-                          {new Date(event.startDateTime).toLocaleTimeString('ja-JP', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })} - {new Date(event.endDateTime).toLocaleTimeString('ja-JP', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
-                        </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          {event.location}
-                        </div>
-                        {event.maxParticipants && (
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Users className="h-4 w-4 mr-1" />
-                            定員 {event.maxParticipants}名
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    {event.difficulty && (
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        event.difficulty === 'beginner' ? 'bg-blue-100 text-blue-700' :
-                        event.difficulty === 'intermediate' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {event.difficulty === 'beginner' ? '初級' :
-                         event.difficulty === 'intermediate' ? '中級' : '上級'}
-                      </span>
-                    )}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
+        <DateEventModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          selectedDate={selectedDate}
+          events={getEventsForDate(selectedDate)}
+          communityId={communityId}
+        />
       )}
     </div>
   );

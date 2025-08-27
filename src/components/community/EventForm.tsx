@@ -28,6 +28,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 interface EventFormProps {
   communityId: string;
@@ -43,6 +44,7 @@ export default function EventForm({
   onCancel 
 }: EventFormProps) {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [showPracticeCards, setShowPracticeCards] = useState(false);
   const [availableCards, setAvailableCards] = useState<PracticeCard[]>([]);
@@ -68,6 +70,16 @@ export default function EventForm({
   const [newTag, setNewTag] = useState('');
 
   useEffect(() => {
+    // URLパラメータから日付を取得
+    const dateParam = searchParams.get('date');
+    if (dateParam && !event) {
+      setFormData(prev => ({
+        ...prev,
+        startDate: dateParam,
+        endDate: dateParam
+      }));
+    }
+    
     if (event) {
       const startDateTime = new Date(event.startDateTime);
       const endDateTime = new Date(event.endDateTime);
@@ -125,23 +137,39 @@ export default function EventForm({
       const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`).toISOString();
       const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`).toISOString();
       
-      const eventData: Partial<CommunityEvent> = {
+      const eventData: any = {
         communityId,
         title: formData.title,
-        description: formData.description || undefined,
         startDateTime,
         endDateTime,
         location: formData.location,
-        maxParticipants: formData.maxParticipants ? parseInt(formData.maxParticipants) : undefined,
-        minParticipants: formData.minParticipants ? parseInt(formData.minParticipants) : undefined,
         difficulty: formData.difficulty,
-        equipment: formData.equipment.length > 0 ? formData.equipment : undefined,
-        tags: formData.tags.length > 0 ? formData.tags : undefined,
-        notes: formData.notes || undefined,
-        practiceCardIds: selectedCards.length > 0 ? selectedCards : undefined,
         status: EventStatus.PUBLISHED,
         updatedAt: Date.now()
       };
+
+      // 空でない値のみ追加
+      if (formData.description) {
+        eventData.description = formData.description;
+      }
+      if (formData.maxParticipants) {
+        eventData.maxParticipants = parseInt(formData.maxParticipants);
+      }
+      if (formData.minParticipants) {
+        eventData.minParticipants = parseInt(formData.minParticipants);
+      }
+      if (formData.equipment.length > 0) {
+        eventData.equipment = formData.equipment;
+      }
+      if (formData.tags.length > 0) {
+        eventData.tags = formData.tags;
+      }
+      if (formData.notes) {
+        eventData.notes = formData.notes;
+      }
+      if (selectedCards.length > 0) {
+        eventData.practiceCardIds = selectedCards;
+      }
       
       if (event) {
         // 更新

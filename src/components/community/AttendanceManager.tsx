@@ -73,19 +73,41 @@ export default function AttendanceManager({ event, communityId }: AttendanceMana
       // 参加者情報を取得
       const participantInfos: ParticipantInfo[] = [];
       for (const participation of participations) {
-        // ユーザー情報を取得（実際のアプリではキャッシュを使用）
-        const userDoc = await getDocs(
-          query(collection(db, 'users'), where('__name__', '==', participation.userId))
-        );
-        
-        if (!userDoc.empty) {
-          const userData = userDoc.docs[0].data();
-          participantInfos.push({
-            participation,
-            userName: userData.displayName || userData.name || 'ユーザー',
-            userPhotoURL: userData.photoURL
-          });
-        } else {
+        try {
+          // usersコレクションから取得
+          const userDoc = await getDocs(
+            query(collection(db, 'users'), where('__name__', '==', participation.userId))
+          );
+          
+          if (!userDoc.empty) {
+            const userData = userDoc.docs[0].data();
+            participantInfos.push({
+              participation,
+              userName: userData.displayName || userData.name || 'ユーザー',
+              userPhotoURL: userData.avatarUrl || userData.avatar || userData.photoURL
+            });
+          } else {
+            // userProfilesコレクションからも試す
+            const profileDoc = await getDocs(
+              query(collection(db, 'userProfiles'), where('__name__', '==', participation.userId))
+            );
+            
+            if (!profileDoc.empty) {
+              const profileData = profileDoc.docs[0].data();
+              participantInfos.push({
+                participation,
+                userName: profileData.displayName || profileData.name || 'ユーザー',
+                userPhotoURL: profileData.avatarUrl || profileData.avatar || profileData.photoURL
+              });
+            } else {
+              participantInfos.push({
+                participation,
+                userName: 'ユーザー'
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching user info:', error);
           participantInfos.push({
             participation,
             userName: 'ユーザー'

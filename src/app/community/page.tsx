@@ -9,10 +9,14 @@ import { Community, CommunityMember } from '@/types/community';
 import { Users, Calendar, Plus, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import CreateCommunityModal from '@/components/community/CreateCommunityModal';
+import Sidebar from '@/components/Sidebar';
+import { usePathname } from 'next/navigation';
+import InvitationBadge from '@/components/community/InvitationBadge';
 
 export default function CommunityPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [communities, setCommunities] = useState<Community[]>([]);
   const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
@@ -93,10 +97,20 @@ export default function CommunityPage() {
   }
 
   return (
-    <div>
+    <div className="flex min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+      <Sidebar activePath={pathname} />
+      <div className="flex-1 lg:ml-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">コミュニティ</h1>
-        <p className="text-gray-600">参加中のコミュニティ一覧</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">コミュニティ</h1>
+            <p className="text-gray-600">参加中のコミュニティ一覧</p>
+          </div>
+          <div className="relative">
+            <InvitationBadge />
+          </div>
+        </div>
       </div>
 
       {communities.length === 0 ? (
@@ -190,9 +204,9 @@ export default function CommunityPage() {
       <div className="mt-8 flex justify-center">
         <button
           onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+          className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors text-sm"
         >
-          <Plus className="h-5 w-5 mr-2" />
+          <Plus className="h-4 w-4 mr-1.5" />
           新しいコミュニティを作成
         </button>
       </div>
@@ -206,6 +220,8 @@ export default function CommunityPage() {
           router.push(`/community/${communityId}`);
         }}
       />
+        </div>
+      </div>
     </div>
   );
 }

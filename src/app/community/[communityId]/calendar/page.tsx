@@ -18,17 +18,23 @@ import {
   EventStatus 
 } from '@/types/community';
 import CommunityCalendar from '@/components/community/CommunityCalendar';
+import CommunityHeader from '@/components/community/CommunityHeader';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
+import Sidebar from '@/components/Sidebar';
+import { usePathname } from 'next/navigation';
+import { CommunityMember } from '@/types/community';
 
 export default function CommunityCalendarPage() {
   const params = useParams();
   const communityId = params.communityId as string;
   const { user } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   
   const [community, setCommunity] = useState<Community | null>(null);
   const [events, setEvents] = useState<CommunityEvent[]>([]);
+  const [memberRole, setMemberRole] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,6 +62,20 @@ export default function CommunityCalendarPage() {
         ...communityDoc.data()
       } as Community;
       setCommunity(communityData);
+
+      // ユーザーのロールを確認
+      const memberQuery = query(
+        collection(db, 'community_members'),
+        where('communityId', '==', communityId),
+        where('userId', '==', user.uid),
+        where('isActive', '==', true)
+      );
+      const memberSnapshot = await getDocs(memberQuery);
+      
+      if (!memberSnapshot.empty) {
+        const memberData = memberSnapshot.docs[0].data() as CommunityMember;
+        setMemberRole(memberData.role);
+      }
 
       // イベントを取得
       const eventsQuery = query(
@@ -97,54 +117,16 @@ export default function CommunityCalendarPage() {
   }
 
   return (
-    <div>
-      {/* ヘッダー */}
-      <div className="mb-6">
-        <Link
-          href={`/community/${communityId}`}
-          className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors mb-4"
-        >
-          <ChevronLeft className="h-5 w-5 mr-1" />
-          {community.name}に戻る
-        </Link>
-
-        <h1 className="text-3xl font-bold text-gray-900">
-          {community.name} カレンダー
-        </h1>
-        <p className="mt-2 text-gray-600">
-          コミュニティの練習予定や大会の日程を確認できます
-        </p>
-      </div>
-
-      {/* ナビゲーションタブ */}
-      <div className="bg-white rounded-lg shadow-md mb-6">
-        <div className="flex border-b border-gray-200">
-          <Link
-            href={`/community/${communityId}`}
-            className="px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            ホーム
-          </Link>
-          <Link
-            href={`/community/${communityId}/calendar`}
-            className="px-6 py-3 text-sm font-medium text-green-600 border-b-2 border-green-600"
-          >
-            カレンダー
-          </Link>
-          <Link
-            href={`/community/${communityId}/events`}
-            className="px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            イベント一覧
-          </Link>
-          <Link
-            href={`/community/${communityId}/members`}
-            className="px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            メンバー
-          </Link>
-        </div>
-      </div>
+    <div className="flex min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+      <Sidebar activePath={pathname} />
+      <div className="flex-1 lg:ml-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* コミュニティヘッダー */}
+          <CommunityHeader 
+            community={community} 
+            memberRole={memberRole}
+            currentTab="calendar"
+          />
 
       {/* カレンダーコンポーネント */}
       <CommunityCalendar
@@ -152,6 +134,8 @@ export default function CommunityCalendarPage() {
         events={events}
         onEventClick={handleEventClick}
       />
+        </div>
+      </div>
     </div>
   );
 }

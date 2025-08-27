@@ -18,7 +18,7 @@ import {
   CommunityMember,
   CommunityRole
 } from '@/types/community';
-import { PracticeCard } from '@/types/practice';
+import { PracticeCard, Practice } from '@/types/practice';
 import AttendanceManager from '@/components/community/AttendanceManager';
 import EventComments from '@/components/community/EventComments';
 import Link from 'next/link';
@@ -46,9 +46,10 @@ export default function EventDetailPage() {
   const [event, setEvent] = useState<CommunityEvent | null>(null);
   const [community, setCommunity] = useState<Community | null>(null);
   const [practiceCards, setPracticeCards] = useState<PracticeCard[]>([]);
+  const [relatedPractices, setRelatedPractices] = useState<Practice[]>([]);
   const [memberRole, setMemberRole] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [creatorName, setCreatorName] = useState<string>('');
+  const [creatorInfo, setCreatorInfo] = useState<{ name: string; photoURL?: string }>({ name: '' });
 
   useEffect(() => {
     if (!user) {
@@ -100,13 +101,33 @@ export default function EventDetailPage() {
         setMemberRole(memberData.role);
       }
 
-      // イベント作成者の名前を取得
-      const creatorDoc = await getDocs(
-        query(collection(db, 'users'), where('__name__', '==', eventData.createdBy))
-      );
-      if (!creatorDoc.empty) {
-        const creatorData = creatorDoc.docs[0].data();
-        setCreatorName(creatorData.displayName || creatorData.name || 'ユーザー');
+      // イベント作成者の情報を取得
+      try {
+        const creatorDoc = await getDocs(
+          query(collection(db, 'users'), where('__name__', '==', eventData.createdBy))
+        );
+        if (!creatorDoc.empty) {
+          const creatorData = creatorDoc.docs[0].data();
+          setCreatorInfo({
+            name: creatorData.displayName || creatorData.name || 'ユーザー',
+            photoURL: creatorData.avatarUrl || creatorData.avatar || creatorData.photoURL
+          });
+        } else {
+          // userProfilesコレクションからも試す
+          const profileDoc = await getDocs(
+            query(collection(db, 'userProfiles'), where('__name__', '==', eventData.createdBy))
+          );
+          if (!profileDoc.empty) {
+            const profileData = profileDoc.docs[0].data();
+            setCreatorInfo({
+              name: profileData.displayName || profileData.name || 'ユーザー',
+              photoURL: profileData.avatarUrl || profileData.avatar || profileData.photoURL
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching creator info:', error);
+        setCreatorInfo({ name: 'ユーザー' });
       }
 
       // 練習カードを取得
@@ -123,6 +144,18 @@ export default function EventDetailPage() {
         }
         setPracticeCards(cardsData);
       }
+      
+      // 関連する練習記録を取得
+      const practicesQuery = query(
+        collection(db, 'practices'),
+        where('communityEventId', '==', eventId)
+      );
+      const practicesSnapshot = await getDocs(practicesQuery);
+      const practicesData = practicesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Practice[];
+      setRelatedPractices(practicesData);
 
     } catch (error) {
       console.error('Error fetching event data:', error);
@@ -200,13 +233,13 @@ export default function EventDetailPage() {
     <div className="max-w-5xl mx-auto">
       {/* ヘッダー */}
       <div className="mb-6">
-        <Link
-          href={`/community/${communityId}`}
+        <button
+          onClick={() => router.back()}
           className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
         >
           <ChevronLeft className="h-5 w-5 mr-1" />
-          {community.name}に戻る
-        </Link>
+          前の画面に戻る
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -220,8 +253,20 @@ export default function EventDetailPage() {
                   {event.title}
                 </h1>
                 <div className="flex items-center text-sm text-gray-500">
-                  <User className="h-4 w-4 mr-1" />
-                  <span>作成者: {creatorName}</span>
+                  <div className="flex items-center mr-3">
+                    {creatorInfo.photoURL ? (
+                      <img
+                        src={creatorInfo.photoURL}
+                        alt={creatorInfo.name}
+                        className="h-6 w-6 rounded-full mr-2"
+                      />
+                    ) : (
+                      <div className="h-6 w-6 rounded-full bg-gray-300 flex items-center justify-center mr-2">
+                        <User className="h-3 w-3 text-gray-600" />
+                      </div>
+                    )}
+                    <span>作成者: {creatorInfo.name}</span>
+                  </div>
                   <span className="mx-2">•</span>
                   <span>
                     {new Date(event.createdAt).toLocaleDateString('ja-JP')}
@@ -415,6 +460,65 @@ export default function EventDetailPage() {
                 <div className="text-sm text-gray-600">
                   合計練習時間: {practiceCards.reduce((sum, card) => sum + card.drill.duration, 0)}分
                 </div>
+              </div>
+            </div>
+          )}
+          
+          {/* 関連する練習記録 */}
+          {relatedPractices.length > 0 && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                練習記録 ({relatedPractices.length}件)
+              </h3>
+              <div className="space-y-3">
+                {relatedPractices.map((practice) => (
+                  <div
+                    key={practice.id}
+                    className="p-4 border border-gray-200 rounded-lg"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900">
+                          {practice.title}
+                        </h4>
+                        <div className="mt-2 flex items-center gap-4 text-sm text-gray-600">
+                          <span>
+                            <Calendar className="inline h-4 w-4 mr-1" />
+                            {practice.date}
+                          </span>
+                          <span>
+                            <Clock className="inline h-4 w-4 mr-1" />
+                            {practice.startTime} - {practice.endTime}
+                          </span>
+                          <span>
+                            {practice.duration}分
+                          </span>
+                        </div>
+                        {practice.description && (
+                          <p className="text-sm text-gray-600 mt-2">
+                            {practice.description}
+                          </p>
+                        )}
+                        {practice.achievements && practice.achievements.length > 0 && (
+                          <div className="mt-2">
+                            <span className="text-xs text-gray-500">成果:</span>
+                            <ul className="text-sm text-gray-600 ml-4 list-disc">
+                              {practice.achievements.map((achievement, index) => (
+                                <li key={index}>{achievement}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                      <Link
+                        href={`/practice-management?tab=records&date=${practice.date}`}
+                        className="text-sm text-green-600 hover:text-green-700 ml-4"
+                      >
+                        詳細 →
+                      </Link>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
