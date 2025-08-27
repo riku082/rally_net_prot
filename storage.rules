@@ -45,6 +45,14 @@ service firebase.storage {
                    isValidImageType();
     }
     
+    // コミュニティ関連の画像
+    match /communities/{communityId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && 
+                   isValidFileSize() && 
+                   isValidImageType();
+    }
+    
     // その他のファイルはデフォルトで拒否
     match /{allPaths=**} {
       allow read, write: if false;

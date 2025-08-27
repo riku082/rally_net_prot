@@ -9,7 +9,7 @@ import NotificationBadge from './NotificationBadge';
 const navItems = [
   { label: 'ダッシュボード', icon: <FaTachometerAlt />, path: '/dashboard' },
   { label: '練習管理', icon: <FaBook />, path: '/practice-management' },
-  
+  { label: 'コミュニティ', icon: <FaUsers />, path: '/community' },
   
   { label: 'ニュース', icon: <FaRss />, path: '/news' },
   { label: 'フレンド', icon: <FaUserFriends />, path: '/friends' },
