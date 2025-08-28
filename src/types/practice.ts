@@ -13,6 +13,7 @@ export interface Practice {
   goals?: string[];
   achievements?: string[];
   routine?: PracticeRoutineExecution; // 練習カードのルーティン情報
+  matchRecords?: string[]; // 関連する試合記録IDのリスト
   communityEventId?: string; // 関連するコミュニティイベントID
   communityId?: string; // 関連するコミュニティID
   createdAt: number; // timestamp

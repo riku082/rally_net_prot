@@ -11,13 +11,15 @@ import PracticeList from '@/components/PracticeList';
 import PracticeForm from '@/components/PracticeForm';
 import PracticeCardList from '@/components/PracticeCardList';
 import PracticeCardForm from '@/components/PracticeCardForm';
+import MatchRecordList from '@/components/MatchRecordList';
 import { Practice, PracticeCard } from '@/types/practice';
+import { MatchRecord } from '@/types/match';
 import { firestoreDb } from '@/utils/db';
 import { useAuth } from '@/context/AuthContext';
 import { useSearchParams } from 'next/navigation';
-import { FaCalendarAlt, FaBook, FaLayerGroup, FaPlus } from 'react-icons/fa';
+import { FaCalendarAlt, FaBook, FaLayerGroup, FaPlus, FaTrophy } from 'react-icons/fa';
 
-type ViewMode = 'calendar' | 'records' | 'cards';
+type ViewMode = 'calendar' | 'records' | 'cards' | 'matches';
 
 function PracticeManagementContent() {
   const { user } = useAuth();
@@ -38,7 +40,7 @@ function PracticeManagementContent() {
   // UI状態  
   const [activeView, setActiveView] = useState<ViewMode>(() => {
     const tab = searchParams.get('tab');
-    if (tab === 'cards' || tab === 'records' || tab === 'calendar') {
+    if (tab === 'cards' || tab === 'records' || tab === 'calendar' || tab === 'matches') {
       return tab as ViewMode;
     }
     return 'calendar';
@@ -626,7 +628,8 @@ function PracticeManagementContent() {
 
   const tabs = [
     { id: 'calendar', label: 'カレンダー', icon: <FaCalendarAlt className="w-4 h-4" /> },
-    { id: 'records', label: '記録一覧', icon: <FaBook className="w-4 h-4" /> },
+    { id: 'records', label: '練習記録', icon: <FaBook className="w-4 h-4" /> },
+    { id: 'matches', label: '試合記録', icon: <FaTrophy className="w-4 h-4" /> },
     { id: 'cards', label: 'カード管理', icon: <FaLayerGroup className="w-4 h-4" /> },
   ];
 
@@ -703,6 +706,13 @@ function PracticeManagementContent() {
                           <span className="hidden xs:inline">練習</span>カード
                         </button>
                       )}
+                      {activeView === 'matches' && (
+                        <button
+                          onClick={() => {/* 試合記録作成は MatchRecordList 内で処理 */}}
+                          className="hidden"
+                        >
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -748,6 +758,10 @@ function PracticeManagementContent() {
                         isLoading={false}
                       />
                     </div>
+                  )}
+
+                  {activeView === 'matches' && (
+                    <MatchRecordList />
                   )}
                 </div>
               </div>

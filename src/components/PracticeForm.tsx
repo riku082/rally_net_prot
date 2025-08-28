@@ -2,13 +2,22 @@
 
 import React, { useState } from 'react';
 import { Practice, PracticeType, PracticeCard, PracticeCardExecution, PracticeRoutineExecution } from '@/types/practice';
+import { MatchRecord } from '@/types/match';
 import { FaClock, FaCalendarAlt, FaLayerGroup } from 'react-icons/fa';
 import { FiSave, FiX } from 'react-icons/fi';
+import { Trophy, Plus, X, ChevronDown, ChevronUp } from 'lucide-react';
 import RoutineBuilder from './RoutineBuilder';
+import MatchRecordForm from './MatchRecordForm';
+import { db } from '@/utils/firebase';
+import { collection, addDoc } from 'firebase/firestore';
+import { useAuth } from '@/context/AuthContext';
 
 interface PracticeFormProps {
   practice?: Practice;
-  onSave: (practice: Omit<Practice, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => void;
+  onSave: (
+    practice: Omit<Practice, 'id' | 'userId' | 'createdAt' | 'updatedAt'>,
+    matchRecords?: Omit<MatchRecord, 'id' | 'createdAt' | 'updatedAt'>[]
+  ) => void;
   onCancel: () => void;
   isLoading?: boolean;
   initialDate?: string;
@@ -27,6 +36,7 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
   communityEventId,
   communityId
 }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     date: practice?.date || initialDate || new Date().toISOString().split('T')[0],
     startTime: practice?.startTime || '10:00',
@@ -39,6 +49,10 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
     achievements: practice?.achievements || [],
     routine: practice?.routine || null as PracticeRoutineExecution | null,
   });
+  
+  const [showMatchRecords, setShowMatchRecords] = useState(false);
+  const [matchRecords, setMatchRecords] = useState<Omit<MatchRecord, 'id' | 'createdAt' | 'updatedAt'>[]>([]);
+  const [showMatchForm, setShowMatchForm] = useState(false);
 
 
   const practiceTypes = [
@@ -127,7 +141,12 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
       practiceData.communityId = communityId;
     }
     
-    onSave(practiceData);
+    // 試合記録がある場合は一緒に保存
+    if (showMatchRecords && matchRecords.length > 0) {
+      onSave(practiceData, matchRecords);
+    } else {
+      onSave(practiceData);
+    }
   };
 
   return (
@@ -299,6 +318,118 @@ const PracticeForm: React.FC<PracticeFormProps> = ({
             style={{ color: '#000000' }}
           />
         </div>
+
+        {/* 試合記録セクション */}
+        <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
+          <div className="flex items-center justify-between mb-3">
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showMatchRecords}
+                onChange={(e) => setShowMatchRecords(e.target.checked)}
+                className="rounded border-gray-300 text-theme-primary-600 focus:ring-theme-primary-500"
+              />
+              <span className="text-sm font-medium text-gray-700 flex items-center">
+                <Trophy className="w-4 h-4 mr-1 sm:mr-2" />
+                試合記録を追加
+              </span>
+            </label>
+              
+              {showMatchRecords && (
+                <button
+                  type="button"
+                  onClick={() => setShowMatchForm(!showMatchForm)}
+                  className="text-sm text-gray-600 hover:text-gray-900 flex items-center"
+                >
+                  {showMatchForm ? (
+                    <>
+                      <ChevronUp className="h-4 w-4 mr-1" />
+                      閉じる
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-4 w-4 mr-1" />
+                      展開
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+            
+            {showMatchRecords && (
+              <div>
+                {/* 既存の試合記録リスト */}
+                {matchRecords.length > 0 && (
+                  <div className="mb-3 space-y-2">
+                    {matchRecords.map((match, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <Trophy className="h-4 w-4 text-green-600" />
+                          <div className="text-sm">
+                            <span className="font-medium">
+                              {match.team1.players.map(p => p.name).join('・')}
+                            </span>
+                            <span className="mx-2 text-gray-500">vs</span>
+                            <span className="font-medium">
+                              {match.team2.players.map(p => p.name).join('・')}
+                            </span>
+                            <span className="ml-3 text-xs text-gray-500">
+                              {match.scores.map(s => `${s.team1Score}-${s.team2Score}`).join(' / ')}
+                            </span>
+                            <span className={`ml-2 text-xs font-semibold ${
+                              match.winner === 'team1' ? 'text-green-600' :
+                              match.winner === 'team2' ? 'text-blue-600' :
+                              'text-gray-500'
+                            }`}>
+                              {match.winner === 'team1' ? '勝利' :
+                               match.winner === 'team2' ? '敗北' :
+                               '引き分け'}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setMatchRecords(matchRecords.filter((_, i) => i !== index))}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* 新規試合記録追加ボタン */}
+                {!showMatchForm && (
+                  <button
+                    type="button"
+                    onClick={() => setShowMatchForm(true)}
+                    className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-green-500 hover:text-green-600 transition-colors flex items-center justify-center"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    試合記録を追加
+                  </button>
+                )}
+                
+                {/* 試合記録フォーム */}
+                {showMatchForm && (
+                  <div className="mt-4">
+                    <MatchRecordForm
+                      practiceId={practice?.id}
+                      communityId={communityId}
+                      communityEventId={communityEventId}
+                      date={formData.date}
+                      onSave={(match) => {
+                        setMatchRecords([...matchRecords, match]);
+                        setShowMatchForm(false);
+                      }}
+                      onCancel={() => setShowMatchForm(false)}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
         {/* 送信ボタン */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-4 sm:pt-6 border-t border-gray-200">
