@@ -17,7 +17,7 @@ import {
   EventStatus,
   EventType
 } from '@/types/community';
-import { PracticeCard } from '@/types/practice';
+import { PracticeCard, Practice, PracticeType, PracticeCardExecution, PracticeRoutineExecution } from '@/types/practice';
 import { 
   Calendar, 
   Clock, 
@@ -27,7 +27,9 @@ import {
   Activity,
   MoreHorizontal,
   FileText,
-  Plus
+  Plus,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -51,6 +53,10 @@ export default function EventFormSimple({
   const [practiceCards, setPracticeCards] = useState<PracticeCard[]>([]);
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
   const [showPracticeCards, setShowPracticeCards] = useState(false);
+  const [showPracticeForm, setShowPracticeForm] = useState(false);
+  const [practiceRecord, setPracticeRecord] = useState<Omit<Practice, 'id' | 'userId' | 'createdAt' | 'updatedAt'> | null>(null);
+  const [practiceRecordCards, setPracticeRecordCards] = useState<string[]>([]);
+  const [showPracticeRecordCards, setShowPracticeRecordCards] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -65,6 +71,31 @@ export default function EventFormSimple({
     createPracticeRecord: false
   });
 
+  // 練習記録の日時を更新
+  useEffect(() => {
+    if (practiceRecord && formData.createPracticeRecord) {
+      setPracticeRecord(prev => {
+        if (!prev) return prev;
+        
+        // 開始時間と終了時間から練習時間を計算
+        let duration = 0;
+        if (formData.startTime && formData.endTime) {
+          const start = new Date(`2000-01-01T${formData.startTime}`);
+          const end = new Date(`2000-01-01T${formData.endTime}`);
+          duration = Math.max(0, (end.getTime() - start.getTime()) / (1000 * 60));
+        }
+        
+        return {
+          ...prev,
+          date: formData.startDate,
+          startTime: formData.startTime,
+          endTime: formData.endTime,
+          duration: duration
+        };
+      });
+    }
+  }, [formData.startDate, formData.startTime, formData.endTime, formData.createPracticeRecord]);
+  
   useEffect(() => {
     // URLパラメータから日付を取得
     const dateParam = searchParams.get('date');
@@ -163,6 +194,8 @@ export default function EventFormSimple({
         }
       }
       
+      let eventId = event?.id;
+      
       if (event) {
         // 更新
         await updateDoc(doc(db, 'communities', communityId, 'events', event.id), eventData);
@@ -171,13 +204,41 @@ export default function EventFormSimple({
         eventData.createdBy = user.uid;
         eventData.createdAt = Date.now();
         const docRef = await addDoc(collection(db, 'communities', communityId, 'events'), eventData);
-        
-        // 練習記録を作成する場合
-        if (formData.eventType === EventType.PRACTICE && formData.createPracticeRecord) {
-          // 練習記録作成ページへリダイレクト（コミュニティIDも含める）
-          router.push(`/practice-management?tab=records&date=${formData.startDate}&eventId=${docRef.id}&communityId=${communityId}`);
-          return;
+        eventId = docRef.id;
+      }
+      
+      // 練習記録を作成する場合
+      if (formData.eventType === EventType.PRACTICE && formData.createPracticeRecord && practiceRecord && eventId) {
+        // 選択された練習カードからルーティン情報を作成
+        let routine = null;
+        if (practiceRecordCards.length > 0) {
+          const selectedCardDetails = practiceCards.filter(card => practiceRecordCards.includes(card.id));
+          routine = {
+            cards: selectedCardDetails.map((card, index) => ({
+              cardId: card.id,
+              cardTitle: card.title,
+              order: index + 1,
+              plannedDuration: card.drill?.duration || 30,
+              completed: false
+            })),
+            totalPlannedDuration: selectedCardDetails.reduce((sum, card) => sum + (card.drill?.duration || 30), 0),
+            totalActualDuration: 0,
+            completedCards: 0
+          };
         }
+        
+        // 練習記録を保存
+        const practiceData = {
+          ...practiceRecord,
+          userId: user.uid,
+          communityEventId: eventId,
+          communityId: communityId,
+          routine: routine,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        };
+        
+        await addDoc(collection(db, 'practices'), practiceData);
       }
       
       onSuccess?.();
@@ -377,57 +438,256 @@ export default function EventFormSimple({
           <h3 className="text-lg font-semibold text-gray-900 mb-4">練習設定</h3>
           
           <div className="space-y-4">
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="createPracticeRecord"
-                checked={formData.createPracticeRecord}
-                onChange={(e) => setFormData({ ...formData, createPracticeRecord: e.target.checked })}
-                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-              />
-              <label htmlFor="createPracticeRecord" className="ml-2 text-sm text-gray-700">
-                練習記録を作成する
-              </label>
-            </div>
-
-            <div>
-              <button
-                type="button"
-                onClick={() => setShowPracticeCards(!showPracticeCards)}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                練習カードを選択 ({selectedCards.length}枚選択中)
-              </button>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="createPracticeRecord"
+                  checked={formData.createPracticeRecord}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setFormData({ ...formData, createPracticeRecord: checked });
+                    setShowPracticeForm(checked);
+                    
+                    // 練習記録フォームを表示する場合、初期値を設定
+                    if (checked && !practiceRecord) {
+                      // 開始時間と終了時間から練習時間を計算
+                      let duration = 0;
+                      if (formData.startTime && formData.endTime) {
+                        const start = new Date(`2000-01-01T${formData.startTime}`);
+                        const end = new Date(`2000-01-01T${formData.endTime}`);
+                        duration = Math.max(0, (end.getTime() - start.getTime()) / (1000 * 60));
+                      }
+                      
+                      setPracticeRecord({
+                        date: formData.startDate,
+                        startTime: formData.startTime,
+                        endTime: formData.endTime,
+                        type: 'basic_practice' as PracticeType,
+                        title: formData.title || '練習',
+                        description: formData.description || '',
+                        notes: '',
+                        goals: [],
+                        achievements: [],
+                        routine: null,
+                        duration: duration,
+                        skills: [],
+                        communityEventId: event?.id,
+                        communityId: communityId
+                      });
+                    }
+                  }}
+                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                />
+                <label htmlFor="createPracticeRecord" className="ml-2 text-sm text-gray-700 font-medium">
+                  練習記録を作成する
+                </label>
+              </div>
               
-              {showPracticeCards && (
-                <div className="mt-4 max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-4">
-                  {practiceCards.length === 0 ? (
-                    <p className="text-gray-500 text-center">練習カードがありません</p>
+              {formData.createPracticeRecord && (
+                <button
+                  type="button"
+                  onClick={() => setShowPracticeForm(!showPracticeForm)}
+                  className="text-sm text-gray-600 hover:text-gray-900"
+                >
+                  {showPracticeForm ? (
+                    <>
+                      <ChevronUp className="inline h-4 w-4 mr-1" />
+                      閉じる
+                    </>
                   ) : (
-                    <div className="space-y-2">
-                      {practiceCards.map((card) => (
-                        <label key={card.id} className="flex items-center p-2 hover:bg-gray-50 rounded">
-                          <input
-                            type="checkbox"
-                            checked={selectedCards.includes(card.id)}
-                            onChange={() => {
-                              if (selectedCards.includes(card.id)) {
-                                setSelectedCards(selectedCards.filter(id => id !== card.id));
-                              } else {
-                                setSelectedCards([...selectedCards, card.id]);
-                              }
-                            }}
-                            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                          />
-                          <span className="ml-2 text-sm">{card.title}</span>
-                        </label>
-                      ))}
-                    </div>
+                    <>
+                      <ChevronDown className="inline h-4 w-4 mr-1" />
+                      展開
+                    </>
                   )}
-                </div>
+                </button>
               )}
             </div>
+
+            {/* 練習記録フォーム */}
+            {formData.createPracticeRecord && showPracticeForm && (
+              <div className="border-t pt-4 mt-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 mb-4">
+                    このイベントに参加したユーザーと共有される練習記録を作成します。
+                    日時と場所は自動的にイベント情報から引き継がれます。
+                  </p>
+                  
+                  {/* 練習記録入力フィールド（PracticeFormの内容を簡略化） */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        練習タイトル
+                      </label>
+                      <input
+                        type="text"
+                        value={practiceRecord?.title || formData.title || ''}
+                        onChange={(e) => setPracticeRecord(prev => ({
+                          ...prev!,
+                          title: e.target.value
+                        }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        placeholder="例: 午前練習"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        練習タイプ
+                      </label>
+                      <select
+                        value={practiceRecord?.type || 'basic_practice'}
+                        onChange={(e) => setPracticeRecord(prev => ({
+                          ...prev!,
+                          type: e.target.value as PracticeType
+                        }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                      >
+                        <option value="basic_practice">基礎練習</option>
+                        <option value="game_practice">ゲーム練習</option>
+                        <option value="physical_training">フィジカル</option>
+                        <option value="technical_drill">テクニカル</option>
+                        <option value="strategy_practice">戦術練習</option>
+                        <option value="match_simulation">試合形式</option>
+                        <option value="individual_practice">個人練習</option>
+                        <option value="group_practice">グループ練習</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        練習内容
+                      </label>
+                      <textarea
+                        value={practiceRecord?.description || ''}
+                        onChange={(e) => setPracticeRecord(prev => ({
+                          ...prev!,
+                          description: e.target.value
+                        }))}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        placeholder="練習メニューや内容を記録してください"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        メモ・反省点
+                      </label>
+                      <textarea
+                        value={practiceRecord?.notes || ''}
+                        onChange={(e) => setPracticeRecord(prev => ({
+                          ...prev!,
+                          notes: e.target.value
+                        }))}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        placeholder="練習の反省点や気づいたことを記録してください"
+                      />
+                    </div>
+                    
+                    {/* 練習カード選択 */}
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => setShowPracticeRecordCards(!showPracticeRecordCards)}
+                        className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        練習カードを選択 ({practiceRecordCards.length}枚選択中)
+                      </button>
+                      
+                      {showPracticeRecordCards && (
+                        <div className="mt-3 max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                          {practiceCards.length === 0 ? (
+                            <p className="text-gray-500 text-center py-4">練習カードがありません</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {practiceCards.map((card) => (
+                                <label key={card.id} className="flex items-start p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={practiceRecordCards.includes(card.id)}
+                                    onChange={() => {
+                                      if (practiceRecordCards.includes(card.id)) {
+                                        setPracticeRecordCards(practiceRecordCards.filter(id => id !== card.id));
+                                      } else {
+                                        setPracticeRecordCards([...practiceRecordCards, card.id]);
+                                      }
+                                    }}
+                                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded mt-0.5"
+                                  />
+                                  <div className="ml-2 flex-1">
+                                    <div className="text-sm font-medium text-gray-900">{card.title}</div>
+                                    {card.description && (
+                                      <div className="text-xs text-gray-500 mt-1">{card.description}</div>
+                                    )}
+                                    {card.drill && (
+                                      <div className="text-xs text-gray-400 mt-1">
+                                        {card.drill.duration}分 • 
+                                        {card.difficulty === 'beginner' ? ' 初級' :
+                                         card.difficulty === 'intermediate' ? ' 中級' : ' 上級'}
+                                      </div>
+                                    )}
+                                  </div>
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="text-xs text-gray-500">
+                      ※ 日時と場所はイベント情報から自動的に設定されます
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 練習カード選択（練習記録を作成しない場合のみ） */}
+            {!formData.createPracticeRecord && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setShowPracticeCards(!showPracticeCards)}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  練習カードを選択 ({selectedCards.length}枚選択中)
+                </button>
+                
+                {showPracticeCards && (
+                  <div className="mt-4 max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-4">
+                    {practiceCards.length === 0 ? (
+                      <p className="text-gray-500 text-center">練習カードがありません</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {practiceCards.map((card) => (
+                          <label key={card.id} className="flex items-center p-2 hover:bg-gray-50 rounded">
+                            <input
+                              type="checkbox"
+                              checked={selectedCards.includes(card.id)}
+                              onChange={() => {
+                                if (selectedCards.includes(card.id)) {
+                                  setSelectedCards(selectedCards.filter(id => id !== card.id));
+                                } else {
+                                  setSelectedCards([...selectedCards, card.id]);
+                                }
+                              }}
+                              className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                            />
+                            <span className="ml-2 text-sm">{card.title}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
