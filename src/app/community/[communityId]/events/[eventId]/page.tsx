@@ -33,7 +33,8 @@ import {
   Trash2,
   Users,
   Tag,
-  Dumbbell
+  Dumbbell,
+  Check
 } from 'lucide-react';
 
 export default function EventDetailPage() {
@@ -470,53 +471,122 @@ export default function EventDetailPage() {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 練習記録 ({relatedPractices.length}件)
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {relatedPractices.map((practice) => (
                   <div
                     key={practice.id}
-                    className="p-4 border border-gray-200 rounded-lg"
+                    className="border border-gray-200 rounded-lg overflow-hidden"
                   >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">
-                          {practice.title}
-                        </h4>
-                        <div className="mt-2 flex items-center gap-4 text-sm text-gray-600">
-                          <span>
-                            <Calendar className="inline h-4 w-4 mr-1" />
-                            {practice.date}
-                          </span>
-                          <span>
-                            <Clock className="inline h-4 w-4 mr-1" />
-                            {practice.startTime} - {practice.endTime}
-                          </span>
-                          <span>
-                            {practice.duration}分
-                          </span>
+                    <div className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900">
+                            {practice.title}
+                          </h4>
+                          <div className="mt-2 flex items-center gap-4 text-sm text-gray-600">
+                            <span>
+                              <Calendar className="inline h-4 w-4 mr-1" />
+                              {practice.date}
+                            </span>
+                            <span>
+                              <Clock className="inline h-4 w-4 mr-1" />
+                              {practice.startTime} - {practice.endTime}
+                            </span>
+                            <span>
+                              {practice.duration}分
+                            </span>
+                          </div>
+                          {practice.description && (
+                            <p className="text-sm text-gray-600 mt-2">
+                              {practice.description}
+                            </p>
+                          )}
+                          {practice.notes && (
+                            <div className="mt-2 p-2 bg-gray-50 rounded">
+                              <p className="text-sm text-gray-600">
+                                <strong>メモ:</strong> {practice.notes}
+                              </p>
+                            </div>
+                          )}
                         </div>
-                        {practice.description && (
-                          <p className="text-sm text-gray-600 mt-2">
-                            {practice.description}
-                          </p>
-                        )}
-                        {practice.achievements && practice.achievements.length > 0 && (
-                          <div className="mt-2">
-                            <span className="text-xs text-gray-500">成果:</span>
-                            <ul className="text-sm text-gray-600 ml-4 list-disc">
-                              {practice.achievements.map((achievement, index) => (
-                                <li key={index}>{achievement}</li>
-                              ))}
-                            </ul>
+                        <Link
+                          href={`/practice-management?tab=records&date=${practice.date}`}
+                          className="text-sm text-green-600 hover:text-green-700 ml-4"
+                        >
+                          詳細 →
+                        </Link>
+                      </div>
+                    </div>
+                    
+                    {/* 練習カード（ルーティン） */}
+                    {practice.routine && practice.routine.cards && practice.routine.cards.length > 0 && (
+                      <div className="border-t border-gray-200 bg-gray-50 p-4">
+                        <h5 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                          <FileText className="h-4 w-4 mr-1" />
+                          練習メニュー ({practice.routine.cards.length}枚)
+                        </h5>
+                        <div className="space-y-2">
+                          {practice.routine.cards.map((card, index) => (
+                            <div
+                              key={`${practice.id}-card-${index}`}
+                              className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200"
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="flex-shrink-0 w-8 h-8 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-sm font-semibold">
+                                  {card.order}
+                                </span>
+                                <div>
+                                  <span className="font-medium text-gray-900">
+                                    {card.cardTitle}
+                                  </span>
+                                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                                    <span className="flex items-center">
+                                      <Clock className="h-3 w-3 mr-1" />
+                                      {card.plannedDuration}分
+                                    </span>
+                                    {card.completed && (
+                                      <span className="text-green-600 flex items-center">
+                                        <Check className="h-3 w-3 mr-1" />
+                                        完了
+                                      </span>
+                                    )}
+                                    {card.notes && (
+                                      <span className="text-gray-500">
+                                        {card.notes}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              {card.rating && (
+                                <div className="flex items-center gap-1">
+                                  {[...Array(5)].map((_, i) => (
+                                    <span
+                                      key={i}
+                                      className={`text-sm ${
+                                        i < card.rating! ? 'text-yellow-400' : 'text-gray-300'
+                                      }`}
+                                    >
+                                      ★
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        {practice.routine.totalPlannedDuration && (
+                          <div className="mt-3 text-sm text-gray-600 text-right">
+                            合計練習時間: {practice.routine.totalPlannedDuration}分
+                            {practice.routine.completedCards > 0 && (
+                              <span className="ml-2">
+                                ({practice.routine.completedCards}/{practice.routine.cards.length}枚完了)
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
-                      <Link
-                        href={`/practice-management?tab=records&date=${practice.date}`}
-                        className="text-sm text-green-600 hover:text-green-700 ml-4"
-                      >
-                        詳細 →
-                      </Link>
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>
