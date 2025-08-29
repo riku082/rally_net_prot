@@ -636,12 +636,12 @@ function PracticeManagementContent() {
   if (isLoading) {
     return (
       <AuthGuard>
-        <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="flex min-h-screen bg-white">
           <Sidebar activePath="/practice-management" />
           <MobileNav activePath="/practice-management" />
           <div className="flex-1 flex flex-col lg:ml-0">
             <Topbar />
-            <main className="flex-1 p-8">
+            <main className="flex-1 p-8 bg-white">
               <div className="max-w-7xl mx-auto">
                 <div className="animate-pulse space-y-6">
                   <div className="bg-gray-200 rounded-lg h-32"></div>
@@ -657,17 +657,17 @@ function PracticeManagementContent() {
 
   return (
     <AuthGuard>
-      <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="flex min-h-screen bg-white">
         <Sidebar activePath="/practice-management" />
         <MobileNav activePath="/practice-management" />
         <div className="flex-1 flex flex-col lg:ml-0">
           <Topbar />
-          <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8">
+          <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-white">
             <div className="max-w-7xl mx-auto space-y-6">
 
 
               {/* タブナビゲーション */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20">
+              <div className="bg-gray-50 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200">
                 <div className="border-b border-gray-200">
                   <div className="flex justify-between items-center px-3 sm:px-6">
                     <div className="flex space-x-2 sm:space-x-4 md:space-x-8 overflow-x-auto">

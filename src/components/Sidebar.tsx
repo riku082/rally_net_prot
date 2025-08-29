@@ -24,7 +24,7 @@ const Sidebar: React.FC<{ activePath?: string }> = ({ activePath = '/' }) => {
   const router = useRouter();
   const { user, profile } = useAuth();
   return (
-    <aside className="hidden lg:flex fixed lg:relative w-64 h-screen bg-white border-r flex-col py-6 px-4 transform lg:translate-x-0 transition-transform duration-300 ease-in-out z-50">
+    <aside className="hidden lg:flex fixed lg:relative w-64 h-screen bg-white flex-col py-6 px-4 transform lg:translate-x-0 transition-transform duration-300 ease-in-out z-50">
       <div className="flex items-center mb-10">
         <Image src="/logo.png" alt="Rally Net" width={32} height={32} className="mr-3" />
         <span className="text-xl font-bold text-gray-800">Rally Net</span>

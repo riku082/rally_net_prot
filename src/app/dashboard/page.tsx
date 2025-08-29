@@ -818,12 +818,12 @@ export default function DashboardPage() {
 
   return (
     <AuthGuard>
-      <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="flex min-h-screen bg-white">
         <Sidebar activePath="/dashboard" />
         <MobileNav activePath="/dashboard" />
         <div className="flex-1 flex flex-col lg:ml-0">
           <Topbar />
-          <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8">
+          <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-white">
             <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
 
               {/* BPSI診断誘導カード（初回ユーザーまたは未診断の場合） */}

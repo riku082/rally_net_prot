@@ -180,7 +180,7 @@ const FriendsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-theme-primary mx-auto"></div>
           <p className="mt-4 text-lg font-semibold text-gray-700">読み込み中...</p>
@@ -190,12 +190,12 @@ const FriendsPage: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-white">
       <Sidebar activePath="/friends" />
       <MobileNav activePath="/friends" />
       <div className="flex-1 flex flex-col">
         <Topbar />
-        <main className="flex-1 p-6 lg:p-8">
+        <main className="flex-1 p-6 lg:p-8 bg-white">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold text-gray-800 mb-6">フレンド</h2>
 

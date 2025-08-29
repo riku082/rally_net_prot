@@ -1,5 +1,39 @@
 // 試合記録の型定義
 
+export interface Match {
+  id: string;
+  practiceId?: string; // 関連する練習記録ID
+  communityId?: string; // コミュニティID（コミュニティ内の試合の場合）
+  communityEventId?: string; // コミュニティイベントID
+  userId: string; // 記録したユーザーID
+  date: string; // YYYY-MM-DD format
+  startTime: string; // HH:mm format
+  endTime?: string; // HH:mm format
+  matchType: MatchType;
+  gameType: GameType;
+  venue?: string; // 会場
+  
+  // プレイヤー情報
+  team1: TeamInfo;
+  team2: TeamInfo;
+  
+  // スコア
+  scores: GameScore[];
+  winner: 'team1' | 'team2' | 'draw';
+  
+  // メタ情報
+  tags?: string[]; // タグ（コミュニティ名、選手名など）
+  notes?: string; // メモ
+  
+  // 将来の拡張用
+  videoUrl?: string; // 動画URL
+  hasRallyData?: boolean; // 配球データの有無
+  
+  // タイムスタンプ
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface MatchRecord {
   id: string;
   practiceId?: string; // 関連する練習記録ID

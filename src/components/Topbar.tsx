@@ -35,17 +35,16 @@ const Topbar: React.FC = () => {
   };
 
   return (
-    <header className="w-full h-16 bg-white border-b flex items-center justify-between px-6 shadow-sm">
+    <header className="w-full h-16 bg-white flex items-center justify-between px-6">
       <div className="flex items-center space-x-3">
-        <img src="/logo.png" alt="ロゴ" className="h-8 w-8" />
-        <div className="text-lg font-bold text-gray-800">Rally Net</div>
+        <div className="flex lg:hidden items-center space-x-3">
+          <img src="/logo.png" alt="ロゴ" className="h-8 w-8" />
+          <div className="text-lg font-bold text-gray-800">Rally Net</div>
+        </div>
       </div>
       <div className="flex items-center space-x-6">
         <button className="text-gray-500 hover:text-theme-primary-600 text-xl focus:outline-none">
           <FaBell />
-        </button>
-        <button className="text-gray-500 hover:text-theme-primary-600 text-xl focus:outline-none">
-          <FaCog />
         </button>
         
         {/* ユーザーメニュー */}
