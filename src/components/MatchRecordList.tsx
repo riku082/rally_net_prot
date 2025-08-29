@@ -165,20 +165,39 @@ export default function MatchRecordList({
     if (!user) return;
     
     try {
+      // undefined値を除外したデータを作成
+      const cleanData: any = {
+        userId: user.uid,
+        date: matchData.date,
+        startTime: matchData.startTime,
+        matchType: matchData.matchType,
+        gameType: matchData.gameType,
+        team1: matchData.team1,
+        team2: matchData.team2,
+        scores: matchData.scores,
+        winner: matchData.winner,
+        updatedAt: Date.now()
+      };
+      
+      // オプショナルフィールドを条件付きで追加
+      if (matchData.practiceId) cleanData.practiceId = matchData.practiceId;
+      if (matchData.communityId) cleanData.communityId = matchData.communityId;
+      if (matchData.communityEventId) cleanData.communityEventId = matchData.communityEventId;
+      if (matchData.endTime) cleanData.endTime = matchData.endTime;
+      if (matchData.venue) cleanData.venue = matchData.venue;
+      if (matchData.tags && matchData.tags.length > 0) cleanData.tags = matchData.tags;
+      if (matchData.notes) cleanData.notes = matchData.notes;
+      if (matchData.videoUrl) cleanData.videoUrl = matchData.videoUrl;
+      if (matchData.hasRallyData) cleanData.hasRallyData = matchData.hasRallyData;
+      if (matchData.rallyDataUrl) cleanData.rallyDataUrl = matchData.rallyDataUrl;
+      
       if (editingMatch) {
         // 更新
-        await updateDoc(doc(db, 'matches', editingMatch.id), {
-          ...matchData,
-          updatedAt: Date.now()
-        });
+        await updateDoc(doc(db, 'matches', editingMatch.id), cleanData);
       } else {
         // 新規作成
-        await addDoc(collection(db, 'matches'), {
-          ...matchData,
-          userId: user.uid,
-          createdAt: Date.now(),
-          updatedAt: Date.now()
-        });
+        cleanData.createdAt = Date.now();
+        await addDoc(collection(db, 'matches'), cleanData);
       }
       
       await loadMatches();
@@ -259,6 +278,7 @@ export default function MatchRecordList({
           
           <MatchRecordForm
             communityId={communityId}
+            initialData={editingMatch || undefined}
             onSave={handleSaveMatch}
             onCancel={() => {
               setShowForm(false);

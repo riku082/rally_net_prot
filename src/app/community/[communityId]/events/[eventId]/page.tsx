@@ -10,7 +10,8 @@ import {
   collection,
   query,
   where,
-  getDocs
+  getDocs,
+  deleteDoc
 } from 'firebase/firestore';
 import { 
   Community, 
@@ -21,6 +22,7 @@ import {
 import { PracticeCard, Practice } from '@/types/practice';
 import AttendanceManager from '@/components/community/AttendanceManager';
 import EventComments from '@/components/community/EventComments';
+import PracticeCardDetailModal from '@/components/community/PracticeCardDetailModal';
 import Link from 'next/link';
 import { 
   ChevronLeft,
@@ -50,7 +52,10 @@ export default function EventDetailPage() {
   const [relatedPractices, setRelatedPractices] = useState<Practice[]>([]);
   const [memberRole, setMemberRole] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const [creatorInfo, setCreatorInfo] = useState<{ name: string; photoURL?: string }>({ name: '' });
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [showCardModal, setShowCardModal] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -170,10 +175,81 @@ export default function EventDetailPage() {
   };
 
   const handleDelete = async () => {
+    console.log('Delete button clicked for event:', eventId);
+    console.log('canEdit:', canEdit);
+    
+    if (deleting) return; // 既に削除中の場合は何もしない
+    
     if (!confirm('このイベントを削除してもよろしいですか？')) return;
     
-    // TODO: イベント削除処理
-    router.push(`/community/${communityId}`);
+    setDeleting(true); // 削除処理開始
+    
+    try {
+      console.log('Starting deletion process for event:', eventId);
+      
+      // イベントを削除（サブコレクションから）
+      await deleteDoc(doc(db, 'communities', communityId, 'events', eventId));
+      console.log('Event deleted successfully from subcollection');
+      
+      // 関連する参加情報も削除
+      try {
+        const participationsQuery = query(
+          collection(db, 'event_participations'),
+          where('eventId', '==', eventId)
+        );
+        const participationsSnapshot = await getDocs(participationsQuery);
+        console.log(`Found ${participationsSnapshot.docs.length} participations to delete`);
+        
+        for (const docSnapshot of participationsSnapshot.docs) {
+          await deleteDoc(docSnapshot.ref);
+        }
+      } catch (error) {
+        console.error('Error deleting participations:', error);
+      }
+      
+      // 関連するコメントも削除
+      try {
+        const commentsQuery = query(
+          collection(db, 'event_comments'),
+          where('eventId', '==', eventId)
+        );
+        const commentsSnapshot = await getDocs(commentsQuery);
+        console.log(`Found ${commentsSnapshot.docs.length} comments to delete`);
+        
+        for (const docSnapshot of commentsSnapshot.docs) {
+          await deleteDoc(docSnapshot.ref);
+        }
+      } catch (error) {
+        console.error('Error deleting comments:', error);
+      }
+      
+      // 関連する練習記録も削除（communityEventIdで紐づいているもの）
+      try {
+        const practicesQuery = query(
+          collection(db, 'practices'),
+          where('communityEventId', '==', eventId)
+        );
+        const practicesSnapshot = await getDocs(practicesQuery);
+        console.log(`Found ${practicesSnapshot.docs.length} practices to delete`);
+        
+        for (const docSnapshot of practicesSnapshot.docs) {
+          await deleteDoc(docSnapshot.ref);
+        }
+      } catch (error) {
+        console.error('Error deleting practices:', error);
+      }
+      
+      // 削除成功
+      console.log('All related data deleted, redirecting...');
+      
+      // 削除されたページから確実に離れる
+      // window.location.hrefを使用して強制的にページをリロード
+      window.location.href = `/community/${communityId}`;
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      alert(`イベントの削除に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      setDeleting(false); // エラー時は削除状態をリセット
+    }
   };
 
   const canEdit = user && (
@@ -284,10 +360,24 @@ export default function EventDetailPage() {
                     <Edit className="h-5 w-5" />
                   </button>
                   <button
-                    onClick={handleDelete}
-                    className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleDelete();
+                    }}
+                    disabled={deleting}
+                    className={`p-2 rounded-lg transition-colors ${
+                      deleting 
+                        ? 'text-gray-400 bg-gray-100 cursor-not-allowed' 
+                        : 'text-red-600 hover:text-red-700 hover:bg-red-50'
+                    }`}
+                    title={deleting ? '削除中...' : 'イベントを削除'}
                   >
-                    <Trash2 className="h-5 w-5" />
+                    {deleting ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-red-600"></div>
+                    ) : (
+                      <Trash2 className="h-5 w-5" />
+                    )}
                   </button>
                 </div>
               )}
@@ -529,7 +619,13 @@ export default function EventDetailPage() {
                           {practice.routine.cards.map((card, index) => (
                             <div
                               key={`${practice.id}-card-${index}`}
-                              className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200"
+                              className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:border-green-400 cursor-pointer transition-colors"
+                              onClick={() => {
+                                if (card.cardId) {
+                                  setSelectedCardId(card.cardId);
+                                  setShowCardModal(true);
+                                }
+                              }}
                             >
                               <div className="flex items-center gap-3">
                                 <span className="flex-shrink-0 w-8 h-8 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-sm font-semibold">
@@ -611,6 +707,18 @@ export default function EventDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* 練習カード詳細モーダル */}
+      {selectedCardId && (
+        <PracticeCardDetailModal
+          cardId={selectedCardId}
+          isOpen={showCardModal}
+          onClose={() => {
+            setShowCardModal(false);
+            setSelectedCardId(null);
+          }}
+        />
+      )}
     </div>
   );
 }

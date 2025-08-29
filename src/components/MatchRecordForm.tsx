@@ -38,6 +38,7 @@ interface MatchRecordFormProps {
   communityId?: string;
   communityEventId?: string;
   date?: string;
+  initialData?: MatchRecord;
   onSave: (match: Omit<MatchRecord, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onCancel?: () => void;
 }
@@ -47,6 +48,7 @@ export default function MatchRecordForm({
   communityId,
   communityEventId,
   date,
+  initialData,
   onSave,
   onCancel
 }: MatchRecordFormProps) {
@@ -56,21 +58,25 @@ export default function MatchRecordForm({
   const [showPlayerSelection, setShowPlayerSelection] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTeam, setSelectedTeam] = useState<1 | 2>(1);
+  const [editingGuestId, setEditingGuestId] = useState<string | null>(null);
+  const [editingGuestName, setEditingGuestName] = useState<string>('');
   
   const [formData, setFormData] = useState({
-    matchType: 'practice' as MatchType,
-    gameType: 'doubles' as GameType,
-    startTime: '',
-    endTime: '',
-    venue: '',
-    notes: ''
+    matchType: (initialData?.matchType || 'practice') as MatchType,
+    gameType: (initialData?.gameType || 'doubles') as GameType,
+    startTime: initialData?.startTime || '',
+    endTime: initialData?.endTime || '',
+    venue: initialData?.venue || '',
+    notes: initialData?.notes || ''
   });
   
-  const [team1, setTeam1] = useState<PlayerInfo[]>([]);
-  const [team2, setTeam2] = useState<PlayerInfo[]>([]);
-  const [scores, setScores] = useState<GameScore[]>([
-    { gameNumber: 1, team1Score: 0, team2Score: 0 }
-  ]);
+  const [team1, setTeam1] = useState<PlayerInfo[]>(initialData?.team1?.players || []);
+  const [team2, setTeam2] = useState<PlayerInfo[]>(initialData?.team2?.players || []);
+  const [scores, setScores] = useState<GameScore[]>(
+    initialData?.scores && initialData.scores.length > 0 
+      ? initialData.scores 
+      : [{ gameNumber: 1, team1Score: 0, team2Score: 0 }]
+  );
 
   useEffect(() => {
     if (user) {
@@ -389,7 +395,7 @@ export default function MatchRecordForm({
           
           {team1.map((player) => (
             <div key={player.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg mb-2">
-              <div className="flex items-center">
+              <div className="flex items-center flex-1">
                 {player.photoURL ? (
                   <img src={player.photoURL} alt={player.name} className="w-8 h-8 rounded-full mr-2" />
                 ) : (
@@ -397,11 +403,54 @@ export default function MatchRecordForm({
                     <User className="h-4 w-4 text-gray-600" />
                   </div>
                 )}
-                <span className="text-sm font-medium">{player.name}</span>
+                {player.type === 'guest' && editingGuestId === player.id ? (
+                  <input
+                    type="text"
+                    value={editingGuestName}
+                    onChange={(e) => setEditingGuestName(e.target.value)}
+                    onBlur={() => {
+                      if (editingGuestName.trim()) {
+                        setTeam1(team1.map(p => 
+                          p.id === player.id ? { ...p, name: editingGuestName.trim() } : p
+                        ));
+                      }
+                      setEditingGuestId(null);
+                      setEditingGuestName('');
+                    }}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        if (editingGuestName.trim()) {
+                          setTeam1(team1.map(p => 
+                            p.id === player.id ? { ...p, name: editingGuestName.trim() } : p
+                          ));
+                        }
+                        setEditingGuestId(null);
+                        setEditingGuestName('');
+                      }
+                    }}
+                    className="text-sm font-medium border-b border-gray-400 focus:border-green-500 outline-none px-1"
+                    autoFocus
+                  />
+                ) : (
+                  <span 
+                    className={`text-sm font-medium ${player.type === 'guest' ? 'cursor-pointer hover:text-green-600' : ''}`}
+                    onClick={() => {
+                      if (player.type === 'guest') {
+                        setEditingGuestId(player.id);
+                        setEditingGuestName(player.name);
+                      }
+                    }}
+                  >
+                    {player.name}
+                    {player.type === 'guest' && (
+                      <span className="ml-1 text-xs text-gray-500">(ゲスト)</span>
+                    )}
+                  </span>
+                )}
               </div>
               <button
                 onClick={() => removePlayerFromTeam(player.id, 1)}
-                className="text-red-500 hover:text-red-700"
+                className="text-red-500 hover:text-red-700 ml-2"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -428,7 +477,7 @@ export default function MatchRecordForm({
           
           {team2.map((player) => (
             <div key={player.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg mb-2">
-              <div className="flex items-center">
+              <div className="flex items-center flex-1">
                 {player.photoURL ? (
                   <img src={player.photoURL} alt={player.name} className="w-8 h-8 rounded-full mr-2" />
                 ) : (
@@ -436,11 +485,54 @@ export default function MatchRecordForm({
                     <User className="h-4 w-4 text-gray-600" />
                   </div>
                 )}
-                <span className="text-sm font-medium">{player.name}</span>
+                {player.type === 'guest' && editingGuestId === player.id ? (
+                  <input
+                    type="text"
+                    value={editingGuestName}
+                    onChange={(e) => setEditingGuestName(e.target.value)}
+                    onBlur={() => {
+                      if (editingGuestName.trim()) {
+                        setTeam2(team2.map(p => 
+                          p.id === player.id ? { ...p, name: editingGuestName.trim() } : p
+                        ));
+                      }
+                      setEditingGuestId(null);
+                      setEditingGuestName('');
+                    }}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        if (editingGuestName.trim()) {
+                          setTeam2(team2.map(p => 
+                            p.id === player.id ? { ...p, name: editingGuestName.trim() } : p
+                          ));
+                        }
+                        setEditingGuestId(null);
+                        setEditingGuestName('');
+                      }
+                    }}
+                    className="text-sm font-medium border-b border-gray-400 focus:border-green-500 outline-none px-1"
+                    autoFocus
+                  />
+                ) : (
+                  <span 
+                    className={`text-sm font-medium ${player.type === 'guest' ? 'cursor-pointer hover:text-green-600' : ''}`}
+                    onClick={() => {
+                      if (player.type === 'guest') {
+                        setEditingGuestId(player.id);
+                        setEditingGuestName(player.name);
+                      }
+                    }}
+                  >
+                    {player.name}
+                    {player.type === 'guest' && (
+                      <span className="ml-1 text-xs text-gray-500">(ゲスト)</span>
+                    )}
+                  </span>
+                )}
               </div>
               <button
                 onClick={() => removePlayerFromTeam(player.id, 2)}
-                className="text-red-500 hover:text-red-700"
+                className="text-red-500 hover:text-red-700 ml-2"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -512,19 +604,33 @@ export default function MatchRecordForm({
             ))}
           </div>
           
-          {searchTerm && filteredPlayers.length === 0 && (
+          {/* ゲスト追加オプション */}
+          <div className="border-t pt-3 mt-3 space-y-2">
+            {searchTerm && filteredPlayers.length === 0 && (
+              <button
+                onClick={() => {
+                  addGuestPlayer(searchTerm, selectedTeam);
+                  setSearchTerm('');
+                  setShowPlayerSelection(false);
+                }}
+                className="w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                <Plus className="inline h-4 w-4 mr-1" />
+                ゲスト「{searchTerm}」を追加
+              </button>
+            )}
+            
             <button
               onClick={() => {
-                addGuestPlayer(searchTerm, selectedTeam);
-                setSearchTerm('');
+                addGuestPlayer('ゲスト', selectedTeam);
                 setShowPlayerSelection(false);
               }}
-              className="w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              className="w-full py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors"
             >
-              <Plus className="inline h-4 w-4 mr-1" />
-              ゲスト「{searchTerm}」を追加
+              <User className="inline h-4 w-4 mr-1" />
+              名前なしゲストを追加
             </button>
-          )}
+          </div>
         </div>
       )}
 
