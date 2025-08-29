@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { firestoreDb } from '@/utils/db';
 import { useRouter } from 'next/navigation';
-import { FiUser, FiUsers, FiAward, FiCalendar, FiSave } from 'react-icons/fi';
+import { FiUser, FiAward, FiCalendar, FiSave } from 'react-icons/fi';
 import { UserProfile } from '@/types/userProfile';
 
 const OnboardingProfilePage: React.FC = () => {
@@ -13,7 +13,6 @@ const OnboardingProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
-    team: '',
     position: '',
     experience: '',
     avatar: ''
@@ -82,7 +81,6 @@ const OnboardingProfilePage: React.FC = () => {
         id: user.uid,
         email: user.email || '',
         name: formData.name.trim(),
-        team: formData.team || undefined,
         position: formData.position || undefined,
         experience: formData.experience || undefined,
         createdAt: Date.now(), // 新規作成時は現在時刻（number型）
@@ -138,13 +136,6 @@ const OnboardingProfilePage: React.FC = () => {
                   <input type="text" name="name" value={formData.name} onChange={handleInputChange} className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" required />
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">チーム</label>
-                <div className="relative">
-                  <FiUsers className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input type="text" name="team" value={formData.team} onChange={handleInputChange} className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" />
-                </div>
-              </div>
               {/* アバターファイル入力フィールド */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">アバター画像</label>
@@ -180,6 +171,7 @@ const OnboardingProfilePage: React.FC = () => {
                     <option value="シングルス">シングルス</option>
                     <option value="ダブルス">ダブルス</option>
                     <option value="ミックスダブルス">ミックスダブルス</option>
+                    <option value="オールラウンド">オールラウンド</option>
                   </select>
                 </div>
               </div>

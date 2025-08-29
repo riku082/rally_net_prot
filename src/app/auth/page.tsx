@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmail, signUpWithEmailVerification, signInWithGoogle, handleGoogleRedirectResult } from '@/utils/auth';
+import { signInWithEmail, signInWithGoogle, handleGoogleRedirectResult } from '@/utils/auth';
 import { firestoreDb } from '@/utils/db';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const AuthPage: React.FC = () => {
   const router = useRouter();
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -59,26 +59,18 @@ const AuthPage: React.FC = () => {
     setError('');
 
     try {
-      const { user, error: authError } = isSignUp 
-        ? await signUpWithEmailVerification(email, password)
-        : await signInWithEmail(email, password);
+      // ログインの場合のみ処理
+      const { user, error: authError } = await signInWithEmail(email, password);
 
       if (authError) {
         setError(authError);
       } else if (user) {
-        if (isSignUp) {
-          // 新規登録の場合、メール認証の案内を表示
-          setError('');
-          alert('アカウントを作成しました！認証メールを送信しましたので、メールボックスをご確認ください。メール認証を行うと全ての機能が利用可能になります。');
-          // 新規登録後も自動的にログイン処理を行う
-          await checkProfileAndRedirect(user.uid);
-        } else {
-          // ログインの場合、メール認証の有無に関わらずログインを許可
-          await checkProfileAndRedirect(user.uid);
-        }
+        // ログイン成功
+        await checkProfileAndRedirect(user.uid);
       }
-    } catch {
-      setError('認証に失敗しました');
+    } catch (error) {
+      console.error('ログインエラー:', error);
+      setError('ログインに失敗しました');
     } finally {
       setLoading(false);
     }
@@ -148,25 +140,18 @@ const AuthPage: React.FC = () => {
               </p>
             </div>
           </div>
-          
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {isSignUp ? 'アカウント作成' : 'ログイン'}
-            </h2>
-            <p className="text-sm text-gray-600 mb-6">
-              {isSignUp ? '既にアカウントをお持ちですか？' : 'アカウントをお持ちでないですか？'}
-              <button
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="font-medium text-theme-primary-600 hover:text-theme-primary-500 ml-1 transition-colors"
-              >
-                {isSignUp ? 'ログイン' : 'アカウント作成'}
-              </button>
-            </p>
-          </div>
         </div>
 
         {/* 認証フォーム */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
+              ログイン
+            </h2>
+            <p className="text-sm text-gray-600 text-center">
+              Rally Netへようこそ
+            </p>
+          </div>
           <div>
 
             <form className="space-y-6" onSubmit={handleEmailAuth}>
@@ -219,7 +204,7 @@ const AuthPage: React.FC = () => {
                   disabled={loading}
                   className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-theme-primary-600 to-theme-primary-400 hover:from-theme-primary-700 hover:to-theme-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
-                  {loading ? '処理中...' : (isSignUp ? 'アカウント作成' : 'ログイン')}
+                  {loading ? '処理中...' : 'ログイン'}
                 </button>
               </div>
 
@@ -258,9 +243,21 @@ const AuthPage: React.FC = () => {
                         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                       />
                     </svg>
-                    <span>Googleで{isSignUp ? 'アカウント作成' : 'ログイン'}</span>
+                    <span>Googleでログイン</span>
                   </button>
                 </div>
+              </div>
+
+              <div className="text-center pt-4 border-t border-gray-200">
+                <p className="text-sm text-gray-600">
+                  アカウントをお持ちでないですか？
+                </p>
+                <Link
+                  href="/auth/signup"
+                  className="font-medium text-theme-primary-600 hover:text-theme-primary-500 transition-colors inline-block mt-2"
+                >
+                  新規アカウントを作成
+                </Link>
               </div>
             </form>
           </div>
