@@ -67,11 +67,11 @@ export default function CommunityHeader({
             </div>
             
             <div className="flex-1 sm:mx-4">
-              <h1 className="text-xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
+              <h1 className="text-xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2 break-words overflow-hidden">
                 {community.name}
               </h1>
               {community.description && (
-                <p className="text-sm sm:text-base text-gray-600 mb-2 sm:mb-0">{community.description}</p>
+                <p className="text-sm sm:text-base text-gray-600 mb-2 sm:mb-0 break-words overflow-hidden line-clamp-3 sm:line-clamp-none">{community.description}</p>
               )}
               <div className="mt-2 sm:mt-4 flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500">
                 <span className="flex items-center">

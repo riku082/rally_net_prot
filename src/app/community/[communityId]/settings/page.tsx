@@ -8,6 +8,7 @@ import {
   doc,
   getDoc,
   updateDoc,
+  deleteDoc,
   collection,
   query,
   where,
@@ -37,7 +38,9 @@ import {
   MapPin,
   Globe,
   Lock,
-  Tag
+  Tag,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 
 export default function CommunitySettingsPage() {
@@ -52,6 +55,10 @@ export default function CommunitySettingsPage() {
   const [saving, setSaving] = useState(false);
   const [uploadingHeader, setUploadingHeader] = useState(false);
   const [uploadingTop, setUploadingTop] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [memberRole, setMemberRole] = useState<CommunityRole | null>(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -113,6 +120,7 @@ export default function CommunitySettingsPage() {
       
       if (!memberSnapshot.empty) {
         const memberData = memberSnapshot.docs[0].data() as CommunityMember;
+        setMemberRole(memberData.role);
         if (memberData.role === CommunityRole.OWNER || memberData.role === CommunityRole.ADMIN) {
           setHasPermission(true);
         }
@@ -237,6 +245,101 @@ export default function CommunitySettingsPage() {
       setHeaderImagePreview(null);
     } else {
       setTopImagePreview(null);
+    }
+  };
+
+  const handleDeleteCommunity = async () => {
+    if (!community || deleteConfirmText !== community.name || deleting) return;
+
+    setDeleting(true);
+
+    try {
+      // 1. コミュニティのすべてのイベントを削除
+      const eventsQuery = query(
+        collection(db, 'communities', communityId, 'events')
+      );
+      const eventsSnapshot = await getDocs(eventsQuery);
+      
+      for (const eventDoc of eventsSnapshot.docs) {
+        const eventId = eventDoc.id;
+        
+        // イベント関連データを削除
+        // 参加情報
+        const participationsQuery = query(
+          collection(db, 'event_participations'),
+          where('eventId', '==', eventId)
+        );
+        const participationsSnapshot = await getDocs(participationsQuery);
+        for (const doc of participationsSnapshot.docs) {
+          await deleteDoc(doc.ref);
+        }
+        
+        // コメント
+        const commentsQuery = query(
+          collection(db, 'event_comments'),
+          where('eventId', '==', eventId)
+        );
+        const commentsSnapshot = await getDocs(commentsQuery);
+        for (const doc of commentsSnapshot.docs) {
+          await deleteDoc(doc.ref);
+        }
+        
+        // イベント本体を削除
+        await deleteDoc(eventDoc.ref);
+      }
+
+      // 2. コミュニティメンバーを削除
+      const membersQuery = query(
+        collection(db, 'community_members'),
+        where('communityId', '==', communityId)
+      );
+      const membersSnapshot = await getDocs(membersQuery);
+      for (const doc of membersSnapshot.docs) {
+        await deleteDoc(doc.ref);
+      }
+
+      // 3. コミュニティ招待を削除
+      const invitationsQuery = query(
+        collection(db, 'community_invitations'),
+        where('communityId', '==', communityId)
+      );
+      const invitationsSnapshot = await getDocs(invitationsQuery);
+      for (const doc of invitationsSnapshot.docs) {
+        await deleteDoc(doc.ref);
+      }
+
+      // 4. 練習記録（コミュニティに紐付いているもの）を削除
+      const practicesQuery = query(
+        collection(db, 'practices'),
+        where('communityId', '==', communityId)
+      );
+      const practicesSnapshot = await getDocs(practicesQuery);
+      for (const doc of practicesSnapshot.docs) {
+        await deleteDoc(doc.ref);
+      }
+
+      // 5. 試合記録（コミュニティに紐付いているもの）を削除
+      const matchesQuery = query(
+        collection(db, 'matches'),
+        where('communityId', '==', communityId)
+      );
+      const matchesSnapshot = await getDocs(matchesQuery);
+      for (const doc of matchesSnapshot.docs) {
+        await deleteDoc(doc.ref);
+      }
+
+      // 6. Storage内の画像を削除（必要に応じて）
+      // TODO: Firebase Storageから画像を削除する処理を追加
+
+      // 7. 最後にコミュニティ本体を削除
+      await deleteDoc(doc(db, 'communities', communityId));
+
+      // 削除完了後、コミュニティ一覧ページへリダイレクト
+      window.location.href = '/community';
+    } catch (error) {
+      console.error('Error deleting community:', error);
+      alert('コミュニティの削除に失敗しました');
+      setDeleting(false);
     }
   };
 
@@ -547,6 +650,95 @@ export default function CommunitySettingsPage() {
           </button>
         </div>
       </form>
+
+      {/* 危険ゾーン - オーナーのみ表示 */}
+      {memberRole === CommunityRole.OWNER && (
+        <div className="mt-12 bg-red-50 border border-red-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-red-900 mb-4 flex items-center">
+            <AlertTriangle className="h-5 w-5 mr-2" />
+            危険ゾーン
+          </h3>
+          
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">コミュニティを削除</h4>
+              <p className="text-sm text-gray-600 mb-4">
+                コミュニティを削除すると、すべてのデータ（イベント、メンバー情報、投稿など）が完全に削除されます。
+                この操作は取り消すことができません。
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(true)}
+                className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                コミュニティを削除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 削除確認モーダル */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
+              本当に削除しますか？
+            </h3>
+            
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-red-800 mb-2">
+                <strong>警告:</strong> この操作は取り消すことができません。
+              </p>
+              <ul className="text-sm text-red-700 space-y-1">
+                <li>• すべてのイベントが削除されます</li>
+                <li>• すべてのメンバー情報が削除されます</li>
+                <li>• すべての投稿とコメントが削除されます</li>
+                <li>• アップロードされた画像が削除されます</li>
+              </ul>
+            </div>
+            
+            <p className="text-sm text-gray-600 mb-4">
+              削除を実行するには、以下にコミュニティ名「<strong>{community?.name}</strong>」を入力してください。
+            </p>
+            
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 mb-4"
+              placeholder="コミュニティ名を入力"
+            />
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleDeleteCommunity}
+                disabled={deleteConfirmText !== community?.name || deleting}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {deleting ? (
+                  <span className="inline-flex items-center">
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    削除中...
+                  </span>
+                ) : (
+                  '削除する'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
