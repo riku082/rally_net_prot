@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { firestoreDb } from '@/utils/db';
 import { FaFile, FaInfoCircle, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
-import { GiShuttlecock } from 'react-icons/gi';
 import Link from 'next/link';
 
 const TermsAgreementPage: React.FC = () => {
@@ -64,9 +63,6 @@ const TermsAgreementPage: React.FC = () => {
       <div className="max-w-4xl w-full">
         {/* ヘッダー */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <GiShuttlecock className="w-12 h-12 text-theme-primary-600" />
-          </div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Rally Net へようこそ</h1>
           <p className="text-gray-600">ご利用前に、以下の内容をご確認・同意いただく必要があります</p>
         </div>

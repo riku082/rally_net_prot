@@ -17,7 +17,7 @@ import DateEventModal from './DateEventModal';
 
 interface CommunityCalendarProps {
   communityId: string;
-  events: CommunityEvent[];
+  events?: CommunityEvent[];
   onEventClick?: (event: CommunityEvent) => void;
 }
 
@@ -25,7 +25,7 @@ type ViewMode = 'month' | 'week';
 
 export default function CommunityCalendar({ 
   communityId, 
-  events, 
+  events = [], 
   onEventClick 
 }: CommunityCalendarProps) {
   const router = useRouter();
@@ -158,42 +158,42 @@ export default function CommunityCalendar({
   return (
     <div className="bg-white rounded-lg shadow-md">
       {/* ヘッダー */}
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
+      <div className="p-3 sm:p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <div className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={navigatePrevious}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-1 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
               aria-label="前へ"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
             
             <button
               onClick={navigateToday}
-              className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              className="px-2 py-1 text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
             >
               今日
             </button>
             
             <button
               onClick={navigateNext}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-1 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
               aria-label="次へ"
             >
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
             
-            <h2 className="text-xl font-bold text-gray-900 ml-4">
+            <h2 className="text-sm sm:text-xl font-bold text-gray-900 ml-1 sm:ml-4">
               {viewMode === 'month' ? formatMonthYear() : formatWeekRange()}
             </h2>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <div className="flex bg-gray-100 rounded-lg p-0.5 sm:p-1">
               <button
                 onClick={() => setViewMode('month')}
-                className={`px-3 py-1 text-sm rounded ${
+                className={`px-2 py-1 text-xs sm:text-sm rounded ${
                   viewMode === 'month' 
                     ? 'bg-white text-gray-900 shadow-sm' 
                     : 'text-gray-600 hover:text-gray-900'
@@ -203,7 +203,7 @@ export default function CommunityCalendar({
               </button>
               <button
                 onClick={() => setViewMode('week')}
-                className={`px-3 py-1 text-sm rounded ${
+                className={`px-2 py-1 text-xs sm:text-sm rounded ${
                   viewMode === 'week' 
                     ? 'bg-white text-gray-900 shadow-sm' 
                     : 'text-gray-600 hover:text-gray-900'
@@ -215,23 +215,24 @@ export default function CommunityCalendar({
 
             <Link
               href={`/community/${communityId}/events/new`}
-              className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+              className="p-1.5 sm:px-4 sm:py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+              title="イベント作成"
             >
-              <Plus className="h-4 w-4 mr-1" />
-              イベント作成
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline sm:ml-1 text-sm font-medium">イベント作成</span>
             </Link>
           </div>
         </div>
       </div>
 
       {/* カレンダー本体 */}
-      <div className="p-4">
+      <div className="p-2 sm:p-4">
         {/* 曜日ヘッダー */}
         <div className="grid grid-cols-7 gap-px bg-gray-200 rounded-t-lg overflow-hidden">
           {weekDays.map((day, index) => (
             <div
               key={day}
-              className={`py-2 text-center text-sm font-medium bg-gray-50 ${
+              className={`py-1 sm:py-2 text-center text-xs sm:text-sm font-medium bg-gray-50 ${
                 index === 0 ? 'text-red-600' : index === 6 ? 'text-blue-600' : 'text-gray-700'
               }`}
             >
@@ -251,7 +252,7 @@ export default function CommunityCalendar({
               <div
                 key={index}
                 className={`
-                  group min-h-[100px] p-2 bg-white cursor-pointer hover:bg-gray-50 transition-colors
+                  group min-h-[60px] sm:min-h-[100px] p-1 sm:p-2 bg-white cursor-pointer hover:bg-gray-50 transition-colors
                   ${!isCurrentMonthDay && viewMode === 'month' ? 'bg-gray-50 text-gray-400' : ''}
                   ${isTodayDate ? 'ring-2 ring-green-500 ring-inset' : ''}
                   ${selectedDate && date.toDateString() === selectedDate.toDateString() ? 'bg-green-50' : ''}
@@ -261,8 +262,8 @@ export default function CommunityCalendar({
                   setIsModalOpen(true);
                 }}
               >
-                <div className="flex justify-between items-start mb-1">
-                  <span className={`text-sm font-medium ${
+                <div className="flex justify-between items-start mb-0.5 sm:mb-1">
+                  <span className={`text-xs sm:text-sm font-medium ${
                     index % 7 === 0 ? 'text-red-600' : 
                     index % 7 === 6 ? 'text-blue-600' : 
                     'text-gray-900'

@@ -80,18 +80,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(false);
 
       if (user) {
-        // メール認証状態を設定
+        // メール認証状態を正確に設定
         setIsEmailVerified(user.emailVerified);
         
-        // ユーザーがログインしている場合、プロフィールを取得
-        setProfileLoading(true);
-        try {
-          const userProfile = await firestoreDb.getUserProfile(user.uid);
-          setProfile(userProfile);
-        } catch (error) {
-          console.error('プロフィール取得エラー:', error);
-          setProfile(null); // エラー時もプロフィールをnullに設定
-        } finally {
+        // メール認証が完了している場合のみプロフィールを取得
+        if (user.emailVerified) {
+          setProfileLoading(true);
+          try {
+            const userProfile = await firestoreDb.getUserProfile(user.uid);
+            setProfile(userProfile);
+          } catch (error) {
+            console.error('プロフィール取得エラー:', error);
+            setProfile(null);
+          } finally {
+            setProfileLoading(false);
+          }
+        } else {
+          // メール未認証の場合はプロフィールを取得しない
+          setProfile(null);
           setProfileLoading(false);
         }
       } else {

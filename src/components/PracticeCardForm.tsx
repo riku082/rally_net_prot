@@ -40,7 +40,7 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
     difficulty: card?.difficulty || 'beginner' as PracticeDifficulty,
     equipment: card?.equipment || [''],
     courtInfo: card?.courtInfo || undefined,
-    practiceType: card?.practiceType || undefined as PracticeMenuType | undefined,
+    practiceType: card?.practiceType || 'knock_practice' as PracticeMenuType,
     visualInfo: card?.visualInfo || { shotTrajectories: [], playerPositions: [] },
     notes: card?.notes || '',
     tags: card?.tags || [''],
@@ -148,7 +148,7 @@ const PracticeCardForm: React.FC<PracticeCardFormProps> = ({
       tags: formData.tags.filter(tag => tag.trim() !== ''),
       // ビジュアルエディタを使用している場合、または既存のvisualInfoがある場合は保持
       visualInfo: useVisualEditor || formData.visualInfo ? formData.visualInfo : undefined,
-      practiceType: formData.practiceType || 'knock_practice',
+      practiceType: formData.practiceType,
     };
     
     onSave(filteredData);

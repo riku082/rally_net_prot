@@ -11,13 +11,16 @@ import PracticeList from '@/components/PracticeList';
 import PracticeForm from '@/components/PracticeForm';
 import PracticeCardList from '@/components/PracticeCardList';
 import PracticeCardForm from '@/components/PracticeCardForm';
+import MatchRecordList from '@/components/MatchRecordList';
 import { Practice, PracticeCard } from '@/types/practice';
+import { MatchRecord } from '@/types/match';
 import { firestoreDb } from '@/utils/db';
 import { useAuth } from '@/context/AuthContext';
 import { useSearchParams } from 'next/navigation';
-import { FaCalendarAlt, FaBook, FaLayerGroup, FaPlus } from 'react-icons/fa';
+import { FaCalendarAlt, FaBook, FaLayerGroup, FaPlus, FaTrophy, FaList, FaTh } from 'react-icons/fa';
 
-type ViewMode = 'calendar' | 'records' | 'cards';
+type ViewMode = 'activities' | 'cards';
+type ActivityView = 'calendar' | 'list';
 
 function PracticeManagementContent() {
   const { user } = useAuth();
@@ -38,11 +41,12 @@ function PracticeManagementContent() {
   // UI状態  
   const [activeView, setActiveView] = useState<ViewMode>(() => {
     const tab = searchParams.get('tab');
-    if (tab === 'cards' || tab === 'records' || tab === 'calendar') {
+    if (tab === 'cards' || tab === 'activities') {
       return tab as ViewMode;
     }
-    return 'calendar';
+    return 'activities';
   });
+  const [activityView, setActivityView] = useState<ActivityView>('calendar');
   const [showPracticeForm, setShowPracticeForm] = useState(false);
   const [showCardForm, setShowCardForm] = useState(false);
   const [editingPractice, setEditingPractice] = useState<Practice | null>(null);
@@ -625,20 +629,19 @@ function PracticeManagementContent() {
 
 
   const tabs = [
-    { id: 'calendar', label: 'カレンダー', icon: <FaCalendarAlt className="w-4 h-4" /> },
-    { id: 'records', label: '記録一覧', icon: <FaBook className="w-4 h-4" /> },
-    { id: 'cards', label: 'カード管理', icon: <FaLayerGroup className="w-4 h-4" /> },
+    { id: 'activities', label: '活動記録', icon: <FaCalendarAlt className="w-4 h-4" /> },
+    { id: 'cards', label: '練習カード', icon: <FaLayerGroup className="w-4 h-4" /> },
   ];
 
   if (isLoading) {
     return (
       <AuthGuard>
-        <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="flex min-h-screen bg-white">
           <Sidebar activePath="/practice-management" />
           <MobileNav activePath="/practice-management" />
           <div className="flex-1 flex flex-col lg:ml-0">
             <Topbar />
-            <main className="flex-1 p-8">
+            <main className="flex-1 p-8 bg-white">
               <div className="max-w-7xl mx-auto">
                 <div className="animate-pulse space-y-6">
                   <div className="bg-gray-200 rounded-lg h-32"></div>
@@ -654,17 +657,17 @@ function PracticeManagementContent() {
 
   return (
     <AuthGuard>
-      <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="flex min-h-screen bg-white">
         <Sidebar activePath="/practice-management" />
         <MobileNav activePath="/practice-management" />
         <div className="flex-1 flex flex-col lg:ml-0">
           <Topbar />
-          <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8">
+          <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-white">
             <div className="max-w-7xl mx-auto space-y-6">
 
 
               {/* タブナビゲーション */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20">
+              <div className="bg-gray-50 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200">
                 <div className="border-b border-gray-200">
                   <div className="flex justify-between items-center px-3 sm:px-6">
                     <div className="flex space-x-2 sm:space-x-4 md:space-x-8 overflow-x-auto">
@@ -685,22 +688,45 @@ function PracticeManagementContent() {
                     </div>
                     
                     <div className="flex items-center space-x-3">
-                      {activeView === 'records' && (
-                        <button
-                          onClick={() => handleCreatePractice()}
-                          className="hidden sm:flex items-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
-                        >
-                          <FaPlus className="w-4 h-4 mr-1 sm:mr-2" />
-                          <span className="hidden xs:inline">練習</span>記録
-                        </button>
+                      {activeView === 'activities' && (
+                        <>
+                          {/* 表示切替ボタン - モバイルでも表示 */}
+                          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                            <button
+                              onClick={() => setActivityView('calendar')}
+                              className={`px-2 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors flex items-center ${
+                                activityView === 'calendar' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                              }`}
+                            >
+                              <FaTh className="w-3 h-3 sm:mr-1" />
+                              <span className="hidden sm:inline ml-1">カレンダー</span>
+                            </button>
+                            <button
+                              onClick={() => setActivityView('list')}
+                              className={`px-2 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors flex items-center ${
+                                activityView === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                              }`}
+                            >
+                              <FaList className="w-3 h-3 sm:mr-1" />
+                              <span className="hidden sm:inline ml-1">リスト</span>
+                            </button>
+                          </div>
+                          <button
+                            onClick={() => handleCreatePractice()}
+                            className="flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-base"
+                          >
+                            <FaPlus className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                            <span className="hidden sm:inline">活動記録</span>
+                          </button>
+                        </>
                       )}
                       {activeView === 'cards' && (
                         <button
                           onClick={() => setShowCardForm(true)}
-                          className="hidden sm:flex items-center px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base font-medium shadow-lg"
+                          className="flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs sm:text-base font-medium shadow-lg"
                         >
-                          <FaPlus className="w-4 h-4 mr-1 sm:mr-2" />
-                          <span className="hidden xs:inline">練習</span>カード
+                          <FaPlus className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                          <span className="hidden sm:inline">練習カード</span>
                         </button>
                       )}
                     </div>
@@ -708,35 +734,26 @@ function PracticeManagementContent() {
                 </div>
 
                 {/* タブコンテンツ */}
-                <div className={activeView === 'calendar' ? 'p-2 sm:p-3 h-[calc(100vh-180px)] sm:h-[calc(100vh-200px)]' : 'p-6'}>
-                  {activeView === 'calendar' && (
-                    <PracticeCalendar
-                      practices={practices}
-                      onDateClick={handleDateClick}
-                      onEditPractice={handleEditPractice}
-                    />
-                  )}
-
-                  {activeView === 'records' && (
-                    <div className="relative">
-                      <PracticeList
-                        practices={practices}
-                        onEdit={handleEditPractice}
-                        onDelete={handleDeletePractice}
-                        isLoading={false}
-                      />
-                      
-                      {/* モバイル用フローティングアクションボタン */}
-                      <div className="fixed bottom-6 right-6 sm:hidden z-40">
-                        <button
-                          onClick={() => handleCreatePractice()}
-                          className="flex items-center justify-center w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200 hover:scale-105"
-                          aria-label="練習記録を追加"
-                        >
-                          <FaPlus className="w-6 h-6" />
-                        </button>
-                      </div>
-                    </div>
+                <div className={activeView === 'activities' && activityView === 'calendar' ? 'p-2 sm:p-3 h-[calc(100vh-180px)] sm:h-[calc(100vh-200px)]' : 'p-6'}>
+                  {activeView === 'activities' && (
+                    <>
+                      {activityView === 'calendar' ? (
+                        <PracticeCalendar
+                          practices={practices}
+                          onDateClick={handleDateClick}
+                          onEditPractice={handleEditPractice}
+                        />
+                      ) : (
+                        <div className="relative">
+                          <PracticeList
+                            practices={practices}
+                            onEdit={handleEditPractice}
+                            onDelete={handleDeletePractice}
+                            isLoading={false}
+                          />
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {activeView === 'cards' && (
@@ -835,13 +852,13 @@ function PracticeManagementContent() {
         </div>
       )}
 
-      {/* モバイル用フローティングアクションボタン - 記録一覧タブの時のみ表示 */}
-      {activeView === 'records' && !showPracticeForm && (
+      {/* モバイル用フローティングアクションボタン - 活動記録タブの時のみ表示 */}
+      {activeView === 'activities' && !showPracticeForm && (
         <div className="fixed bottom-6 right-6 sm:hidden z-40 animate-in fade-in slide-in-from-bottom-5 duration-300">
           <button
             onClick={() => handleCreatePractice()}
             className="group flex items-center justify-center w-14 h-14 bg-blue-600 text-white rounded-full shadow-xl hover:shadow-2xl hover:bg-blue-700 active:bg-blue-800 transition-all duration-200 hover:scale-110 active:scale-95"
-            aria-label="練習記録を追加"
+            aria-label="活動記録を追加"
             style={{
               boxShadow: '0 4px 14px 0 rgba(59, 130, 246, 0.5)'
             }}
@@ -850,7 +867,7 @@ function PracticeManagementContent() {
           </button>
           {/* ツールチップ */}
           <div className="absolute bottom-16 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 pointer-events-none transition-opacity duration-200 group-hover:opacity-100 whitespace-nowrap">
-            練習記録を追加
+            活動記録を追加
           </div>
         </div>
       )}

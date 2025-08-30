@@ -1,30 +1,30 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { FaTachometerAlt, FaUser, FaChartBar, FaUserCircle, FaRss, FaUserFriends, FaBrain, FaBook, FaMailBulk, FaQuestionCircle, FaShare, FaUsers } from 'react-icons/fa';
+import { FaHome, FaUser, FaChartBar, FaUserCircle, FaRss, FaUserFriends, FaBrain, FaBook, FaMailBulk, FaQuestionCircle, FaShare, FaUsers, FaFileContract } from 'react-icons/fa';
 import { GiShuttlecock } from 'react-icons/gi';
 import Image from 'next/image';
 import NotificationBadge from './NotificationBadge';
 
 const navItems = [
-  { label: 'ダッシュボード', icon: <FaTachometerAlt />, path: '/dashboard' },
+  { label: 'ホーム', icon: <FaHome />, path: '/dashboard' },
   { label: '練習管理', icon: <FaBook />, path: '/practice-management' },
   { label: 'コミュニティ', icon: <FaUsers />, path: '/community' },
-  
   { label: 'ニュース', icon: <FaRss />, path: '/news' },
   { label: 'フレンド', icon: <FaUserFriends />, path: '/friends' },
   { label: 'BPSI診断', icon: <FaBrain />, path: '/mbti' },
-  { label: '目安箱', icon: <FaMailBulk />, path: '/feedback' },
-  { label: '選手管理', icon: <FaUser />, path: '/players', disabled: true },
-  { label: '試合記録', icon: <GiShuttlecock />, path: '/matches', badge: 'ヨシダシステム', disabled: true }, // GiShuttlecockを使用
-  { label: '分析', icon: <FaChartBar />, path: '/analysis', disabled: true },
+  
+  // Coming Soon項目（非表示）
+  // { label: '選手管理', icon: <FaUser />, path: '/players', disabled: true },
+  // { label: '試合記録', icon: <GiShuttlecock />, path: '/matches', badge: 'ヨシダシステム', disabled: true },
+  // { label: '分析', icon: <FaChartBar />, path: '/analysis', disabled: true },
 ];
 
 const Sidebar: React.FC<{ activePath?: string }> = ({ activePath = '/' }) => {
   const router = useRouter();
   const { user, profile } = useAuth();
   return (
-    <aside className="hidden lg:flex fixed lg:relative w-64 h-screen bg-white border-r flex-col py-6 px-4 transform lg:translate-x-0 transition-transform duration-300 ease-in-out z-50">
+    <aside className="hidden lg:flex fixed lg:relative w-64 h-screen bg-white flex-col py-6 px-4 transform lg:translate-x-0 transition-transform duration-300 ease-in-out z-50">
       <div className="flex items-center mb-10">
         <Image src="/logo.png" alt="Rally Net" width={32} height={32} className="mr-3" />
         <span className="text-xl font-bold text-gray-800">Rally Net</span>

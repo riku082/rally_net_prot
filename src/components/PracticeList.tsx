@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react';
 import { Practice, PracticeType } from '@/types/practice';
-import { FaClock, FaCalendarAlt, FaEdit, FaTrash, FaStar, FaFilter, FaLayerGroup, FaCheckCircle } from 'react-icons/fa';
-import { FiTrendingUp, FiTarget } from 'react-icons/fi';
+import { FaClock, FaCalendarAlt, FaEdit, FaTrash, FaStar, FaFilter, FaLayerGroup, FaCheckCircle, FaChevronDown, FaChevronRight } from 'react-icons/fa';
 import { GiShuttlecock } from 'react-icons/gi';
 
 interface PracticeListProps {
@@ -25,6 +24,7 @@ const PracticeList: React.FC<PracticeListProps> = ({
   }>({
     dateRange: 'all'
   });
+  const [showStats, setShowStats] = useState(false);
 
   const practiceTypeLabels = {
     'basic_practice': '基礎練習',
@@ -133,54 +133,79 @@ const PracticeList: React.FC<PracticeListProps> = ({
         </div>
       </div>
 
-      {/* 統計サマリー */}
+      {/* 統計サマリー - 折りたたみ可能 */}
       {sortedPractices.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-blue-50 rounded-lg p-4">
-            <div className="flex items-center">
-              <FaCalendarAlt className="w-5 h-5 text-blue-600 mr-2" />
-              <div>
-                <p className="text-sm text-blue-600 font-medium">総練習回数</p>
-                <p className="text-2xl font-bold text-blue-800">{sortedPractices.length}</p>
-              </div>
+        <div className="mb-6">
+          <button
+            onClick={() => setShowStats(!showStats)}
+            className="flex items-center justify-between w-full text-left bg-gray-50 hover:bg-gray-100 rounded-lg px-3 sm:px-4 py-2 sm:py-3 transition-colors"
+          >
+            <div className="flex items-center space-x-2">
+              {showStats ? (
+                <FaChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
+              ) : (
+                <FaChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
+              )}
+              <span className="text-sm sm:text-base font-medium text-gray-700">統計情報</span>
             </div>
-          </div>
+            <div className="flex items-center space-x-3 text-xs sm:text-sm text-gray-600">
+              <span>練習{sortedPractices.length}回</span>
+              <span>•</span>
+              <span>{formatDuration(sortedPractices.reduce((sum, p) => sum + p.duration, 0))}</span>
+            </div>
+          </button>
           
-          <div className="bg-green-50 rounded-lg p-4">
-            <div className="flex items-center">
-              <FaClock className="w-5 h-5 text-green-600 mr-2" />
-              <div>
-                <p className="text-sm text-green-600 font-medium">総練習時間</p>
-                <p className="text-2xl font-bold text-green-800">
-                  {formatDuration(sortedPractices.reduce((sum, p) => sum + p.duration, 0))}
-                </p>
+          {showStats && (
+            <div className="bg-gray-50 rounded-b-lg px-3 sm:px-4 pb-3 sm:pb-4 -mt-1">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 pt-3">
+                <div className="bg-white rounded-lg p-2 sm:p-3 shadow-sm">
+                  <div className="flex items-center">
+                    <GiShuttlecock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mr-1 sm:mr-2" />
+                    <div>
+                      <p className="text-[10px] sm:text-xs text-gray-600 font-medium">練習回数</p>
+                      <p className="text-sm sm:text-lg font-bold text-gray-900">{sortedPractices.length}回</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-lg p-2 sm:p-3 shadow-sm">
+                  <div className="flex items-center">
+                    <FaClock className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mr-1 sm:mr-2" />
+                    <div>
+                      <p className="text-[10px] sm:text-xs text-gray-600 font-medium">総時間</p>
+                      <p className="text-sm sm:text-lg font-bold text-gray-900">
+                        {formatDuration(sortedPractices.reduce((sum, p) => sum + p.duration, 0))}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-lg p-2 sm:p-3 shadow-sm">
+                  <div className="flex items-center">
+                    <FaCalendarAlt className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 mr-1 sm:mr-2" />
+                    <div>
+                      <p className="text-[10px] sm:text-xs text-gray-600 font-medium">練習日数</p>
+                      <p className="text-sm sm:text-lg font-bold text-gray-900">
+                        {new Set(sortedPractices.map(p => p.date)).size}日
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-lg p-2 sm:p-3 shadow-sm">
+                  <div className="flex items-center">
+                    <FaClock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 mr-1 sm:mr-2" />
+                    <div>
+                      <p className="text-[10px] sm:text-xs text-gray-600 font-medium">平均時間</p>
+                      <p className="text-sm sm:text-lg font-bold text-gray-900">
+                        {formatDuration(Math.round(sortedPractices.reduce((sum, p) => sum + p.duration, 0) / sortedPractices.length))}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-          
-          <div className="bg-purple-50 rounded-lg p-4">
-            <div className="flex items-center">
-              <FiTarget className="w-5 h-5 text-purple-600 mr-2" />
-              <div>
-                <p className="text-sm text-purple-600 font-medium">平均時間</p>
-                <p className="text-2xl font-bold text-purple-800">
-                  {formatDuration(Math.round(sortedPractices.reduce((sum, p) => sum + p.duration, 0) / sortedPractices.length))}
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-orange-50 rounded-lg p-4">
-            <div className="flex items-center">
-              <FiTrendingUp className="w-5 h-5 text-orange-600 mr-2" />
-              <div>
-                <p className="text-sm text-orange-600 font-medium">平均評価</p>
-                <p className="text-2xl font-bold text-orange-800">
-                  {(sortedPractices.reduce((sum, p) => sum + calculateAverageRating(p), 0) / sortedPractices.length).toFixed(1)}
-                </p>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       )}
 

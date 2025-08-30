@@ -10,7 +10,8 @@ import {
   collection,
   query,
   where,
-  getDocs
+  getDocs,
+  deleteDoc
 } from 'firebase/firestore';
 import { 
   Community, 
@@ -21,6 +22,7 @@ import {
 import { PracticeCard, Practice } from '@/types/practice';
 import AttendanceManager from '@/components/community/AttendanceManager';
 import EventComments from '@/components/community/EventComments';
+import PracticeCardDetailModal from '@/components/community/PracticeCardDetailModal';
 import Link from 'next/link';
 import { 
   ChevronLeft,
@@ -33,7 +35,8 @@ import {
   Trash2,
   Users,
   Tag,
-  Dumbbell
+  Dumbbell,
+  Check
 } from 'lucide-react';
 
 export default function EventDetailPage() {
@@ -49,7 +52,10 @@ export default function EventDetailPage() {
   const [relatedPractices, setRelatedPractices] = useState<Practice[]>([]);
   const [memberRole, setMemberRole] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const [creatorInfo, setCreatorInfo] = useState<{ name: string; photoURL?: string }>({ name: '' });
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [showCardModal, setShowCardModal] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -169,10 +175,81 @@ export default function EventDetailPage() {
   };
 
   const handleDelete = async () => {
+    console.log('Delete button clicked for event:', eventId);
+    console.log('canEdit:', canEdit);
+    
+    if (deleting) return; // 既に削除中の場合は何もしない
+    
     if (!confirm('このイベントを削除してもよろしいですか？')) return;
     
-    // TODO: イベント削除処理
-    router.push(`/community/${communityId}`);
+    setDeleting(true); // 削除処理開始
+    
+    try {
+      console.log('Starting deletion process for event:', eventId);
+      
+      // イベントを削除（サブコレクションから）
+      await deleteDoc(doc(db, 'communities', communityId, 'events', eventId));
+      console.log('Event deleted successfully from subcollection');
+      
+      // 関連する参加情報も削除
+      try {
+        const participationsQuery = query(
+          collection(db, 'event_participations'),
+          where('eventId', '==', eventId)
+        );
+        const participationsSnapshot = await getDocs(participationsQuery);
+        console.log(`Found ${participationsSnapshot.docs.length} participations to delete`);
+        
+        for (const docSnapshot of participationsSnapshot.docs) {
+          await deleteDoc(docSnapshot.ref);
+        }
+      } catch (error) {
+        console.error('Error deleting participations:', error);
+      }
+      
+      // 関連するコメントも削除
+      try {
+        const commentsQuery = query(
+          collection(db, 'event_comments'),
+          where('eventId', '==', eventId)
+        );
+        const commentsSnapshot = await getDocs(commentsQuery);
+        console.log(`Found ${commentsSnapshot.docs.length} comments to delete`);
+        
+        for (const docSnapshot of commentsSnapshot.docs) {
+          await deleteDoc(docSnapshot.ref);
+        }
+      } catch (error) {
+        console.error('Error deleting comments:', error);
+      }
+      
+      // 関連する練習記録も削除（communityEventIdで紐づいているもの）
+      try {
+        const practicesQuery = query(
+          collection(db, 'practices'),
+          where('communityEventId', '==', eventId)
+        );
+        const practicesSnapshot = await getDocs(practicesQuery);
+        console.log(`Found ${practicesSnapshot.docs.length} practices to delete`);
+        
+        for (const docSnapshot of practicesSnapshot.docs) {
+          await deleteDoc(docSnapshot.ref);
+        }
+      } catch (error) {
+        console.error('Error deleting practices:', error);
+      }
+      
+      // 削除成功
+      console.log('All related data deleted, redirecting...');
+      
+      // 削除されたページから確実に離れる
+      // window.location.hrefを使用して強制的にページをリロード
+      window.location.href = `/community/${communityId}`;
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      alert(`イベントの削除に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      setDeleting(false); // エラー時は削除状態をリセット
+    }
   };
 
   const canEdit = user && (
@@ -283,10 +360,24 @@ export default function EventDetailPage() {
                     <Edit className="h-5 w-5" />
                   </button>
                   <button
-                    onClick={handleDelete}
-                    className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleDelete();
+                    }}
+                    disabled={deleting}
+                    className={`p-2 rounded-lg transition-colors ${
+                      deleting 
+                        ? 'text-gray-400 bg-gray-100 cursor-not-allowed' 
+                        : 'text-red-600 hover:text-red-700 hover:bg-red-50'
+                    }`}
+                    title={deleting ? '削除中...' : 'イベントを削除'}
                   >
-                    <Trash2 className="h-5 w-5" />
+                    {deleting ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-red-600"></div>
+                    ) : (
+                      <Trash2 className="h-5 w-5" />
+                    )}
                   </button>
                 </div>
               )}
@@ -470,53 +561,128 @@ export default function EventDetailPage() {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 練習記録 ({relatedPractices.length}件)
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {relatedPractices.map((practice) => (
                   <div
                     key={practice.id}
-                    className="p-4 border border-gray-200 rounded-lg"
+                    className="border border-gray-200 rounded-lg overflow-hidden"
                   >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">
-                          {practice.title}
-                        </h4>
-                        <div className="mt-2 flex items-center gap-4 text-sm text-gray-600">
-                          <span>
-                            <Calendar className="inline h-4 w-4 mr-1" />
-                            {practice.date}
-                          </span>
-                          <span>
-                            <Clock className="inline h-4 w-4 mr-1" />
-                            {practice.startTime} - {practice.endTime}
-                          </span>
-                          <span>
-                            {practice.duration}分
-                          </span>
+                    <div className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900">
+                            {practice.title}
+                          </h4>
+                          <div className="mt-2 flex items-center gap-4 text-sm text-gray-600">
+                            <span>
+                              <Calendar className="inline h-4 w-4 mr-1" />
+                              {practice.date}
+                            </span>
+                            <span>
+                              <Clock className="inline h-4 w-4 mr-1" />
+                              {practice.startTime} - {practice.endTime}
+                            </span>
+                            <span>
+                              {practice.duration}分
+                            </span>
+                          </div>
+                          {practice.description && (
+                            <p className="text-sm text-gray-600 mt-2">
+                              {practice.description}
+                            </p>
+                          )}
+                          {practice.notes && (
+                            <div className="mt-2 p-2 bg-gray-50 rounded">
+                              <p className="text-sm text-gray-600">
+                                <strong>メモ:</strong> {practice.notes}
+                              </p>
+                            </div>
+                          )}
                         </div>
-                        {practice.description && (
-                          <p className="text-sm text-gray-600 mt-2">
-                            {practice.description}
-                          </p>
-                        )}
-                        {practice.achievements && practice.achievements.length > 0 && (
-                          <div className="mt-2">
-                            <span className="text-xs text-gray-500">成果:</span>
-                            <ul className="text-sm text-gray-600 ml-4 list-disc">
-                              {practice.achievements.map((achievement, index) => (
-                                <li key={index}>{achievement}</li>
-                              ))}
-                            </ul>
+                        <Link
+                          href={`/practice-management?tab=records&date=${practice.date}`}
+                          className="text-sm text-green-600 hover:text-green-700 ml-4"
+                        >
+                          詳細 →
+                        </Link>
+                      </div>
+                    </div>
+                    
+                    {/* 練習カード（ルーティン） */}
+                    {practice.routine && practice.routine.cards && practice.routine.cards.length > 0 && (
+                      <div className="border-t border-gray-200 bg-gray-50 p-4">
+                        <h5 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                          <FileText className="h-4 w-4 mr-1" />
+                          練習メニュー ({practice.routine.cards.length}枚)
+                        </h5>
+                        <div className="space-y-2">
+                          {practice.routine.cards.map((card, index) => (
+                            <div
+                              key={`${practice.id}-card-${index}`}
+                              className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:border-green-400 cursor-pointer transition-colors"
+                              onClick={() => {
+                                if (card.cardId) {
+                                  setSelectedCardId(card.cardId);
+                                  setShowCardModal(true);
+                                }
+                              }}
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="flex-shrink-0 w-8 h-8 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-sm font-semibold">
+                                  {card.order}
+                                </span>
+                                <div>
+                                  <span className="font-medium text-gray-900">
+                                    {card.cardTitle}
+                                  </span>
+                                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                                    <span className="flex items-center">
+                                      <Clock className="h-3 w-3 mr-1" />
+                                      {card.plannedDuration}分
+                                    </span>
+                                    {card.completed && (
+                                      <span className="text-green-600 flex items-center">
+                                        <Check className="h-3 w-3 mr-1" />
+                                        完了
+                                      </span>
+                                    )}
+                                    {card.notes && (
+                                      <span className="text-gray-500">
+                                        {card.notes}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              {card.rating && (
+                                <div className="flex items-center gap-1">
+                                  {[...Array(5)].map((_, i) => (
+                                    <span
+                                      key={i}
+                                      className={`text-sm ${
+                                        i < card.rating! ? 'text-yellow-400' : 'text-gray-300'
+                                      }`}
+                                    >
+                                      ★
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        {practice.routine.totalPlannedDuration && (
+                          <div className="mt-3 text-sm text-gray-600 text-right">
+                            合計練習時間: {practice.routine.totalPlannedDuration}分
+                            {practice.routine.completedCards > 0 && (
+                              <span className="ml-2">
+                                ({practice.routine.completedCards}/{practice.routine.cards.length}枚完了)
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
-                      <Link
-                        href={`/practice-management?tab=records&date=${practice.date}`}
-                        className="text-sm text-green-600 hover:text-green-700 ml-4"
-                      >
-                        詳細 →
-                      </Link>
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -541,6 +707,18 @@ export default function EventDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* 練習カード詳細モーダル */}
+      {selectedCardId && (
+        <PracticeCardDetailModal
+          cardId={selectedCardId}
+          isOpen={showCardModal}
+          onClose={() => {
+            setShowCardModal(false);
+            setSelectedCardId(null);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -159,12 +159,12 @@ export default function MBTIPage() {
 
   return (
     <AuthGuard>
-      <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="flex min-h-screen bg-white">
         <Sidebar activePath="/mbti" />
         <MobileNav activePath="/mbti" />
         <div className="flex-1 flex flex-col">
           <Topbar />
-          <main className="flex-1 p-6 lg:p-8">
+          <main className="flex-1 p-6 lg:p-8 bg-white">
             {renderContent()}
           </main>
         </div>

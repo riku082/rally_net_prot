@@ -18,8 +18,7 @@ import {
   UserPlus,
   Users,
   Check,
-  User,
-  Mail
+  User
 } from 'lucide-react';
 import { Friendship } from '@/types/friendship';
 import { CommunityMember, CommunityRole } from '@/types/community';
@@ -27,7 +26,6 @@ import { CommunityMember, CommunityRole } from '@/types/community';
 interface Friend {
   id: string;
   name: string;
-  email?: string;
   photoURL?: string;
   isAlreadyMember?: boolean;
 }
@@ -124,8 +122,7 @@ export default function InviteFriendsModal({
             
             friendsList.push({
               id: friendId,
-              name: profileData.displayName || profileData.name || profileData.email?.split('@')[0] || 'ユーザー',
-              email: profileData.email || '',
+              name: profileData.displayName || profileData.name || 'ユーザー',
               photoURL: profileData.avatar || profileData.photoURL || null,
               isAlreadyMember: activeMemberUserIds.has(friendId)
             });
@@ -135,7 +132,6 @@ export default function InviteFriendsModal({
             friendsList.push({
               id: friendId,
               name: `ユーザー`,
-              email: '',
               photoURL: null,
               isAlreadyMember: activeMemberUserIds.has(friendId)
             });
@@ -146,7 +142,6 @@ export default function InviteFriendsModal({
           friendsList.push({
             id: friendId,
             name: `ユーザー`,
-            email: '',
             photoURL: null,
             isAlreadyMember: memberUserIds.has(friendId)
           });
@@ -223,8 +218,7 @@ export default function InviteFriendsModal({
   };
 
   const filteredFriends = friends.filter(friend =>
-    friend.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (friend.email && friend.email.toLowerCase().includes(searchTerm.toLowerCase()))
+    friend.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const toggleFriendSelection = (friendId: string) => {
@@ -360,12 +354,6 @@ export default function InviteFriendsModal({
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">{friend.name}</p>
-                      {friend.email && (
-                        <p className="text-sm text-gray-500 flex items-center">
-                          <Mail className="h-3 w-3 mr-1" />
-                          {friend.email}
-                        </p>
-                      )}
                     </div>
                   </div>
                   {friend.isAlreadyMember && (

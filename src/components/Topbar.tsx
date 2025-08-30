@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FaBell, FaCog, FaUserCircle, FaSignOutAlt, FaFile, FaInfoCircle, FaQuestionCircle } from 'react-icons/fa';
+import { FaBell, FaCog, FaUserCircle, FaSignOutAlt, FaFile, FaInfoCircle, FaQuestionCircle, FaMailBulk } from 'react-icons/fa';
 import { useAuth } from '@/context/AuthContext';
 import { signOutUser } from '@/utils/auth';
 import { useRouter } from 'next/navigation';
@@ -35,17 +35,16 @@ const Topbar: React.FC = () => {
   };
 
   return (
-    <header className="w-full h-16 bg-white border-b flex items-center justify-between px-6 shadow-sm">
+    <header className="w-full h-16 bg-white flex items-center justify-between px-6">
       <div className="flex items-center space-x-3">
-        <img src="/logo.png" alt="ロゴ" className="h-8 w-8" />
-        <div className="text-lg font-bold text-gray-800">Rally Net</div>
+        <div className="flex lg:hidden items-center space-x-3">
+          <img src="/logo.png" alt="ロゴ" className="h-8 w-8" />
+          <div className="text-lg font-bold text-gray-800">Rally Net</div>
+        </div>
       </div>
       <div className="flex items-center space-x-6">
         <button className="text-gray-500 hover:text-theme-primary-600 text-xl focus:outline-none">
           <FaBell />
-        </button>
-        <button className="text-gray-500 hover:text-theme-primary-600 text-xl focus:outline-none">
-          <FaCog />
         </button>
         
         {/* ユーザーメニュー */}
@@ -63,7 +62,7 @@ const Topbar: React.FC = () => {
           {showDropdown && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
               <div className="px-4 py-2 text-sm text-gray-700 border-b">
-                {user?.email}
+                {getUserDisplayName()}
               </div>
               {profile && (
                 <div className="px-4 py-2 text-xs text-gray-500 border-b">
@@ -94,6 +93,14 @@ const Topbar: React.FC = () => {
               >
                 <FaInfoCircle className="mr-2" />
                 アドミッションポリシー
+              </Link>
+              <Link
+                href="/feedback"
+                onClick={() => setShowDropdown(false)}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+              >
+                <FaMailBulk className="mr-2" />
+                目安箱
               </Link>
               <div className="border-t my-1"></div>
               <button
