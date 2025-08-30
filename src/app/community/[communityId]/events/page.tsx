@@ -21,6 +21,7 @@ import {
 } from '@/types/community';
 import CommunityHeader from '@/components/community/CommunityHeader';
 import Sidebar from '@/components/Sidebar';
+import MobileNav from '@/components/MobileNav';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
@@ -204,6 +205,7 @@ export default function EventsListPage() {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       <Sidebar activePath={pathname} />
+      <MobileNav activePath={pathname} />
       <div className="flex-1 lg:ml-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* コミュニティヘッダー */}

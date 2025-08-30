@@ -94,7 +94,7 @@ const DashboardMobileCalendar: React.FC<DashboardMobileCalendarProps> = ({ pract
     if (practices.length === 0) return '';
     
     // Show indicator based on practice count
-    if (practices.length === 1) return 'bg-theme-primary-400';
+    if (practices.length === 1) return 'bg-gray-400';
     if (practices.length === 2) return 'bg-purple-400';
     return 'bg-indigo-400';
   };
@@ -151,7 +151,7 @@ const DashboardMobileCalendar: React.FC<DashboardMobileCalendarProps> = ({ pract
               !day.isCurrentMonth 
                 ? 'bg-gray-50 text-gray-400' 
                 : day.isToday
-                ? 'bg-theme-primary-50 border-theme-primary-300'
+                ? 'bg-gray-50 border-theme-primary-300'
                 : 'bg-white border-gray-200 hover:bg-gray-50'
             }`}
           >
@@ -256,7 +256,7 @@ const DashboardDesktopWideCalendar: React.FC<DashboardDesktopWideCalendarProps> 
     if (practices.length === 0) return '';
     
     // Show indicator based on practice count
-    if (practices.length === 1) return 'bg-theme-primary-100 border-theme-primary-300';
+    if (practices.length === 1) return 'bg-gray-100 border-theme-primary-300';
     if (practices.length === 2) return 'bg-purple-100 border-purple-300';
     return 'bg-indigo-100 border-indigo-300';
   };
@@ -332,7 +332,7 @@ const DashboardDesktopWideCalendar: React.FC<DashboardDesktopWideCalendarProps> 
                 e.stopPropagation();
                 goToToday();
               }}
-              className="px-4 py-2 text-sm bg-theme-primary-100 text-theme-primary-700 rounded-lg hover:bg-theme-primary-200 transition-colors font-medium"
+              className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
               style={{ color: '#000000' }}
             >
               今日
@@ -341,12 +341,12 @@ const DashboardDesktopWideCalendar: React.FC<DashboardDesktopWideCalendarProps> 
 
           {/* 月次統計 */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-theme-primary-50 rounded-lg p-4 text-center">
+            <div className="bg-gray-50 rounded-lg p-4 text-center">
               <div className="flex items-center justify-center mb-1">
-                <GiShuttlecock className="w-5 h-5 text-theme-primary-600 mr-1" />
+                <GiShuttlecock className="w-5 h-5 text-gray-600 mr-1" />
               </div>
-              <p className="text-sm text-theme-primary-600 font-medium">練習回数</p>
-              <p className="text-xl font-bold text-theme-primary-800">{monthlyStats.totalPractices}</p>
+              <p className="text-sm text-gray-600 font-medium">練習回数</p>
+              <p className="text-xl font-bold text-gray-800">{monthlyStats.totalPractices}</p>
             </div>
             
             <div className="bg-green-50 rounded-lg p-4 text-center">
@@ -375,8 +375,8 @@ const DashboardDesktopWideCalendar: React.FC<DashboardDesktopWideCalendarProps> 
           </div>
 
           {/* 操作案内 */}
-          <div className="bg-theme-primary-50 rounded-lg p-3 text-center">
-            <p className="text-sm text-theme-primary-700 font-medium">クリックで詳細管理</p>
+          <div className="bg-gray-50 rounded-lg p-3 text-center">
+            <p className="text-sm text-gray-700 font-medium">クリックで詳細管理</p>
           </div>
         </div>
 
@@ -398,7 +398,7 @@ const DashboardDesktopWideCalendar: React.FC<DashboardDesktopWideCalendarProps> 
                   !day.isCurrentMonth 
                     ? 'bg-gray-50 text-gray-400' 
                     : day.isToday
-                    ? 'bg-theme-primary-50 border-theme-primary-300 ring-2 ring-theme-primary-200'
+                    ? 'bg-gray-50 border-theme-primary-300 ring-2 ring-theme-primary-200'
                     : day.practices.length > 0
                     ? getPracticeIndicatorColor(day.practices)
                     : 'bg-white border-gray-200 hover:bg-gray-50'
@@ -501,7 +501,7 @@ const DashboardDesktopCalendar: React.FC<DashboardDesktopCalendarProps> = ({ pra
     if (practices.length === 0) return '';
     
     // Show indicator based on practice count
-    if (practices.length === 1) return 'bg-theme-primary-100 border-theme-primary-300';
+    if (practices.length === 1) return 'bg-gray-100 border-theme-primary-300';
     if (practices.length === 2) return 'bg-purple-100 border-purple-300';
     return 'bg-indigo-100 border-indigo-300';
   };
@@ -574,7 +574,7 @@ const DashboardDesktopCalendar: React.FC<DashboardDesktopCalendarProps> = ({ pra
             e.stopPropagation();
             goToToday();
           }}
-          className="px-4 py-2 text-sm bg-theme-primary-100 text-theme-primary-700 rounded-lg hover:bg-theme-primary-200 transition-colors font-medium"
+          className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
           style={{ color: '#000000' }}
         >
           今日
@@ -583,12 +583,12 @@ const DashboardDesktopCalendar: React.FC<DashboardDesktopCalendarProps> = ({ pra
 
       {/* 月次統計 */}
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-theme-primary-50 rounded-lg p-4 text-center">
+        <div className="bg-gray-50 rounded-lg p-4 text-center">
           <div className="flex items-center justify-center mb-1">
-            <GiShuttlecock className="w-5 h-5 text-theme-primary-600 mr-1" />
+            <GiShuttlecock className="w-5 h-5 text-gray-600 mr-1" />
           </div>
-          <p className="text-sm text-theme-primary-600 font-medium">練習回数</p>
-          <p className="text-xl font-bold text-theme-primary-800">{monthlyStats.totalPractices}</p>
+          <p className="text-sm text-gray-600 font-medium">練習回数</p>
+          <p className="text-xl font-bold text-gray-800">{monthlyStats.totalPractices}</p>
         </div>
         
         <div className="bg-green-50 rounded-lg p-4 text-center">
@@ -633,7 +633,7 @@ const DashboardDesktopCalendar: React.FC<DashboardDesktopCalendarProps> = ({ pra
               !day.isCurrentMonth 
                 ? 'bg-gray-50 text-gray-400' 
                 : day.isToday
-                ? 'bg-theme-primary-50 border-theme-primary-300'
+                ? 'bg-gray-50 border-theme-primary-300'
                 : day.practices.length > 0
                 ? getPracticeIndicatorColor(day.practices)
                 : 'bg-white border-gray-200 hover:bg-gray-50'
@@ -836,13 +836,13 @@ export default function DashboardPage() {
 
               {/* PC版：練習カレンダーを最上部に横長ウィジェットで表示 */}
               <div className="hidden lg:block">
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300 mb-8">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6  mb-8">
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-xl font-bold text-gray-800 flex items-center">
-                      <FiCalendar className="w-5 h-5 mr-2 text-theme-primary-600" />
+                      <FiCalendar className="w-5 h-5 mr-2 text-gray-600" />
                       練習カレンダー
                     </h3>
-                    <Link href="/practice-management" className="text-theme-primary-600 hover:text-theme-primary-800 transition-colors text-sm font-medium">
+                    <Link href="/practice-management" className="text-gray-600 hover:text-gray-800 transition-colors text-sm font-medium">
                       詳細管理 →
                     </Link>
                   </div>
@@ -862,14 +862,14 @@ export default function DashboardPage() {
 
                   {/* 最近の試合 - Coming Soon */}
                   <div>
-                    <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300 opacity-75">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6  opacity-75">
                       <div className="flex items-center justify-between mb-6">
                         <h3 className="text-xl font-bold text-gray-400 flex items-center">
                           <GiShuttlecock className="w-5 h-5 mr-2 text-gray-400" />
                           最近の試合
                         </h3>
                         <div className="flex items-center space-x-2">
-                          <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded font-medium">
+                          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded font-medium">
                             Coming Soon
                           </span>
                           <span className="text-gray-400 text-sm font-medium cursor-not-allowed">
@@ -891,7 +891,7 @@ export default function DashboardPage() {
                   <div className="space-y-6">
                     <FriendsListCard friends={friends} />
                     {/* 最新記事 */}
-                    <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 ">
                       <TopNewsPanel />
                     </div>
                   </div>
@@ -902,13 +902,13 @@ export default function DashboardPage() {
               <div className="lg:hidden">
                 <div className="space-y-6">
                   {/* カレンダー */}
-                  <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 ">
                     <div className="flex items-center justify-between mb-4 sm:mb-6">
                       <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center">
-                        <FiCalendar className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-theme-primary-600" />
+                        <FiCalendar className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-gray-600" />
                         練習カレンダー
                       </h3>
-                      <Link href="/practice-management" className="text-theme-primary-600 hover:text-theme-primary-800 transition-colors text-xs sm:text-sm font-medium">
+                      <Link href="/practice-management" className="text-gray-600 hover:text-gray-800 transition-colors text-xs sm:text-sm font-medium">
                         詳細表示 →
                       </Link>
                     </div>
@@ -925,14 +925,14 @@ export default function DashboardPage() {
                   <BPSIResultCard mbtiResult={mbtiResult} />
 
                   {/* 最近の試合 - Coming Soon */}
-                  <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300 opacity-75">
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6  opacity-75">
                     <div className="flex items-center justify-between mb-4 sm:mb-6">
                       <h3 className="text-lg sm:text-xl font-bold text-gray-400 flex items-center">
                         <GiShuttlecock className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-gray-400" />
                         最近の試合
                       </h3>
                       <div className="flex items-center space-x-1 sm:space-x-2">
-                        <span className="text-xs bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-medium">
+                        <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-medium">
                           Coming Soon
                         </span>
                         <span className="text-gray-400 text-xs sm:text-sm font-medium cursor-not-allowed">
@@ -953,7 +953,7 @@ export default function DashboardPage() {
                   <FriendsListCard friends={friends} />
 
                   {/* モバイル版のみ：最新記事 */}
-                  <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 ">
                     <TopNewsPanel />
                   </div>
                 </div>
@@ -1028,7 +1028,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, description, actio
       <h4 className="text-base sm:text-lg font-medium text-gray-600 mb-2">{title}</h4>
       <p className="text-sm sm:text-base text-gray-500 mb-3 sm:mb-4">{description}</p>
       {actionText && actionHref && (
-        <Link href={actionHref} className="inline-flex items-center px-3 sm:px-4 py-2 bg-theme-primary-600 text-white rounded-lg hover:bg-theme-primary-700 transition-colors text-xs sm:text-sm font-medium">
+        <Link href={actionHref} className="inline-flex items-center px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-xs sm:text-sm font-medium">
           {actionText}
         </Link>
       )}
@@ -1041,7 +1041,7 @@ const ModernProfileCard: React.FC = () => {
   const { profile, user } = useAuth();
   
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 ">
       <div className="flex items-center justify-between mb-4 sm:mb-6">
         <h3 className="text-lg sm:text-xl font-bold text-gray-800">プロフィール</h3>
         <Link href="/profile" className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
@@ -1058,7 +1058,7 @@ const ModernProfileCard: React.FC = () => {
               className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl sm:rounded-2xl bg-cover bg-center border-4 border-white shadow-lg"
             />
           ) : (
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center shadow-lg">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl sm:rounded-2xl bg-gray-200 flex items-center justify-center shadow-sm">
               <FaUserCircle className="w-10 h-10 sm:w-14 sm:h-14 text-white" />
             </div>
           )}
@@ -1078,15 +1078,15 @@ const ModernProfileCard: React.FC = () => {
           
           {/* 統計情報 */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg sm:rounded-xl p-2 sm:p-3">
-              <p className="text-xs text-theme-primary-600 font-medium">レベル</p>
-              <p className="text-xs sm:text-sm font-bold text-theme-primary-800">
+            <div className="bg-gray-50 rounded-lg sm:rounded-xl p-2 sm:p-3 border border-gray-200">
+              <p className="text-xs text-gray-600 font-medium">レベル</p>
+              <p className="text-xs sm:text-sm font-bold text-gray-800">
                 {profile?.experience || '設定なし'}
               </p>
             </div>
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg sm:rounded-xl p-2 sm:p-3">
-              <p className="text-xs text-purple-600 font-medium">スタイル</p>
-              <p className="text-xs sm:text-sm font-bold text-purple-800">
+            <div className="bg-gray-50 rounded-lg sm:rounded-xl p-2 sm:p-3 border border-gray-200">
+              <p className="text-xs text-gray-600 font-medium">スタイル</p>
+              <p className="text-xs sm:text-sm font-bold text-gray-800">
                 {profile?.playStyle === 'aggressive' ? '攻撃型' :
                  profile?.playStyle === 'defensive' ? '守備型' : 'バランス'}
               </p>
@@ -1095,7 +1095,7 @@ const ModernProfileCard: React.FC = () => {
           
           {/* アクションボタン */}
           <Link href="/profile" className="w-full">
-            <button className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl text-sm sm:text-base">
+            <button className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800 text-white rounded-lg sm:rounded-xl hover:bg-gray-900 transition-colors font-medium shadow-sm text-sm sm:text-base">
               プロフィール編集
             </button>
           </Link>
@@ -1108,13 +1108,13 @@ const ModernProfileCard: React.FC = () => {
 // フレンドリストカードコンポーネント
 const FriendsListCard: React.FC<{ friends: Friend[] }> = ({ friends }) => {
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 ">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center">
-          <FaUsers className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-theme-primary-600" />
+          <FaUsers className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-gray-600" />
           フレンド
         </h3>
-        <Link href="/friends" className="text-theme-primary-600 hover:text-theme-primary-800 transition-colors text-xs sm:text-sm font-medium">
+        <Link href="/friends" className="text-gray-600 hover:text-gray-800 transition-colors text-xs sm:text-sm font-medium">
           すべて表示 →
         </Link>
       </div>
@@ -1133,7 +1133,7 @@ const FriendsListCard: React.FC<{ friends: Friend[] }> = ({ friends }) => {
                 size="md"
               />
               <div className="ml-2 sm:ml-3 flex-1 min-w-0">
-                <p className="font-medium text-gray-800 text-sm sm:text-base truncate group-hover:text-theme-primary-600 transition-colors">
+                <p className="font-medium text-gray-800 text-sm sm:text-base truncate group-hover:text-gray-600 transition-colors">
                   {friend.name || 'ユーザー'}
                 </p>
                 <div className="flex items-center space-x-2">
@@ -1172,7 +1172,7 @@ const FriendsListCard: React.FC<{ friends: Friend[] }> = ({ friends }) => {
         <div className="text-center py-4">
           <FaUsers className="w-6 h-6 sm:w-8 sm:h-8 text-gray-300 mx-auto mb-2" />
           <p className="text-gray-500 text-xs sm:text-sm">まだフレンドがいません</p>
-          <Link href="/friends" className="text-theme-primary-600 hover:text-theme-primary-800 transition-colors text-xs sm:text-sm font-medium">
+          <Link href="/friends" className="text-gray-600 hover:text-gray-800 transition-colors text-xs sm:text-sm font-medium">
             フレンドを追加
           </Link>
         </div>
@@ -1185,7 +1185,7 @@ const FriendsListCard: React.FC<{ friends: Friend[] }> = ({ friends }) => {
 const BPSIResultCard: React.FC<{ mbtiResult: MbtiAnalysisResult | null }> = ({ mbtiResult }) => {
   if (!mbtiResult) {
     return (
-      <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 ">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center">
             <FaBrain className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-purple-600" />
@@ -1209,7 +1209,7 @@ const BPSIResultCard: React.FC<{ mbtiResult: MbtiAnalysisResult | null }> = ({ m
   const result = mbtiResult;
   
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 ">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center">
           <FaBrain className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-purple-600" />

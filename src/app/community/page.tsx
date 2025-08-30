@@ -10,6 +10,7 @@ import { Users, Calendar, Plus, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import CreateCommunityModal from '@/components/community/CreateCommunityModal';
 import Sidebar from '@/components/Sidebar';
+import MobileNav from '@/components/MobileNav';
 import { usePathname } from 'next/navigation';
 import InvitationBadge from '@/components/community/InvitationBadge';
 
@@ -99,6 +100,7 @@ export default function CommunityPage() {
   return (
     <div className="flex min-h-screen bg-white">
       <Sidebar activePath={pathname} />
+      <MobileNav activePath={pathname} />
       <div className="flex-1 lg:ml-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
@@ -124,81 +126,142 @@ export default function CommunityPage() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {communities.map((community) => (
-            <Link
-              key={community.id}
-              href={`/community/${community.id}`}
-              className="group bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-200 overflow-hidden"
-            >
-              {/* トップ画像 */}
-              {community.topImageUrl && (
-                <div className="h-48 overflow-hidden">
-                  <img
-                    src={community.topImageUrl}
-                    alt={community.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-              )}
-              
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-gray-900 group-hover:text-green-600 transition-colors">
-                      {community.name}
-                    </h3>
-                    {community.description && (
-                      <p className="mt-1 text-sm text-gray-500 line-clamp-2">
-                        {community.description}
-                      </p>
+        <>
+          {/* PC版のグリッドレイアウト */}
+          <div className="hidden md:grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {communities.map((community) => (
+              <Link
+                key={community.id}
+                href={`/community/${community.id}`}
+                className="group bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-200 overflow-hidden"
+              >
+                {/* トップ画像 */}
+                {community.topImageUrl && (
+                  <div className="h-48 overflow-hidden">
+                    <img
+                      src={community.topImageUrl}
+                      alt={community.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                )}
+                
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-semibold text-gray-900 group-hover:text-green-600 transition-colors">
+                        {community.name}
+                      </h3>
+                      {community.description && (
+                        <p className="mt-1 text-sm text-gray-500 line-clamp-2">
+                          {community.description}
+                        </p>
+                      )}
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-green-600 transition-colors" />
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {community.location && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">
+                        📍 {community.location}
+                      </span>
+                    )}
+                    {community.category && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
+                        {community.category === 'beginner' ? '初心者' :
+                         community.category === 'intermediate' ? '中級者' :
+                         community.category === 'advanced' ? '上級者' :
+                         community.category === 'competitive' ? '競技志向' :
+                         community.category === 'casual' ? 'カジュアル' : community.category}
+                      </span>
                     )}
                   </div>
-                  <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-green-600 transition-colors" />
-                </div>
 
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {community.location && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">
-                      📍 {community.location}
-                    </span>
-                  )}
-                  {community.category && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
-                      {community.category === 'beginner' ? '初心者' :
-                       community.category === 'intermediate' ? '中級者' :
-                       community.category === 'advanced' ? '上級者' :
-                       community.category === 'competitive' ? '競技志向' :
-                       community.category === 'casual' ? 'カジュアル' : community.category}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center text-gray-600">
-                    <Users className="h-4 w-4 mr-1" />
-                    <span>{memberCounts[community.id] || 0} メンバー</span>
-                  </div>
-                  <div className="flex items-center text-green-600">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    <span>カレンダー</span>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center text-gray-600">
+                      <Users className="h-4 w-4 mr-1" />
+                      <span>{memberCounts[community.id] || 0} メンバー</span>
+                    </div>
+                    <div className="flex items-center text-green-600">
+                      <Calendar className="h-4 w-4 mr-1" />
+                      <span>カレンダー</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="bg-gray-50 px-6 py-3 border-t border-gray-100">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">
-                    {community.isPublic ? '公開' : '非公開'}
-                  </span>
-                  <span className="text-xs text-green-600 font-medium group-hover:underline">
-                    詳細を見る →
-                  </span>
+                <div className="bg-gray-50 px-6 py-3 border-t border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500">
+                      {community.isPublic ? '公開' : '非公開'}
+                    </span>
+                    <span className="text-xs text-green-600 font-medium group-hover:underline">
+                      詳細を見る →
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* モバイル版のリストレイアウト */}
+          <div className="md:hidden space-y-3">
+            {communities.map((community) => (
+              <Link
+                key={community.id}
+                href={`/community/${community.id}`}
+                className="block bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200"
+              >
+                <div className="flex items-center p-4">
+                  {/* 左側：画像またはアイコン */}
+                  <div className="flex-shrink-0 mr-4">
+                    {community.topImageUrl ? (
+                      <img
+                        src={community.topImageUrl}
+                        alt={community.name}
+                        className="w-12 h-12 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                        <Users className="h-6 w-6 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 中央：コミュニティ情報 */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-semibold text-gray-900 truncate">
+                      {community.name}
+                    </h3>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-xs text-gray-500">
+                        <Users className="inline h-3 w-3 mr-0.5" />
+                        {memberCounts[community.id] || 0}
+                      </span>
+                      {community.location && (
+                        <span className="text-xs text-gray-500 truncate">
+                          📍 {community.location}
+                        </span>
+                      )}
+                      {community.category && (
+                        <span className="text-xs text-blue-600">
+                          {community.category === 'beginner' ? '初心者' :
+                           community.category === 'intermediate' ? '中級者' :
+                           community.category === 'advanced' ? '上級者' :
+                           community.category === 'competitive' ? '競技' :
+                           community.category === 'casual' ? 'カジュアル' : ''}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 右側：矢印 */}
+                  <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </>
       )}
 
       <div className="mt-8 flex justify-center">

@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { FaTachometerAlt, FaUser, FaChartBar, FaUserCircle, FaRss, FaUserFriends, FaBrain, FaBars, FaTimes, FaBook, FaQuestionCircle, FaMailBulk } from 'react-icons/fa';
+import { FaHome, FaUser, FaChartBar, FaUserCircle, FaRss, FaUserFriends, FaBrain, FaBars, FaTimes, FaBook, FaQuestionCircle, FaMailBulk, FaUsers, FaFileContract } from 'react-icons/fa';
 import { GiShuttlecock } from 'react-icons/gi';
 import Image from 'next/image';
 import NotificationBadge from './NotificationBadge';
 
 const navItems = [
-  { label: 'ダッシュボード', icon: <FaTachometerAlt />, path: '/dashboard' },
+  { label: 'ホーム', icon: <FaHome />, path: '/dashboard' },
   { label: '練習管理', icon: <FaBook />, path: '/practice-management' },
+  { label: 'コミュニティ', icon: <FaUsers />, path: '/community' },
   { label: 'ニュース', icon: <FaRss />, path: '/news' },
   { label: 'フレンド', icon: <FaUserFriends />, path: '/friends' },
   { label: 'BPSI診断', icon: <FaBrain />, path: '/mbti' },
-  { label: 'ガイド', icon: <FaQuestionCircle />, path: '/guide' },
-  { label: '目安箱', icon: <FaMailBulk />, path: '/feedback' },
-  { label: '選手管理', icon: <FaUser />, path: '/players', disabled: true },
-  { label: '試合記録', icon: <GiShuttlecock />, path: '/matches', badge: 'ヨシダシステム', disabled: true },
-  { label: '分析', icon: <FaChartBar />, path: '/analysis', disabled: true },
+  
+  // Coming Soon項目（非表示）
+  // { label: '選手管理', icon: <FaUser />, path: '/players', disabled: true },
+  // { label: '試合記録', icon: <GiShuttlecock />, path: '/matches', badge: 'ヨシダシステム', disabled: true },
+  // { label: '分析', icon: <FaChartBar />, path: '/analysis', disabled: true },
 ];
 
 const MobileNav: React.FC<{ activePath?: string }> = ({ activePath = '/' }) => {
