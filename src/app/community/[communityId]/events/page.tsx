@@ -20,25 +20,26 @@ import {
   CommunityMember
 } from '@/types/community';
 import CommunityHeader from '@/components/community/CommunityHeader';
+import CommunityCalendar from '@/components/community/CommunityCalendar';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
-  ChevronLeft,
-  ChevronRight,
   Calendar,
   Clock,
   MapPin,
   Users,
   Plus,
   Filter,
-  Search
+  Search,
+  ChevronRight
 } from 'lucide-react';
 
+type ViewMode = 'calendar' | 'list';
 type FilterType = 'all' | 'upcoming' | 'past' | 'draft' | 'cancelled';
 
-export default function EventsListPage() {
+export default function EventsPage() {
   const params = useParams();
   const communityId = params.communityId as string;
   const { user } = useAuth();
@@ -50,6 +51,7 @@ export default function EventsListPage() {
   const [filteredEvents, setFilteredEvents] = useState<CommunityEvent[]>([]);
   const [memberRole, setMemberRole] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>('calendar');
   const [filter, setFilter] = useState<FilterType>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -148,11 +150,10 @@ export default function EventsListPage() {
 
     // 検索語による絞り込み
     if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(event =>
-        event.title.toLowerCase().includes(searchLower) ||
-        event.description?.toLowerCase().includes(searchLower) ||
-        event.location.toLowerCase().includes(searchLower)
+        event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        event.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        event.location.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -163,7 +164,6 @@ export default function EventsListPage() {
     const date = new Date(isoString);
     return {
       date: date.toLocaleDateString('ja-JP', { 
-        year: 'numeric',
         month: 'long', 
         day: 'numeric',
         weekday: 'short'
@@ -175,18 +175,29 @@ export default function EventsListPage() {
     };
   };
 
-  const getStatusBadge = (status: EventStatus) => {
+  const getStatusColor = (status: EventStatus) => {
     switch (status) {
       case EventStatus.DRAFT:
-        return <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">下書き</span>;
+        return 'bg-gray-100 text-gray-700';
       case EventStatus.PUBLISHED:
-        return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">公開中</span>;
-      case EventStatus.IN_PROGRESS:
-        return <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">開催中</span>;
-      case EventStatus.COMPLETED:
-        return <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">終了</span>;
+        return 'bg-green-100 text-green-700';
       case EventStatus.CANCELLED:
-        return <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-700">中止</span>;
+        return 'bg-red-100 text-red-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const getStatusLabel = (status: EventStatus) => {
+    switch (status) {
+      case EventStatus.DRAFT:
+        return '下書き';
+      case EventStatus.PUBLISHED:
+        return '公開中';
+      case EventStatus.CANCELLED:
+        return '中止';
+      default:
+        return status;
     }
   };
 
@@ -203,198 +214,175 @@ export default function EventsListPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+    <div className="flex min-h-screen bg-white">
       <Sidebar activePath={pathname} />
       <MobileNav activePath={pathname} />
       <div className="flex-1 lg:ml-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* コミュニティヘッダー */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
           <CommunityHeader 
             community={community} 
             memberRole={memberRole}
             currentTab="events"
           />
 
-          {/* アクションボタン */}
-          <div className="mb-6 flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-gray-900">
-              イベント一覧
-            </h2>
-            <Link
-              href={`/community/${communityId}/events/new`}
-              className="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              イベント作成
-            </Link>
-          </div>
+          {/* ヘッダーバー */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-6 mb-4 sm:mb-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-sm sm:text-xl font-bold text-gray-900">イベント管理</h2>
+              
+              <div className="flex items-center gap-2">
+                {/* 表示切替ボタン */}
+                <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
+                  <button
+                    onClick={() => setViewMode('calendar')}
+                    className={`p-1.5 rounded transition-colors ${
+                      viewMode === 'calendar' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+                    }`}
+                    title="カレンダー"
+                  >
+                    <Calendar className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-1.5 rounded transition-colors ${
+                      viewMode === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+                    }`}
+                    title="リスト"
+                  >
+                    <Users className="w-4 h-4" />
+                  </button>
+                </div>
 
-      {/* フィルターと検索 */}
-      <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* 検索ボックス */}
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="イベントを検索..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
+                {/* イベント作成ボタン */}
+                <Link
+                  href={`/community/${communityId}/events/new`}
+                  className="p-1.5 sm:px-3 sm:py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center"
+                  title="新規イベント"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-1 text-sm">新規</span>
+                </Link>
+              </div>
             </div>
-          </div>
 
-          {/* フィルターボタン */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filter === 'all'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              すべて ({events.length})
-            </button>
-            <button
-              onClick={() => setFilter('upcoming')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filter === 'upcoming'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              今後
-            </button>
-            <button
-              onClick={() => setFilter('past')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filter === 'past'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              過去
-            </button>
-            <button
-              onClick={() => setFilter('cancelled')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filter === 'cancelled'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              中止
-            </button>
-          </div>
-        </div>
+            {/* リスト表示時のフィルター */}
+            {viewMode === 'list' && (
+              <div className="mt-4 flex flex-col sm:flex-row gap-3">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-gray-400" />
+                  <select
+                    value={filter}
+                    onChange={(e) => setFilter(e.target.value as FilterType)}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    <option value="all">すべて</option>
+                    <option value="upcoming">今後の予定</option>
+                    <option value="past">過去のイベント</option>
+                    {(memberRole === 'owner' || memberRole === 'admin') && (
+                      <>
+                        <option value="draft">下書き</option>
+                        <option value="cancelled">中止</option>
+                      </>
+                    )}
+                  </select>
+                </div>
 
-        <div className="mt-4 text-sm text-gray-600">
-          {filteredEvents.length}件のイベントが見つかりました
-        </div>
-      </div>
-
-      {/* イベントリスト */}
-      {filteredEvents.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-md p-12 text-center">
-          <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            イベントが見つかりません
-          </h3>
-          <p className="text-gray-500">
-            検索条件を変更するか、新しいイベントを作成してください
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredEvents.map((event) => {
-            const { date, time } = formatDateTime(event.startDateTime);
-            const isPast = new Date(event.startDateTime) < new Date();
-            
-            return (
-              <Link
-                key={event.id}
-                href={`/community/${communityId}/events/${event.id}`}
-                className={`block bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ${
-                  isPast ? 'opacity-75' : ''
-                }`}
-              >
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-xl font-semibold text-gray-900">
-                          {event.title}
-                        </h3>
-                        {getStatusBadge(event.status)}
-                      </div>
-                      
-                      {event.description && (
-                        <p className="text-gray-600 line-clamp-2 mb-3">
-                          {event.description}
-                        </p>
-                      )}
-
-                      <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                        <span className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          {date}
-                        </span>
-                        <span className="flex items-center">
-                          <Clock className="h-4 w-4 mr-1" />
-                          {time}
-                        </span>
-                        <span className="flex items-center">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          {event.location}
-                        </span>
-                        {event.maxParticipants && (
-                          <span className="flex items-center">
-                            <Users className="h-4 w-4 mr-1" />
-                            定員 {event.maxParticipants}名
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {event.difficulty && (
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            event.difficulty === 'beginner' ? 'bg-blue-100 text-blue-700' :
-                            event.difficulty === 'intermediate' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>
-                            {event.difficulty === 'beginner' ? '初級' :
-                             event.difficulty === 'intermediate' ? '中級' : '上級'}
-                          </span>
-                        )}
-                        
-                        {event.practiceCardIds && event.practiceCardIds.length > 0 && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                            練習カード {event.practiceCardIds.length}枚
-                          </span>
-                        )}
-
-                        {event.tags && event.tags.map((tag, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
-                          >
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                <div className="flex-1 max-w-md">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="イベントを検索..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
                   </div>
                 </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
+              </div>
+            )}
+          </div>
+
+          {/* コンテンツ */}
+          {viewMode === 'calendar' ? (
+            <CommunityCalendar communityId={communityId} events={events} />
+          ) : (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+              {filteredEvents.length === 0 ? (
+                <div className="text-center py-8">
+                  <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <p className="text-gray-500">イベントが見つかりません</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredEvents.map((event) => {
+                    const { date, time } = formatDateTime(event.startDateTime);
+                    const now = new Date();
+                    const eventDate = new Date(event.startDateTime);
+                    const isPast = eventDate < now;
+                    
+                    return (
+                      <Link
+                        key={event.id}
+                        href={`/community/${communityId}/events/${event.id}`}
+                        className={`block p-4 border rounded-lg transition-all duration-200 ${
+                          isPast ? 'border-gray-200 bg-gray-50 hover:bg-gray-100' : 'border-gray-200 hover:border-green-500 hover:shadow-md'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-start gap-3">
+                              <div>
+                                <h3 className={`text-sm sm:text-base font-semibold mb-1 ${isPast ? 'text-gray-500' : 'text-gray-900'}`}>
+                                  {event.title}
+                                </h3>
+                                <div className="flex flex-wrap gap-2 sm:gap-3 text-xs sm:text-sm text-gray-600">
+                                  <span className="flex items-center">
+                                    <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+                                    {date}
+                                  </span>
+                                  <span className="flex items-center">
+                                    <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+                                    {time}
+                                  </span>
+                                  <span className="flex items-center">
+                                    <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+                                    {event.location}
+                                  </span>
+                                  {event.maxParticipants && (
+                                    <span className="flex items-center">
+                                      <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+                                      定員 {event.maxParticipants}名
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="mt-2 flex items-center gap-2">
+                                  <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${getStatusColor(event.status)}`}>
+                                    {getStatusLabel(event.status)}
+                                  </span>
+                                  {isPast && (
+                                    <span className="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 text-gray-600 text-xs">
+                                      終了
+                                    </span>
+                                  )}
+                                  {event.practiceCardIds && event.practiceCardIds.length > 0 && (
+                                    <span className="inline-flex items-center px-2 py-1 rounded-md bg-green-100 text-green-700 text-xs">
+                                      練習カード {event.practiceCardIds.length}枚
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

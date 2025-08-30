@@ -860,8 +860,8 @@ export default function DashboardPage() {
                     <BPSIResultCard mbtiResult={mbtiResult} />
                   </div>
 
-                  {/* 最近の試合 - Coming Soon */}
-                  <div>
+                  {/* 最近の試合 - 非表示 */}
+                  {/* <div>
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6  opacity-75">
                       <div className="flex items-center justify-between mb-6">
                         <h3 className="text-xl font-bold text-gray-400 flex items-center">
@@ -885,7 +885,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* フレンドと最新記事 */}
                   <div className="space-y-6">
@@ -924,8 +924,8 @@ export default function DashboardPage() {
                   {/* BPSI診断 */}
                   <BPSIResultCard mbtiResult={mbtiResult} />
 
-                  {/* 最近の試合 - Coming Soon */}
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6  opacity-75">
+                  {/* 最近の試合 - 非表示 */}
+                  {/* <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6  opacity-75">
                     <div className="flex items-center justify-between mb-4 sm:mb-6">
                       <h3 className="text-lg sm:text-xl font-bold text-gray-400 flex items-center">
                         <GiShuttlecock className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-gray-400" />
@@ -947,7 +947,7 @@ export default function DashboardPage() {
                         <p className="text-gray-400 text-xs sm:text-sm">試合戦績機能は現在開発中です</p>
                       </div>
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* フレンド */}
                   <FriendsListCard friends={friends} />

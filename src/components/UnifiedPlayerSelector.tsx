@@ -127,7 +127,6 @@ const UnifiedPlayerSelector: React.FC<UnifiedPlayerSelectorProps> = ({
   const filteredPlayers = unifiedPlayers.filter(player => {
     const matchesSearch = searchTerm === '' || 
       player.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (player.email && player.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
       player.affiliation.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesTab = activeTab === 'friends' ? player.isFromFriend : !player.isFromFriend;
@@ -241,9 +240,6 @@ const UnifiedPlayerSelector: React.FC<UnifiedPlayerSelectorProps> = ({
                           )}
                         </div>
                         <p className="text-sm text-gray-600">{player.affiliation}</p>
-                        {player.email && (
-                          <p className="text-sm text-gray-500">{player.email}</p>
-                        )}
                       </div>
                     </div>
                     <div className="text-blue-600 hover:text-blue-800">

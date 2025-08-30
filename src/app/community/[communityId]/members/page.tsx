@@ -11,8 +11,7 @@ import {
   getDocs,
   doc,
   getDoc,
-  updateDoc,
-  deleteDoc
+  updateDoc
 } from 'firebase/firestore';
 import { 
   Community, 
@@ -26,12 +25,10 @@ import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import { usePathname } from 'next/navigation';
 import { 
-  ChevronLeft,
   Users,
   User,
   Crown,
   Shield,
-  Mail,
   Search,
   UserPlus,
   UserMinus,
@@ -47,7 +44,6 @@ interface MemberInfo {
   userInfo: {
     userId: string;
     name: string;
-    email?: string;
     photoURL?: string;
     playRegion?: string;
     bio?: string;
@@ -145,7 +141,6 @@ export default function MembersPage() {
         let userInfo = {
           userId: memberData.userId,
           name: 'ユーザー',
-          email: undefined as string | undefined,
           photoURL: undefined as string | undefined,
           playRegion: undefined as string | undefined,
           bio: undefined as string | undefined,
@@ -156,7 +151,6 @@ export default function MembersPage() {
         if (!userSnapshot.empty) {
           const userData = userSnapshot.docs[0].data();
           userInfo.name = userData.displayName || userData.name || 'ユーザー';
-          userInfo.email = userData.email;
           userInfo.photoURL = userData.photoURL;
         }
         
@@ -212,7 +206,6 @@ export default function MembersPage() {
     const searchLower = searchTerm.toLowerCase();
     const filtered = members.filter(({ userInfo }) =>
       userInfo.name.toLowerCase().includes(searchLower) ||
-      userInfo.email?.toLowerCase().includes(searchLower) ||
       userInfo.playRegion?.toLowerCase().includes(searchLower)
     );
     
@@ -440,12 +433,6 @@ export default function MembersPage() {
                       
                       <div className="mt-1 space-y-1">
                         <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          {userInfo.email && (
-                            <span className="flex items-center">
-                              <Mail className="h-4 w-4 mr-1" />
-                              {userInfo.email}
-                            </span>
-                          )}
                           {userInfo.playRegion && (
                             <span>{userInfo.playRegion}</span>
                           )}

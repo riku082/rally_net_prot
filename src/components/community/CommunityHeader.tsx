@@ -8,7 +8,7 @@ import { Community } from '@/types/community';
 interface CommunityHeaderProps {
   community: Community;
   memberRole: string;
-  currentTab: 'home' | 'calendar' | 'events' | 'members' | 'settings';
+  currentTab: 'home' | 'events' | 'members' | 'settings';
 }
 
 export default function CommunityHeader({ 
@@ -125,16 +125,6 @@ export default function CommunityHeader({
             ホーム
           </Link>
           <Link
-            href={`/community/${communityId}/calendar`}
-            className={`px-3 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-medium whitespace-nowrap ${
-              currentTab === 'calendar'
-                ? 'text-green-600 border-b-2 border-green-600'
-                : 'text-gray-600 hover:text-gray-900 transition-colors'
-            }`}
-          >
-            カレンダー
-          </Link>
-          <Link
             href={`/community/${communityId}/events`}
             className={`px-3 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-medium whitespace-nowrap ${
               currentTab === 'events'
@@ -142,7 +132,7 @@ export default function CommunityHeader({
                 : 'text-gray-600 hover:text-gray-900 transition-colors'
             }`}
           >
-            イベント一覧
+            イベント
           </Link>
           <Link
             href={`/community/${communityId}/members`}
@@ -157,7 +147,7 @@ export default function CommunityHeader({
           {(memberRole === 'owner' || memberRole === 'admin') && (
             <Link
               href={`/community/${communityId}/settings`}
-              className={`px-6 py-3 text-sm font-medium ${
+              className={`px-3 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-medium whitespace-nowrap ${
                 currentTab === 'settings'
                   ? 'text-green-600 border-b-2 border-green-600'
                   : 'text-gray-600 hover:text-gray-900 transition-colors'
