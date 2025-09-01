@@ -11,6 +11,7 @@ import Link from 'next/link';
 import CreateCommunityModal from '@/components/community/CreateCommunityModal';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
+import Topbar from '@/components/Topbar';
 import { usePathname } from 'next/navigation';
 import InvitationBadge from '@/components/community/InvitationBadge';
 
@@ -101,14 +102,11 @@ export default function CommunityPage() {
     <div className="flex min-h-screen bg-white">
       <Sidebar activePath={pathname} />
       <MobileNav activePath={pathname} />
-      <div className="flex-1 lg:ml-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex-1 flex flex-col lg:ml-0">
+        <Topbar />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
       <div className="mb-8">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">コミュニティ</h1>
-            <p className="text-gray-600">参加中のコミュニティ一覧</p>
-          </div>
           <div className="relative">
             <InvitationBadge />
           </div>
@@ -149,11 +147,11 @@ export default function CommunityPage() {
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-gray-900 group-hover:text-green-600 transition-colors">
+                      <h3 className="text-xl font-semibold text-gray-900 group-hover:text-green-600 transition-colors break-words line-clamp-2">
                         {community.name}
                       </h3>
                       {community.description && (
-                        <p className="mt-1 text-sm text-gray-500 line-clamp-2">
+                        <p className="mt-1 text-sm text-gray-500 line-clamp-2 break-words">
                           {community.description}
                         </p>
                       )}
@@ -230,21 +228,21 @@ export default function CommunityPage() {
 
                   {/* 中央：コミュニティ情報 */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-semibold text-gray-900 truncate">
+                    <h3 className="text-base font-semibold text-gray-900 break-words line-clamp-1">
                       {community.name}
                     </h3>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-xs text-gray-500">
-                        <Users className="inline h-3 w-3 mr-0.5" />
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <span className="text-xs text-gray-500 flex items-center flex-shrink-0">
+                        <Users className="h-3 w-3 mr-0.5" />
                         {memberCounts[community.id] || 0}
                       </span>
                       {community.location && (
-                        <span className="text-xs text-gray-500 truncate">
+                        <span className="text-xs text-gray-500 truncate max-w-[100px]">
                           📍 {community.location}
                         </span>
                       )}
                       {community.category && (
-                        <span className="text-xs text-blue-600">
+                        <span className="text-xs text-blue-600 flex-shrink-0">
                           {community.category === 'beginner' ? '初心者' :
                            community.category === 'intermediate' ? '中級者' :
                            community.category === 'advanced' ? '上級者' :

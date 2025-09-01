@@ -37,14 +37,18 @@ export default function CreateCommunityModal({
 
     try {
       // コミュニティを作成
-      const communityData: Omit<Community, 'id'> = {
+      const communityData: any = {
         name: formData.name,
-        description: formData.description || undefined,
         createdBy: user.uid,
         createdAt: Date.now(),
         memberCount: 1,
         isPublic: formData.isPublic
       };
+
+      // 空でない場合のみdescriptionを追加
+      if (formData.description && formData.description.trim()) {
+        communityData.description = formData.description.trim();
+      }
 
       const communityRef = await addDoc(collection(db, 'communities'), communityData);
 

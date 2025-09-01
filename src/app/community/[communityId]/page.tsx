@@ -34,6 +34,7 @@ import Link from 'next/link';
 import CommunityHeader from '@/components/community/CommunityHeader';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
+import Topbar from '@/components/Topbar';
 import { usePathname } from 'next/navigation';
 
 export default function CommunityDetailPage() {
@@ -150,8 +151,9 @@ export default function CommunityDetailPage() {
     <div className="flex min-h-screen bg-white">
       <Sidebar activePath={pathname} />
       <MobileNav activePath={pathname} />
-      <div className="flex-1 lg:ml-0">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+      <div className="flex-1 flex flex-col lg:ml-0">
+        <Topbar />
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 w-full">
           <CommunityHeader 
             community={community} 
             memberRole={memberRole}

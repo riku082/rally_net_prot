@@ -23,6 +23,7 @@ import CommunityHeader from '@/components/community/CommunityHeader';
 import InviteFriendsModal from '@/components/community/InviteFriendsModal';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
+import Topbar from '@/components/Topbar';
 import { usePathname } from 'next/navigation';
 import { 
   Users,
@@ -330,8 +331,9 @@ export default function MembersPage() {
     <div className="flex min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       <Sidebar activePath={pathname} />
       <MobileNav activePath={pathname} />
-      <div className="flex-1 lg:ml-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex-1 flex flex-col lg:ml-0">
+        <Topbar />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
           {/* コミュニティヘッダー */}
           <CommunityHeader 
             community={community} 
@@ -340,29 +342,29 @@ export default function MembersPage() {
           />
 
           {/* アクションボタン */}
-          <div className="mb-6 flex justify-between items-center">
+          <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
                 メンバー一覧 ({members.length}名)
               </h2>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3">
               {canManageMembers && (
                 <button
                   onClick={() => setShowInviteModal(true)}
-                  className="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-6 py-2 sm:py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 text-sm sm:text-base"
                 >
-                  <UserPlus className="h-5 w-5 mr-2" />
-                  フレンドを招待
+                  <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                  <span className="hidden xs:inline">フレンドを</span>招待
                 </button>
               )}
               {currentUserRole === CommunityRole.MEMBER && (
                 <button
                   onClick={handleLeaveCommunity}
-                  className="inline-flex items-center px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-6 py-2 sm:py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 text-sm sm:text-base"
                 >
-                  <UserMinus className="h-5 w-5 mr-2" />
-                  コミュニティを脱退
+                  <UserMinus className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                  <span className="hidden xs:inline">コミュニティを</span>脱退
                 </button>
               )}
             </div>
