@@ -88,10 +88,13 @@ export default function MatchRecordList({
       }
       
       const snapshot = await getDocs(matchQuery);
-      const matchData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as MatchRecord[];
+      const matchData = snapshot.docs.map(doc => {
+        const data = doc.data() as Omit<MatchRecord, 'id'>;
+        return {
+          id: doc.id,
+          ...data
+        };
+      });
       
       setMatches(matchData);
     } catch (error: any) {
@@ -114,10 +117,13 @@ export default function MatchRecordList({
           }
           
           const snapshot = await getDocs(simpleQuery);
-          const matchData = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          })) as MatchRecord[];
+          const matchData = snapshot.docs.map(doc => {
+            const data = doc.data() as Omit<MatchRecord, 'id'>;
+            return {
+              id: doc.id,
+              ...data
+            };
+          });
           
           // クライアント側でソート
           matchData.sort((a, b) => {

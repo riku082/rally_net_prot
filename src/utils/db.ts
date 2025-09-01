@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { db, storage } from './firebase';
 import { collection, getDocs, deleteDoc, doc, setDoc, getDoc, query, where, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';

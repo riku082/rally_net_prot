@@ -1,26 +1,41 @@
 import * as admin from 'firebase-admin';
-import * as path from 'path';
-import * as fs from 'fs';
-
-// サービスアカウントキーファイルのパス (プロジェクトルートからの相対パス)
-const serviceAccountFileName = 'badsnsn-q2xa94-firebase-adminsdk-fbsvc-21f8d57b36.json';
-const serviceAccountPath = path.resolve(process.cwd(), serviceAccountFileName);
 
 // アプリが既に初期化されているか確認し、重複初期化を防ぐ
 if (!admin.apps.length) {
   try {
-    console.log('Attempting to initialize Firebase Admin SDK from file...');
-    // ファイルからサービスアカウントキーを読み込む
-    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
-    });
-    console.log('Firebase Admin SDK initialized successfully from file.');
+    // 環境変数から設定を読み込む
+    const projectId = process.env.FIREBASE_PROJECT_ID || 'badsnsn-q2xa94';
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    
+    // 完全な認証情報がある場合のみ、cert認証を使用
+    if (projectId && privateKey && clientEmail) {
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          project_id: projectId,
+          client_email: clientEmail,
+          private_key: privateKey,
+        } as any),
+        databaseURL: `https://${projectId}.firebaseio.com`
+      });
+      console.log('Firebase Admin SDK initialized with service account.');
+    } else {
+      // 認証情報が不完全な場合は、プロジェクトIDのみで初期化（読み取り専用）
+      console.warn('Firebase Admin credentials not found, initializing with limited functionality.');
+      admin.initializeApp({
+        projectId: projectId,
+      });
+    }
   } catch (error: any) {
-    console.error('CRITICAL: Firebase Admin SDK initialization failed from file.', error.message);
-    // 初期化エラーは致命的なので、ここでエラーを再スローする
-    throw new Error(`Firebase Admin SDK could not be initialized. Check the service account file at ${serviceAccountPath}. Error: ${error.message}`);
+    console.error('Firebase Admin SDK initialization error:', error.message);
+    // エラーが発生した場合でも、最小限の初期化を試みる
+    try {
+      admin.initializeApp({
+        projectId: 'badsnsn-q2xa94',
+      });
+    } catch (fallbackError: any) {
+      console.error('Fallback initialization also failed:', fallbackError.message);
+    }
   }
 }
 

@@ -1,0 +1,19 @@
+   ▲ Next.js 15.2.5
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Skipping linting
+   Checking validity of types ...
+Failed to compile.
+
+./src/components/BadmintonCourt.tsx:102:15
+Type error: Property 'score' does not exist on type 'Match'. Did you mean 'scores'?
+
+[0m [90m 100 |[39m   [90m// スコアを初期化または復元[39m[0m
+[0m [90m 101 |[39m   useEffect(() [33m=>[39m {[0m
+[0m[31m[1m>[22m[39m[90m 102 |[39m     [36mif[39m (match[33m.[39mscore) {[0m
+[0m [90m     |[39m               [31m[1m^[22m[39m[0m
+[0m [90m 103 |[39m       setScore(match[33m.[39mscore)[33m;[39m[0m
+[0m [90m 104 |[39m       setScoreHistory([{ player[33m:[39m [35m0[39m[33m,[39m opponent[33m:[39m [35m0[39m }[33m,[39m match[33m.[39mscore])[33m;[39m[0m
+[0m [90m 105 |[39m     }[0m
+Next.js build worker exited with code: 1 and signal: null

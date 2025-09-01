@@ -1,31 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore } from 'firebase-admin/firestore';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { db } from '@/utils/firebaseAdmin';
 import crypto from 'crypto';
 import { Resend } from 'resend';
-
-// Firebase Admin初期化を試みる
-let isAdminInitialized = false;
-try {
-  if (!getApps().length) {
-    if (process.env.FIREBASE_PROJECT_ID && 
-        process.env.FIREBASE_CLIENT_EMAIL && 
-        process.env.FIREBASE_PRIVATE_KEY) {
-      initializeApp({
-        credential: cert({
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-        }),
-      });
-      isAdminInitialized = true;
-    }
-  } else {
-    isAdminInitialized = true;
-  }
-} catch (error) {
-  console.error('Firebase Admin SDK初期化エラー:', error);
-}
 
 
 function generateVerificationCode(): string {
@@ -47,23 +23,18 @@ export async function POST(request: NextRequest) {
     const verificationCode = generateVerificationCode();
     const expiresAt = Date.now() + 10 * 60 * 1000; // 10分後に期限切れ
 
-    // Firebase Admin SDKが初期化されている場合のみFirestoreに保存
-    if (isAdminInitialized) {
-      try {
-        const db = getFirestore();
-        await db.collection('verificationCodes').doc(email).set({
-          code: verificationCode,
-          email,
-          expiresAt,
-          createdAt: Date.now(),
-          verified: false,
-        });
-      } catch (firestoreError) {
-        console.error('Firestore保存エラー:', firestoreError);
-        // Firestoreエラーでも処理を続行（開発環境用）
-      }
-    } else {
-      console.warn('Firebase Admin SDKが初期化されていません。開発モードで動作します。');
+    // Firestoreに認証コードを保存
+    try {
+      await db.collection('verificationCodes').doc(email).set({
+        code: verificationCode,
+        email,
+        expiresAt,
+        createdAt: Date.now(),
+        verified: false,
+      });
+    } catch (firestoreError) {
+      console.error('Firestore保存エラー:', firestoreError);
+      // Firestoreエラーでも処理を続行（開発環境用）
     }
 
     // Resendを使用してメール送信

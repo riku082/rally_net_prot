@@ -287,12 +287,6 @@ export default function AttendanceManager({ event, communityId }: AttendanceMana
             </div>
           </div>
         )}
-
-        {event.minParticipants && attendingCount < event.minParticipants && (
-          <div className="text-sm text-yellow-600 bg-yellow-50 p-2 rounded">
-            最小催行人数（{event.minParticipants}名）に達していません
-          </div>
-        )}
       </div>
 
       {/* 参加者リスト */}

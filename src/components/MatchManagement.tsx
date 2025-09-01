@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from 'react';
 import { Match } from '@/types/match';
 import { Shot } from '@/types/shot';

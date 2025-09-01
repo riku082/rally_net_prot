@@ -1,23 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuth } from 'firebase-admin/auth';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-
-// Firebase Admin初期化
-if (!getApps().length) {
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-  
-  if (process.env.FIREBASE_PROJECT_ID && 
-      process.env.FIREBASE_CLIENT_EMAIL && 
-      privateKey) {
-    initializeApp({
-      credential: cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey,
-      }),
-    });
-  }
-}
+import { auth } from '@/utils/firebaseAdmin';
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,15 +12,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Firebase Admin SDKが初期化されていない場合
-    if (!getApps().length) {
-      return NextResponse.json(
-        { error: 'サーバー設定エラー' },
-        { status: 500 }
-      );
-    }
-
-    const auth = getAuth();
+    // Firebase Auth操作を実行
 
     try {
       // ユーザーをメールアドレスで検索

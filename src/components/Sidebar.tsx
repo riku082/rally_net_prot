@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';

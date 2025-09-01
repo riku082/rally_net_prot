@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signInWithCustomToken } from 'firebase/auth';
 import { auth } from '@/utils/firebase';
@@ -8,7 +8,7 @@ import { firestoreDb } from '@/utils/db';
 import Image from 'next/image';
 import { FiMail, FiCheck, FiRefreshCw } from 'react-icons/fi';
 
-const VerifyCodePage: React.FC = () => {
+const VerifyCodeContent: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
@@ -277,6 +277,21 @@ const VerifyCodePage: React.FC = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const VerifyCodePage: React.FC = () => {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">読み込み中...</p>
+        </div>
+      </div>
+    }>
+      <VerifyCodeContent />
+    </Suspense>
   );
 };
 
