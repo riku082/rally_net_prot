@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { FiMail, FiRefreshCw, FiAlertCircle } from 'react-icons/fi';
+import { FiMail, FiRefreshCw, FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 
 const VerificationPendingPage: React.FC = () => {
   const router = useRouter();

@@ -93,10 +93,7 @@ const MatchesPage: React.FC = () => {
     try {
       await firestoreDb.updateMatchRequestStatus(request.id, 'accepted');
       
-      await firestoreDb.addMatch({
-        ...request.matchData,
-        ownerUserId: user.uid,
-      });
+      await firestoreDb.addMatch(request.matchData);
 
       // リクエストリストを更新
       const updatedRequests = await firestoreDb.getPendingMatchRequests(user.uid);
@@ -165,12 +162,12 @@ const MatchesPage: React.FC = () => {
                               試合日: {new Date(request.matchData.date).toLocaleDateString('ja-JP')}
                             </p>
                             <p className="text-sm text-gray-600">
-                              形式: {request.matchData.type === 'singles' ? 'シングルス' : 'ダブルス'}
+                              形式: 試合
                             </p>
-                            {request.matchData.score && (
+                            {request.matchData.scores && request.matchData.scores.length > 0 && (
                               <div className="mt-2 p-2 bg-white rounded border">
                                 <p className="text-sm text-gray-600">
-                                  スコア: {request.matchData.score.player} - {request.matchData.score.opponent}
+                                  スコア: {request.matchData.scores[0].team1Score} - {request.matchData.scores[0].team2Score}
                                 </p>
                               </div>
                             )}

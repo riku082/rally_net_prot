@@ -413,7 +413,7 @@ export default function EventDetailPage() {
                 </div>
               </div>
 
-              {(event.minParticipants || event.maxParticipants) && (
+              {event.maxParticipants && (
                 <div className="flex items-start">
                   <Users className="h-5 w-5 text-gray-400 mr-3 mt-0.5" />
                   <div>
@@ -421,82 +421,15 @@ export default function EventDetailPage() {
                       参加人数
                     </div>
                     <div className="text-sm text-gray-600">
-                      {event.minParticipants && `最小: ${event.minParticipants}名`}
-                      {event.minParticipants && event.maxParticipants && ' / '}
                       {event.maxParticipants && `定員: ${event.maxParticipants}名`}
                     </div>
                   </div>
                 </div>
               )}
 
-              {event.difficulty && (
-                <div className="flex items-start">
-                  <Dumbbell className="h-5 w-5 text-gray-400 mr-3 mt-0.5" />
-                  <div>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${
-                      event.difficulty === 'beginner' ? 'bg-blue-100 text-blue-800' :
-                      event.difficulty === 'intermediate' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {event.difficulty === 'beginner' ? '初級' :
-                       event.difficulty === 'intermediate' ? '中級' : '上級'}
-                    </span>
-                  </div>
-                </div>
-              )}
 
-              {event.equipment && event.equipment.length > 0 && (
-                <div className="flex items-start">
-                  <FileText className="h-5 w-5 text-gray-400 mr-3 mt-0.5" />
-                  <div>
-                    <div className="font-medium text-gray-900 mb-1">
-                      必要な用具
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {event.equipment.map((item, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
-                        >
-                          {item}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
 
-              {event.tags && event.tags.length > 0 && (
-                <div className="flex items-start">
-                  <Tag className="h-5 w-5 text-gray-400 mr-3 mt-0.5" />
-                  <div className="flex flex-wrap gap-2">
-                    {event.tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
 
-              {event.notes && (
-                <div className="mt-4 p-4 bg-yellow-50 rounded-lg">
-                  <div className="flex items-start">
-                    <FileText className="h-5 w-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <div className="font-medium text-yellow-800 mb-1">
-                        メモ
-                      </div>
-                      <p className="text-sm text-yellow-700 whitespace-pre-wrap">
-                        {event.notes}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 

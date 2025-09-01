@@ -95,7 +95,6 @@ export async function POST(request: NextRequest) {
         endDateTime: eventData.endDateTime,
         location: eventData.location,
         practiceCardIds: eventData.practiceCardIds,
-        difficulty: eventData.difficulty,
         syncedAt: Date.now(),
         source: 'community'
       };

@@ -65,7 +65,7 @@ function PracticeManagementContent() {
   // イベントIDがある場合、練習記録フォームを開く
   useEffect(() => {
     if (eventId && initialDate) {
-      setActiveView('records');
+      setActiveView('activities');
       setFormInitialDate(initialDate);
       setShowPracticeForm(true);
     }

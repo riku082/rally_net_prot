@@ -973,7 +973,7 @@ interface MatchCardProps {
 }
 
 const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
-  const hasVideo = match.youtubeVideoId;
+  const hasVideo = false;
   
   return (
     <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-gray-200 transition-all duration-200 opacity-60 cursor-not-allowed">
@@ -986,9 +986,9 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
             </p>
             <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm text-gray-500">
               <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${
-                match.type === 'singles' ? 'bg-gray-100 text-gray-500' : 'bg-gray-100 text-gray-500'
+                'bg-gray-100 text-gray-500'
               }`}>
-                {match.type === 'singles' ? 'シングルス' : 'ダブルス'}
+                試合
               </span>
               {hasVideo && (
                 <div className="flex items-center text-gray-500">
@@ -996,9 +996,9 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
                   <span className="text-xs">動画あり</span>
                 </div>
               )}
-              {match.score && (
+              {match.scores && match.scores.length > 0 && (
                 <span className="text-xs text-gray-500">
-                  {match.score.player}-{match.score.opponent}
+                  {match.scores[0].team1Score}-{match.scores[0].team2Score}
                 </span>
               )}
             </div>

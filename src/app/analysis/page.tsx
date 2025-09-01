@@ -10,7 +10,7 @@ import AuthGuard from '@/components/AuthGuard';
 import SimpleVideoPlayer from '@/components/SimpleVideoPlayer';
 import { Player } from '@/types/player';
 import { Shot } from '@/types/shot';
-import { Match } from '@/types/match';
+import { Match, GameScore } from '@/types/match';
 import { firestoreDb } from '@/utils/db';
 import { useAuth } from '@/context/AuthContext';
 
@@ -58,9 +58,9 @@ const AnalysisContent: React.FC = () => {
   };
 
   // ローカルストレージに一時データを保存
-  const saveTempData = (matchId: string, shots: Shot[], score: { player: number; opponent: number }, gameState?: unknown) => {
+  const saveTempData = (matchId: string, shots: Shot[], scores: GameScore[], gameState?: unknown) => {
     try {
-      const tempData = { shots, score, gameState, lastUpdated: Date.now() };
+      const tempData = { shots, scores, gameState, lastUpdated: Date.now() };
       localStorage.setItem(getLocalStorageKey(matchId), JSON.stringify(tempData));
     } catch (error) {
       console.error('Failed to save temp data:', error);
@@ -97,7 +97,7 @@ const AnalysisContent: React.FC = () => {
           // 一時データがある場合はスコアもマッチに反映
           if (tempData.shots.length > 0) {
             // ローカルストレージからスコアを復元
-            let scoreToUse = tempData.score;
+            let scoreToUse = tempData.scores;
             
             // gameStateからも最新スコアを取得
             if (tempData.gameState && tempData.gameState.scoreHistory) {
@@ -107,10 +107,10 @@ const AnalysisContent: React.FC = () => {
               }
             }
             
-            setSelectedMatch({ ...match, score: scoreToUse });
-          } else if (match.score) {
+            setSelectedMatch({ ...match, scores: scoreToUse });
+          } else if (match.scores) {
             // 一時データがない場合でも、既存のマッチスコアを保持
-            setSelectedMatch({ ...match, score: match.score });
+            setSelectedMatch({ ...match, scores: match.scores });
           }
         }
       }
@@ -137,7 +137,7 @@ const AnalysisContent: React.FC = () => {
     
     // ローカルストレージに自動保存（スコアは後で更新されるため、現在のスコアを保存）
     if (selectedMatch) {
-      saveTempData(shotMatchId, updatedTempShots, selectedMatch.score || { player: 0, opponent: 0 }, gameState);
+      saveTempData(shotMatchId, updatedTempShots, selectedMatch.scores || [], gameState);
     }
   };
 
@@ -153,7 +153,7 @@ const AnalysisContent: React.FC = () => {
         
         // ローカルストレージを更新
         if (selectedMatch && matchId) {
-          saveTempData(matchId, updatedTempShots, selectedMatch.score || { player: 0, opponent: 0 }, gameState);
+          saveTempData(matchId, updatedTempShots, selectedMatch.scores || [], gameState);
         }
       } else {
         // 既存のFirestoreデータから削除
@@ -178,8 +178,13 @@ const AnalysisContent: React.FC = () => {
     if (matchId && newGameState && typeof newGameState === 'object' && newGameState !== null && 'scoreHistory' in newGameState) {
       const scoreHistory = (newGameState as { scoreHistory: unknown[] }).scoreHistory;
       if (Array.isArray(scoreHistory) && scoreHistory.length > 0) {
-        const currentScore = scoreHistory[scoreHistory.length - 1];
-        saveTempData(matchId, tempShots, currentScore as { player: number; opponent: number }, newGameState);
+        const currentScore = scoreHistory[scoreHistory.length - 1] as { player: number; opponent: number };
+        const gameScore: GameScore = {
+          gameNumber: 1,
+          team1Score: currentScore.player,
+          team2Score: currentScore.opponent
+        };
+        saveTempData(matchId, tempShots, [gameScore], newGameState);
       }
     }
   };
@@ -246,25 +251,25 @@ const AnalysisContent: React.FC = () => {
             {showCourt && selectedMatch ? (
               <div className="space-y-6">
                 {/* 動画とコートの表示エリア */}
-                <div className={`grid gap-6 ${selectedMatch.youtubeVideoId && showVideo ? 'lg:grid-cols-2' : 'grid-cols-1'}`}>
+                <div className={`grid gap-6 ${showVideo ? 'lg:grid-cols-2' : 'grid-cols-1'}`}>
                   {/* 動画プレイヤー */}
-                  {selectedMatch.youtubeVideoId && showVideo && (
+                  {showVideo && (
                     <div className="lg:col-span-1">
                       <SimpleVideoPlayer
-                        videoId={selectedMatch.youtubeVideoId}
-                        title={selectedMatch.youtubeVideoTitle || '試合動画'}
+                        videoId=""
+                        title={'試合動画'}
                         onClose={() => setShowVideo(false)}
                       />
                     </div>
                   )}
                   
                   {/* コート入力エリア */}
-                  <div className={`${selectedMatch.youtubeVideoId && showVideo ? 'lg:col-span-1' : 'col-span-1'}`}>
+                  <div className={`${showVideo ? 'lg:col-span-1' : 'col-span-1'}`}>
                     <div className="bg-white rounded-lg shadow p-6">
                       <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-bold">配球登録 - {selectedMatch.type === 'singles' ? 'シングルス' : 'ダブルス'}</h3>
+                        <h3 className="text-lg font-bold">配球登録</h3>
                         <div className="flex space-x-2">
-                          {selectedMatch.youtubeVideoId && (
+                          {false && (
                             <button
                               onClick={() => setShowVideo(!showVideo)}
                               className={`px-4 py-2 rounded transition-colors ${
